@@ -1,27 +1,100 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, ChevronRight, ChevronDown, X } from 'lucide-react';
+import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Select from '../components/Select';
 import Input from '../components/Input';
 import Badge from '../components/Badge';
-import { MOCK_TALENT } from '../data/mockData';
-import { View, Talent } from '../types';
+import { searchProfessionals } from '../services/searchServices';
+import { getMyCollaborationRequests, respondToCollaborationRequest, sendCollaborationRequest } from '../services/collaborationServices';
+import { View } from '../types';
 
 const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
+  const [professionals, setProfessionals] = React.useState<any[]>([]);
+  const [requests, setRequests] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [intent, setIntent] = React.useState('');
   const [date, setDate] = React.useState('');
   const [type, setType] = React.useState('');
   const [showCalendar, setShowCalendar] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false);
-  const [bookingExpert, setBookingExpert] = React.useState<Talent | null>(null);
+  const [bookingExpert, setBookingExpert] = React.useState<any | null>(null);
+  const [bookingMessage, setBookingMessage] = React.useState('');
+  const [publicUrl, setPublicUrl] = React.useState('');
+
+  const fetchDashboardData = async (query: any = {}) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (token) {
+        const [profRes, reqRes] = await Promise.all([
+          searchProfessionals(token, query),
+          getMyCollaborationRequests(token)
+        ]);
+
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          setProfessionals(profData.data);
+        }
+        if (reqRes.ok) {
+          const reqData = await reqRes.json();
+          setRequests(reqData.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const handleRespond = async (id: number, status: 'accepted' | 'rejected') => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const res = await respondToCollaborationRequest(token, id, { status });
+        if (res.ok) fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error responding to request:', error);
+    }
+  };
+
+  const handleBookRequest = async () => {
+    if (!bookingExpert) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const res = await sendCollaborationRequest(token, {
+          receiverId: bookingExpert.id,
+          receiverRole: 'professional',
+          message: bookingMessage || `I would like to invite you for a ${type} on ${date}.`,
+          proposedDate: date,
+          publicUrl: publicUrl,
+        });
+        if (res.ok) {
+          setBookingExpert(null);
+          setBookingMessage('');
+          setPublicUrl('');
+          fetchDashboardData();
+        }
+      }
+    } catch (error) {
+      console.error('Error sending request:', error);
+    }
+  };
 
   const handleSearch = () => {
-    if (intent && date && type) {
+    if (intent || date || type) {
       setShowResults(true);
+      fetchDashboardData({ skill: intent, availability: date });
     }
   };
 
@@ -56,7 +129,9 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     onClick={() => setShowCalendar(!showCalendar)}
                     className="w-full p-3 bg-brand-surface rounded-brand text-sm text-left border border-transparent hover:border-gray-200 transition-premium flex items-center justify-between"
                   >
-                    <span className={date ? 'text-brand-primary font-medium' : 'text-text-muted'}>{date || 'Select Date'}</span>
+                    <span className={date ? 'text-brand-primary font-medium' : 'text-text-muted'}>
+                      {date ? new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Select Date'}
+                    </span>
                     <Calendar size={16} className="text-text-muted" />
                   </button>
                   
@@ -82,7 +157,11 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                           {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                             <button 
                               key={d} 
-                              onClick={() => { setDate(`${d} March 2026`); setShowCalendar(false); }}
+                              onClick={() => { 
+                                const day = d.toString().padStart(2, '0');
+                                setDate(`2026-03-${day}`); 
+                                setShowCalendar(false); 
+                              }}
                               className="p-1.5 text-xs hover:bg-brand-primary hover:text-white rounded transition-premium"
                             >
                               {d}
@@ -108,6 +187,137 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
           </div>
         </section>
 
+        {/* Collaboration Requests Section */}
+        <section className="bg-white py-12 border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-6 space-y-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* Invitations Received */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between border-b border-gray-50 pb-4 text-left">
+                  <div className="text-left">
+                    <h2 className="text-xl font-display font-bold text-brand-primary">Invitations Received</h2>
+                    <p className="text-[10px] text-text-secondary font-medium uppercase tracking-wider">From Experts</p>
+                  </div>
+                  <Badge variant="info">
+                    {requests.filter(r => r.status === 'pending' && r.senderRole === 'professional').length} New
+                  </Badge>
+                </div>
+
+                <div className="space-y-4">
+                  {requests.filter(r => r.senderRole === 'professional').length > 0 ? (
+                    requests.filter(r => r.senderRole === 'professional').map((req) => (
+                      <Card key={req.id} className={`p-5 space-y-4 border-l-4 ${req.status === 'accepted' ? 'border-l-emerald-500' : req.status === 'rejected' ? 'border-l-red-500' : 'border-l-brand-accent shadow-premium'}`}>
+                        <div className="flex justify-between items-start text-left">
+                          <div className="flex gap-3 items-center text-left">
+                            <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-xs">
+                              {req.professional?.user?.email[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-brand-primary">{req.professional?.user?.email.split('@')[0]}</h4>
+                            </div>
+                          </div>
+                          <Badge variant={req.status === 'accepted' ? 'success' : req.status === 'rejected' ? 'warning' : 'warning'} className="text-[10px] py-0 px-2">
+                            {req.status.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-text-secondary line-clamp-2 italic">"{req.message}"</p>
+                        
+                        {req.publicUrl && (
+                          <div className="pt-1">
+                            <Button 
+                              variant="outline" 
+                              className="w-full py-1 text-[10px] font-bold gap-2"
+                              onClick={() => window.open(req.publicUrl.startsWith('http') ? req.publicUrl : `https://${req.publicUrl}`, '_blank')}
+                            >
+                              <ArrowRight size={12} /> View Portfolio
+                            </Button>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 pt-1">
+                          <Button 
+                            variant="ghost" 
+                            className="flex-1 py-1 text-[10px] font-bold text-brand-accent hover:bg-brand-surface"
+                            onClick={() => req.professional?.talentId?.talentCode && navigate(`/talent/${req.professional.talentId.talentCode}`)}
+                          >
+                            Profile
+                          </Button>
+                          
+                          {req.status === 'pending' && (
+                            <div className="flex-[2] flex gap-2">
+                              <Button variant="secondary" className="flex-1 py-1 text-[10px]" onClick={() => handleRespond(req.id, 'rejected')}>Decline</Button>
+                              <Button className="flex-1 py-1 text-[10px]" onClick={() => handleRespond(req.id, 'accepted')}>Accept</Button>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="py-10 text-center text-text-muted border-2 border-dashed border-gray-100 rounded-brand text-xs">
+                      No invitations from experts yet.
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* My Sent Requests */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between border-b border-gray-50 pb-4 text-left">
+                  <div className="text-left">
+                    <h2 className="text-xl font-display font-bold text-brand-primary">My Sent Requests</h2>
+                    <p className="text-[10px] text-text-secondary font-medium uppercase tracking-wider">To Professionals</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {requests.filter(r => r.senderRole === 'institute').length > 0 ? (
+                    requests.filter(r => r.senderRole === 'institute').map((req) => (
+                      <Card key={req.id} className={`p-5 space-y-4 border-l-4 ${req.status === 'accepted' ? 'border-l-emerald-500' : req.status === 'rejected' ? 'border-l-red-500' : 'border-gray-200'}`}>
+                        <div className="flex justify-between items-start text-left">
+                          <div className="flex gap-3 items-center text-left">
+                            <div className="w-8 h-8 rounded-full bg-brand-surface flex items-center justify-center text-brand-primary font-bold text-xs">
+                              {req.professional?.user?.email[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-brand-primary">{req.professional?.user?.email.split('@')[0]}</h4>
+                            </div>
+                          </div>
+                          <Badge variant={req.status === 'accepted' ? 'success' : req.status === 'rejected' ? 'warning' : 'warning'} className="text-[10px] py-0 px-2">
+                            {req.status.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-text-secondary line-clamp-2 italic">"{req.message}"</p>
+                        
+                        <div className="flex gap-2 pt-1">
+                          <Button 
+                            variant="ghost" 
+                            className="w-full py-1 text-[10px] font-bold text-brand-accent hover:bg-brand-surface"
+                            onClick={() => req.professional?.talentId?.talentCode && navigate(`/talent/${req.professional.talentId.talentCode}`)}
+                          >
+                            View Profile
+                          </Button>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="py-10 text-center text-text-muted border-2 border-dashed border-gray-100 rounded-brand text-xs">
+                      You haven't sent any booking requests yet.
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+
+            {requests.length === 0 && (
+              <div className="py-20 text-center text-text-muted border-2 border-dashed border-gray-100 rounded-brand max-w-xl mx-auto">
+                <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
+                <h3 className="text-lg font-bold text-brand-primary">No Active Collaborations</h3>
+                <p className="text-sm">Start by booking an expert from the directory below.</p>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Results Section */}
         <AnimatePresence>
           {showResults && (
@@ -128,7 +338,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {MOCK_TALENT.slice(0, 3).map((talent, i) => (
+                {professionals.slice(0, 3).map((talent, i) => (
                   <motion.div
                     key={talent.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -137,32 +347,55 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   >
                     <Card className="group p-6 bg-white border-gray-100 shadow-premium hover:shadow-premium-hover hover:-translate-y-1 transition-premium space-y-6 text-left">
                       <div className="flex items-center gap-4">
-                        <img src={talent.avatar} className="w-16 h-16 rounded-brand object-cover transition-premium" alt="" />
+                        {talent.avatarUrl ? (
+                          <img src={talent.avatarUrl} className="w-16 h-16 rounded-brand object-cover transition-premium" alt="" />
+                        ) : (
+                          <div className="w-16 h-16 bg-brand-surface rounded-brand flex items-center justify-center text-brand-primary/20">
+                            <Calendar size={24} />
+                          </div>
+                        )}
                         <div>
-                          <h3 className="text-lg font-bold text-brand-primary">{talent.name}</h3>
-                          <p className="text-sm text-text-secondary">{talent.role}</p>
+                          <h3 className="text-lg font-bold text-brand-primary">{talent.user?.email.split('@')[0]}</h3>
+                          <p className="text-sm text-text-secondary">{talent.position}</p>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4 py-4 border-y border-gray-50 text-left">
                         <div>
                           <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Experience</div>
-                          <div className="text-sm font-bold text-brand-primary">{talent.exp}</div>
+                          <div className="text-sm font-bold text-brand-primary">{talent.experienceYears}y</div>
                         </div>
                         <div>
-                          <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Confidence</div>
-                          <div className="text-sm font-bold text-brand-accent">{talent.confidence.experience}%</div>
+                          <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Skill</div>
+                          <div className="text-sm font-bold text-brand-accent">{talent.primarySkill}</div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 text-xs text-emerald-600 font-bold uppercase tracking-wider">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Available on {date.split(' ')[0] || 'Selected'}nd
+                        Available for Sessions
                       </div>
 
-                      <div className="flex gap-3">
-                        <Button variant="secondary" className="flex-1" onClick={() => setView('talent_id')}>View Profile</Button>
-                        <Button className="flex-1" onClick={() => setBookingExpert(talent)}>Book</Button>
+                      <div className="flex gap-4">
+                        <Button 
+                          variant="secondary" 
+                          className="flex-1 py-3 text-sm"
+                          onClick={() => talent.talentId?.talentCode && navigate(`/talent/${talent.talentId.talentCode}`)}
+                        >
+                          View Full Profile
+                        </Button>
+                        {requests.find(r => r.professionalId === talent.id && r.senderRole === 'institute') ? (
+                          <Button className="flex-1 py-3 text-sm opacity-50 cursor-not-allowed uppercase" disabled>
+                            {(() => {
+                              const req = requests.find(r => r.professionalId === talent.id && r.senderRole === 'institute');
+                              if (req.status === 'accepted') return 'Accepted';
+                              if (req.status === 'rejected') return 'Declined';
+                              return 'Request Sent';
+                            })()}
+                          </Button>
+                        ) : (
+                          <Button className="flex-1 py-3 text-sm" onClick={() => setBookingExpert(talent)}>Book Session</Button>
+                        )}
                       </div>
                     </Card>
                   </motion.div>
@@ -173,15 +406,15 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
         </AnimatePresence>
 
         {/* Exploration Mode */}
-        <section className="bg-brand-surface py-24 text-left">
+        <section className="bg-brand-surface py-24 text-left border-t border-gray-100">
           <div className="max-w-7xl mx-auto px-6 space-y-12">
             <div className="space-y-2">
-              <h2 className="text-3xl font-display font-bold text-brand-primary">Explore All Mentors</h2>
+              <h2 className="text-3xl font-display font-bold text-brand-primary">Expert Directory</h2>
               <p className="text-text-secondary">Browse our full network of industry professionals.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {MOCK_TALENT.map((talent, i) => (
+              {professionals.map((talent, i) => (
                 <motion.div
                   key={`mentor-${talent.id}`}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -190,13 +423,33 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 >
                   <Card className="p-6 bg-white border-gray-100 shadow-sm hover:shadow-premium transition-premium space-y-6 text-left">
                     <div className="flex items-center gap-4">
-                      <img src={talent.avatar} className="w-16 h-16 rounded-brand object-cover transition-premium" alt="" />
+                      {talent.avatarUrl ? (
+                        <img src={talent.avatarUrl} className="w-16 h-16 rounded-brand object-cover transition-premium" alt="" />
+                      ) : (
+                        <div className="w-16 h-16 bg-brand-surface rounded-brand flex items-center justify-center text-brand-primary/20">
+                          <Calendar size={20} />
+                        </div>
+                      )}
                       <div>
-                        <h4 className="font-bold text-brand-primary">{talent.name}</h4>
-                        <p className="text-xs text-text-secondary">{talent.role} • {talent.exp} Exp</p>
+                        <h4 className="font-bold text-brand-primary">{talent.user?.email.split('@')[0]}</h4>
+                        <p className="text-xs text-text-secondary">{talent.position} • {talent.experienceYears}y Exp</p>
                       </div>
                     </div>
-                    <Button variant="secondary" className="w-full text-xs py-2" onClick={() => setView('talent_id')}>View Profile</Button>
+                    <div className="flex gap-3">
+                      <Button variant="secondary" className="flex-1 text-xs py-2" onClick={() => talent.talentId?.talentCode && navigate(`/talent/${talent.talentId.talentCode}`)}>View Profile</Button>
+                      {requests.find(r => r.professionalId === talent.id && r.senderRole === 'institute') ? (
+                        <Button className="flex-1 text-xs py-2 opacity-50 cursor-not-allowed uppercase" disabled>
+                          {(() => {
+                            const req = requests.find(r => r.professionalId === talent.id && r.senderRole === 'institute');
+                            if (req.status === 'accepted') return 'Accepted';
+                            if (req.status === 'rejected') return 'Declined';
+                            return 'Request Sent';
+                          })()}
+                        </Button>
+                      ) : (
+                        <Button className="flex-1 text-xs py-2" onClick={() => setBookingExpert(talent)}>Book</Button>
+                      )}
+                    </div>
                   </Card>
                 </motion.div>
               ))}
@@ -218,7 +471,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
               <div className="bg-brand-primary p-8 text-white flex justify-between items-start text-left">
                 <div className="space-y-1">
                   <h2 className="text-2xl font-display font-bold">Book Session</h2>
-                  <p className="text-white/60 text-sm">Expert: {bookingExpert.name}</p>
+                  <p className="text-white/60 text-sm">Expert: {bookingExpert.user?.email.split('@')[0]}</p>
                 </div>
                 <button onClick={() => setBookingExpert(null)} className="p-2 hover:bg-white/10 rounded-full transition-premium">
                   <X size={20} />
@@ -226,19 +479,51 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
               </div>
               
               <div className="p-8 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <Input label="Date" value={date} disabled className="bg-brand-surface" />
-                  <Select label="Time" options={['Select Time', '10:00 AM', '01:00 PM', '04:00 PM']} />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Proposed Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full p-3 bg-brand-surface rounded-brand text-sm border-none focus:ring-0 cursor-pointer"
+                        value={date ? new Date(date).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setDate(e.target.value)}
+                      />
+                    </div>
+                    <Select label="Preferred Time" options={['Select Time', '10:00 AM', '01:00 PM', '04:00 PM']} />
+                  </div>
+
+                  <Input 
+                    label="Message / Topic" 
+                    placeholder="e.g. Invitation for Advanced Lighting Workshop" 
+                    value={bookingMessage}
+                    onChange={(e: any) => setBookingMessage(e.target.value)}
+                  />
+
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Public URL / Portfolio (Optional)</label>
+                    <div className="flex items-center gap-3 p-3 bg-brand-surface rounded-brand">
+                      <BookOpen size={16} className="text-brand-primary" />
+                      <input 
+                        className="w-full bg-transparent border-none focus:ring-0 text-sm p-0"
+                        placeholder="e.g. Your institute showcase or brochure link"
+                        value={publicUrl}
+                        onChange={(e) => setPublicUrl(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="Duration" placeholder="e.g. 2 Hours" />
+                    <div className="flex flex-col justify-end">
+                      <p className="text-[10px] text-text-muted italic">* Professional will review and respond.</p>
+                    </div>
+                  </div>
                 </div>
-                <Input label="Topic" placeholder="e.g. Advanced Lighting Techniques" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Input label="Duration" placeholder="e.g. 2 Hours" />
-                  <Input label="No. of Students" placeholder="e.g. 25" />
-                </div>
+
                 <div className="pt-4 flex gap-3">
                   <Button variant="secondary" className="flex-1" onClick={() => setBookingExpert(null)}>Cancel</Button>
-                  <Button className="flex-[2]" onClick={() => setView('showcase_institute')}>View Institute Showcase</Button>
-                  <Button className="flex-[2]" onClick={() => setBookingExpert(null)}>Confirm Booking Request</Button>
+                  <Button className="flex-[2]" onClick={handleBookRequest}>Send Request</Button>
                 </div>
               </div>
             </motion.div>

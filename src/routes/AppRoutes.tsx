@@ -16,7 +16,7 @@ import StudioList from '../views/StudioList';
 import InstituteList from '../views/InstituteList';
 import TalentIDPage from '../views/TalentID';
 import StudioShowcase from '../views/StudioShowcase';
-import InstituteShowcase from '../views/InstituteShowcase';
+import InstitutePublicProfile from '../views/InstitutePublicProfile';
 import AdminPanel from '../views/AdminPanel';
 import PendingApprovalPage from '../views/PendingApproval';
 
@@ -85,7 +85,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       
       <Route path="/talent/:id" element={<TalentIDPage setView={handleSetView} />} />
       <Route path="/studio/:id" element={<StudioShowcase setView={handleSetView} />} />
-      <Route path="/institute/:id" element={<InstituteShowcase setView={handleSetView} />} />
+      <Route path="/institute/:id" element={<InstitutePublicProfile setView={handleSetView} />} />
       <Route path="/admin" element={<AdminPanel setView={handleSetView} />} />
       <Route path="/pending-approval" element={<PendingApprovalPage onBack={() => handleSetView('landing')} />} />
       <Route path="*" element={<Navigate to="/" replace />} />

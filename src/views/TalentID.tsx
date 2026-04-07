@@ -8,15 +8,54 @@ import TalentIDCard from '../components/TalentIDCard';
 import { MOCK_TALENT } from '../data/mockData';
 import { View } from '../types';
 
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getPublicProfile } from '../services/professionalServices';
+import { getEmbedUrl } from '../utils/videoUtils';
 
 const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const talent = MOCK_TALENT[0];
+  const [talent, setTalent] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
 
-  const shareUrl = `${window.location.origin}/profile/${talent.id}`;
-  const shareMessage = `I’m a verified professional on AUI (Production Talent Network).\n\nTalent ID: ${talent.id}\nRole: ${talent.role}\n\nView my verified profile: ${shareUrl}`;
+  React.useEffect(() => {
+    const fetchTalent = async () => {
+      if (!id) return;
+      try {
+        const response = await getPublicProfile(id);
+        if (response.ok) {
+          const data = await response.json();
+          setTalent(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch talent:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTalent();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center p-12">
+        <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!talent) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-12 text-center space-y-6">
+        <h2 className="text-2xl font-display font-bold text-brand-primary">Talent Not Found</h2>
+        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    );
+  }
+
+  const shareUrl = `${window.location.origin}/talent/${id}`;
+  const shareMessage = `I’m a verified professional on AUI (Production Talent Network).\n\nTalent ID: ${id}\nRole: ${talent.primarySkill}\n\nView my verified profile: ${shareUrl}`;
 
   return (
     <div className="min-h-screen bg-white no-scrollbar text-left">
@@ -49,7 +88,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               animate={{ opacity: 1, scale: 1 }}
               className="relative"
             >
-              <img src={talent.avatar} className="w-48 h-48 rounded-brand object-cover shadow-premium" alt="" />
+                <img src={talent.avatarUrl || 'https://picsum.photos/seed/placeholder/200/200'} className="w-48 h-48 rounded-brand object-cover shadow-premium" alt="" />
               <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-brand-accent rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                 <ShieldCheck size={24} className="text-white" />
               </div>
@@ -61,13 +100,13 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                   <Badge variant="success" className="px-3 py-1">Available Now</Badge>
                   <Badge variant="info" className="px-3 py-1">Verified Professional</Badge>
                 </div>
-                <h1 className="text-5xl font-display font-bold tracking-tight text-brand-primary">{talent.name}</h1>
+                <h1 className="text-5xl font-display font-bold tracking-tight text-brand-primary">{talent.fullName}</h1>
                 <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-text-secondary font-medium">
-                  <span className="text-brand-accent font-bold uppercase tracking-widest text-xs">{talent.id}</span>
+                  <span className="text-brand-accent font-bold uppercase tracking-widest text-xs">{id}</span>
                   <span>•</span>
-                  <span>{talent.role}</span>
+                  <span>{talent.primarySkill}</span>
                   <span>•</span>
-                  <span>{talent.exp} Experience</span>
+                  <span>{talent.experienceYears}y Experience</span>
                 </div>
               </div>
             </div>
@@ -82,8 +121,8 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                 className="px-8 py-3"
                 onClick={() => {
                   const link = document.createElement('a');
-                  link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Talent ID: ${talent.id}\nName: ${talent.name}\nRole: ${talent.role}\nExperience: ${talent.exp}`);
-                  link.download = `TalentID_${talent.id}.txt`;
+                  link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Talent ID: ${id}\nName: ${talent.fullName}\nRole: ${talent.primarySkill}\nExperience: ${talent.experienceYears}y`);
+                  link.download = `TalentID_${id}.txt`;
                   link.click();
                 }}
               >
@@ -102,9 +141,9 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Confidence Scores</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                 {[
-                  { label: 'Experience Score', val: talent.confidence.experience, icon: TrendingUp, color: 'text-brand-accent' },
-                  { label: 'Reliability Score', val: talent.confidence.reliability, icon: Shield, color: 'text-emerald-500' },
-                  { label: 'Project Count', val: talent.confidence.projects, icon: Briefcase, color: 'text-brand-primary' },
+                  { label: 'Experience Score', val: talent.experienceScore, icon: TrendingUp, color: 'text-brand-accent' },
+                  { label: 'Reliability Score', val: talent.reliabilityScore, icon: Shield, color: 'text-emerald-500' },
+                  { label: 'Project Count', val: talent.projectCount, icon: Briefcase, color: 'text-brand-primary' },
                 ].map(s => (
                   <div key={s.label} className="p-8 bg-brand-surface rounded-brand border border-gray-50 text-center space-y-4">
                     <div className={`w-12 h-12 mx-auto rounded-xl bg-white flex items-center justify-center shadow-sm ${s.color}`}>
@@ -124,7 +163,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Showreel</h3>
               <div className="aspect-video bg-brand-surface rounded-brand overflow-hidden border border-gray-100 shadow-premium relative text-left">
                 <iframe 
-                  src={talent.showreel} 
+                  src={getEmbedUrl(talent.showreelUrl)} 
                   className="w-full h-full border-none" 
                   title="Showreel"
                   allowFullScreen
@@ -136,7 +175,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <section className="space-y-8 text-left">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Responsibility Scope</h3>
               <div className="p-10 bg-brand-surface rounded-brand border border-gray-50 text-left">
-                <p className="text-brand-primary text-lg leading-relaxed font-medium">{talent.bio}</p>
+                <p className="text-brand-primary text-lg leading-relaxed font-medium">{talent.responsibilityScope}</p>
               </div>
             </section>
 
@@ -157,13 +196,13 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {talent.ledger.map((entry) => (
+                    {talent.workLedgers?.map((entry: any) => (
                       <tr key={entry.id} className="border-b border-gray-50 hover:bg-brand-surface transition-premium group text-left">
-                        <td className="py-6 font-bold text-brand-primary">{entry.project}</td>
-                        <td className="py-6 text-text-secondary">{entry.org}</td>
+                        <td className="py-6 font-bold text-brand-primary">{entry.projectName}</td>
+                        <td className="py-6 text-text-secondary">{entry.organizationType === 'studio' ? 'Studio' : 'Institute'}</td>
                         <td className="py-6 text-text-secondary">{entry.role}</td>
                         <td className="py-6 text-text-secondary">{entry.duration}</td>
-                        <td className="py-6 text-text-secondary">{entry.date}</td>
+                        <td className="py-6 text-text-secondary">{entry.completionDate}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -172,19 +211,19 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
               {/* Mobile Card View */}
               <div className="md:hidden space-y-4">
-                {talent.ledger.map((entry) => (
+                {talent.workLedgers?.map((entry: any) => (
                   <div key={entry.id} className="p-6 bg-brand-surface rounded-2xl border border-gray-100 space-y-4 shadow-sm">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Project</p>
-                        <h4 className="text-lg font-bold text-brand-primary">{entry.project}</h4>
+                        <h4 className="text-lg font-bold text-brand-primary">{entry.projectName}</h4>
                       </div>
                       <Badge variant="info" className="text-[9px] px-2 py-0.5">{entry.duration}</Badge>
                     </div>
                     <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100/50">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Studio</p>
-                        <p className="text-sm font-medium text-text-secondary">{entry.org}</p>
+                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Type</p>
+                        <p className="text-sm font-medium text-text-secondary">{entry.organizationType === 'studio' ? 'Studio' : 'Institute'}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Role</p>
@@ -192,7 +231,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Date</p>
-                        <p className="text-sm font-medium text-text-secondary">{entry.date}</p>
+                        <p className="text-sm font-medium text-text-secondary">{entry.completionDate}</p>
                       </div>
                     </div>
                   </div>
@@ -202,7 +241,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           </div>
 
           {/* Right Column: Timeline & Work */}
-          <div className="space-y-16 text-left">
+          <aside className="space-y-16 text-left">
             {/* Career Timeline */}
             <section className="space-y-8 text-left">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Career Timeline</h3>
@@ -222,29 +261,27 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             </section>
 
-            {/* Mentorship / Work Section */}
-            <section className="space-y-8 text-left">
+            <section className="space-y-6 text-left">
               <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Mentorship & Industry Work</h3>
               <div className="space-y-4 text-left">
                 {[
-                  { label: 'Workshops Conducted', val: 12, icon: GraduationCapIcon },
-                  { label: 'Mentorship Sessions', val: 45, icon: Users },
-                  { label: 'Portfolio Reviews', val: 28, icon: Search },
+                  { label: 'Workshops Conducted', val: talent.workshopsConducted || 0, icon: GraduationCapIcon },
+                  { label: 'Mentorship Sessions', val: talent.mentorshipSessions || 0, icon: Users },
+                  { label: 'Portfolio Reviews', val: talent.portfolioReviews || 0, icon: Search },
                 ].map(item => (
-                  <div key={item.label} className="p-6 bg-brand-surface rounded-3xl border border-gray-100 flex items-center justify-between shadow-sm hover:shadow-md transition-premium text-left">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-accent shadow-sm text-left">
-                        <item.icon size={22} />
+                  <div key={item.label} className="p-6 flex items-center justify-between hover:bg-brand-surface transition-colors border-none bg-brand-surface/30 rounded-3xl">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-primary shadow-sm">
+                        <item.icon size={18} />
                       </div>
-                      <span className="text-sm font-bold text-brand-primary leading-tight">{item.label}</span>
+                      <span className="text-sm font-bold text-brand-primary">{item.label}</span>
                     </div>
-                    <span className="text-2xl font-black text-brand-accent">{item.val}</span>
+                    <span className="text-2xl font-display font-bold text-brand-primary">{item.val}</span>
                   </div>
                 ))}
               </div>
             </section>
-
-          </div>
+          </aside>
         </div>
       </main>
     </div>
