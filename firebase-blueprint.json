@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Base user profile for all roles",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["professional", "studio", "institute"] },
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "onboarded": { "type": "boolean" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "TalentProfile": {
+      "title": "Talent Profile",
+      "description": "Detailed professional profile (Talent ID)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "talentId": { "type": "string", "description": "Unique AUI Talent ID (e.g. AUI-102)" },
+        "primarySkill": { "type": "string" },
+        "experience": { "type": "string" },
+        "bio": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "portfolioUrl": { "type": "string", "format": "uri" },
+        "showreelUrl": { "type": "string", "format": "uri" },
+        "verified": { "type": "boolean" },
+        "confidence": {
+          "type": "object",
+          "properties": {
+            "experience": { "type": "number" },
+            "reliability": { "type": "number" },
+            "projects": { "type": "number" }
+          }
+        },
+        "ledger": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "project": { "type": "string" },
+              "org": { "type": "string" },
+              "role": { "type": "string" },
+              "duration": { "type": "string" },
+              "date": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["uid", "talentId", "primarySkill"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Institute workshop booking with an expert",
+      "type": "object",
+      "properties": {
+        "instituteId": { "type": "string" },
+        "expertId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "programType": { "type": "string", "enum": ["Workshop", "Mentorship", "Portfolio Review"] },
+        "subject": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["instituteId", "expertId", "date", "programType"]
+    },
+    "Engagement": {
+      "title": "Engagement",
+      "description": "Studio hiring engagement with a professional",
+      "type": "object",
+      "properties": {
+        "studioId": { "type": "string" },
+        "talentId": { "type": "string" },
+        "projectName": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["active", "completed", "paused"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studioId", "talentId", "projectName", "startDate"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/talents/{uid}": {
+      "schema": "TalentProfile",
+      "description": "Professional talent data"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Institute bookings"
+    },
+    "/engagements/{engagementId}": {
+      "schema": "Engagement",
+      "description": "Studio hiring records"
+    }
+  }
+}
