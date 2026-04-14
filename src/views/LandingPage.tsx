@@ -15,15 +15,23 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
   const [restrictedMessage, setRestrictedMessage] = React.useState('');
 
   const handleAction = (v: View) => {
-    if ((v === 'hire' || v === 'dashboard_studio') && userRole === 'institute') {
-      setRestrictedMessage('This feature is for studios. Institutes can book industry experts for their students.');
-      setIsRestrictedModalOpen(true);
-      return;
-    }
-    if ((v === 'experts' || v === 'dashboard_institute') && userRole === 'studio') {
-      setRestrictedMessage('This feature is for institutes. Studios can hire verified talent directly.');
-      setIsRestrictedModalOpen(true);
-      return;
+    if (userRole) {
+      if (v === 'register_select') {
+        setRestrictedMessage(`You have already joined as a ${userRole}. You can access your dashboard from the top right menu.`);
+        setIsRestrictedModalOpen(true);
+        return;
+      }
+      
+      if ((v === 'hire' || v === 'dashboard_studio') && userRole === 'institute') {
+        setRestrictedMessage('This feature is for studios. Institutes can book industry experts for their students.');
+        setIsRestrictedModalOpen(true);
+        return;
+      }
+      if ((v === 'experts' || v === 'dashboard_institute') && userRole === 'studio') {
+        setRestrictedMessage('This feature is for institutes. Studios can hire verified talent directly.');
+        setIsRestrictedModalOpen(true);
+        return;
+      }
     }
     
     onStart(v);

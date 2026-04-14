@@ -1,29 +1,38 @@
 import React from 'react';
-import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter } from 'lucide-react';
+import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
 import { View } from '../types';
 import { fetchAdminUsers, updateUserStatus, fetchAnalytics } from '../services/adminServices';
+import { getAllSpecialRequests, updateSpecialRequestStatus } from '../services/specialRequestServices';
 import { motion, AnimatePresence } from 'framer-motion';
 
+
 const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests'>('overview');
   const [users, setUsers] = React.useState<any[]>([]);
+  const [specialRequests, setSpecialRequests] = React.useState<any[]>([]);
   const [analytics, setAnalytics] = React.useState<any>(null);
+
   const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState({ role: 'all', status: 'all' });
   const [selectedUser, setSelectedUser] = React.useState<any>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = React.useState(false);
   const [actionLoading, setActionLoading] = React.useState<string | null>(null);
+  const [specialRequestSubTab, setSpecialRequestSubTab] = React.useState<'professional' | 'institute'>('institute');
+  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+  const [sharingReq, setSharingReq] = React.useState<any>(null);
+  const [shareSearch, setShareSearch] = React.useState('');
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersRes, analyticsRes] = await Promise.all([
+      const [usersRes, analyticsRes, specialRes] = await Promise.all([
         fetchAdminUsers(filters),
-        fetchAnalytics()
+        fetchAnalytics(),
+        getAllSpecialRequests(localStorage.getItem('token') || '')
       ]);
       
       if (usersRes.ok) {
@@ -35,6 +44,12 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         const analyticsData = await analyticsRes.json();
         setAnalytics(analyticsData.data);
       }
+
+      if (specialRes.ok) {
+        const specialData = await specialRes.json();
+        setSpecialRequests(specialData.data);
+      }
+
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
@@ -65,6 +80,47 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       setActionLoading(null);
     }
   };
+
+  const handleSpecialStatusUpdate = async (id: number, newStatus: any, responseMessage?: string) => {
+    setActionLoading(`${id}-${newStatus}`);
+    try {
+      const res = await updateSpecialRequestStatus(localStorage.getItem('token') || '', id, { 
+        status: newStatus,
+        responseMessage
+      });
+      if (res.ok) {
+        setSpecialRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus, responseMessage } : r));
+      }
+    } catch (err) {
+      console.error('Failed to update special request status:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleShareToInstitute = async (instituteId: number) => {
+    if (!sharingReq) return;
+    const token = localStorage.getItem('token') || '';
+    setActionLoading(`share-${instituteId}`);
+    try {
+      const { shareProfessionalToInstitute } = await import('../services/specialRequestServices');
+      const res = await shareProfessionalToInstitute(token, {
+        professionalId: sharingReq.professionalId,
+        instituteId,
+        message: `Recommendation: Check out this professional portfolio.`
+      });
+      if (res.ok) {
+        setIsShareModalOpen(false);
+        setSharingReq(null);
+        alert('Professional shared successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to share:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
 
   const SummaryCard = ({ title, value, icon: Icon, colorClass }: any) => (
     <Card className="p-6 bg-white border-gray-100 shadow-premium flex items-center gap-6">
@@ -238,6 +294,13 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           >
             <FileText size={18} /> Applications {users.filter(u => u.status === 'pending').length > 0 && <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{users.filter(u => u.status === 'pending').length}</span>}
           </button>
+          <button 
+            onClick={() => setActiveTab('special_requests')}
+            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'special_requests' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
+          >
+            <Users size={18} /> Special Requests {specialRequests.filter(r => r.status === 'pending').length > 0 && <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{specialRequests.filter(r => r.status === 'pending').length}</span>}
+          </button>
+
         </div>
       </div>
 
@@ -262,9 +325,181 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
             </div>
           </Card>
         </div>
-      ) : (
+      ) : activeTab === 'special_requests' ? (
         <div className="space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+             <div className="space-y-1">
+               <h3 className="text-2xl font-display font-bold text-brand-primary">Collaboration Requests Pipeline</h3>
+               <p className="text-text-muted text-sm uppercase font-bold tracking-widest">Manage specialized connection requests</p>
+             </div>
+             <div className="flex items-center gap-2 bg-brand-surface p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+                <button 
+                  onClick={() => setSpecialRequestSubTab('institute')}
+                  className={`px-6 py-2.5 rounded-xl font-bold text-xs transition-premium flex items-center gap-2 ${specialRequestSubTab === 'institute' ? 'bg-white text-brand-primary shadow-md ring-1 ring-black/5' : 'text-text-secondary hover:text-brand-primary'}`}
+                >
+                  <GraduationCap size={16} /> From Institutes {specialRequests.filter(r => r.senderRole === 'institute' && r.status === 'pending').length > 0 && <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{specialRequests.filter(r => r.senderRole === 'institute' && r.status === 'pending').length}</span>}
+                </button>
+                <button 
+                  onClick={() => setSpecialRequestSubTab('professional')}
+                  className={`px-6 py-2.5 rounded-xl font-bold text-xs transition-premium flex items-center gap-2 ${specialRequestSubTab === 'professional' ? 'bg-white text-brand-primary shadow-md ring-1 ring-black/5' : 'text-text-secondary hover:text-brand-primary'}`}
+                >
+                  <Users size={16} /> From Professionals {specialRequests.filter(r => r.senderRole === 'professional' && r.status === 'pending').length > 0 && <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{specialRequests.filter(r => r.senderRole === 'professional' && r.status === 'pending').length}</span>}
+                </button>
+             </div>
+             <button onClick={loadData} className="text-sm font-bold text-brand-primary hover:underline flex items-center gap-2">
+                <Filter size={14} /> Refresh List
+             </button>
+          </div>
+          <div className="grid grid-cols-1 gap-6">
+            {loading ? (
+              <div className="py-20 text-center space-y-4">
+                <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-text-muted font-bold uppercase tracking-widest text-xs">Loading Requests...</p>
+              </div>
+            ) : specialRequests.filter(r => r.senderRole === specialRequestSubTab).length === 0 ? (
+              <div className="py-20 text-center bg-brand-surface rounded-3xl border-2 border-dashed border-gray-200">
+                <p className="text-text-secondary">No special requests found for {specialRequestSubTab}s.</p>
+              </div>
+            ) : (
+              specialRequests.filter(r => r.senderRole === specialRequestSubTab).map(req => (
+                <Card key={req.id} className="p-6 bg-white border-gray-100 shadow-premium space-y-6 hover:shadow-premium-hover transition-premium">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${req.senderRole === 'institute' ? 'bg-amber-50 text-amber-600' : 'bg-brand-surface text-brand-primary'}`}>
+                        {req.senderRole === 'institute' ? <GraduationCap size={24} /> : <Users size={24} />}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-brand-primary">{req.professionalName}</h4>
+                          <Badge variant="outline" className="text-[10px]">{req.senderRole?.toUpperCase()}</Badge>
+                        </div>
+                        <p className="text-xs text-text-muted uppercase font-bold tracking-widest">
+                          Sender: {req.senderRole === 'institute' ? (req.institute?.user?.email) : (req.professional?.user?.email)} • {new Date(req.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant={req.status === 'pending' ? 'info' : req.status === 'rejected' ? 'warning' : req.status === 'contacted' ? 'info' : 'success'}>
+                      {req.status}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4 text-left">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{req.senderRole === 'institute' ? 'Institute URL' : 'Target Institute URL'}</p>
+                        <a href={req.institutePublicUrl?.startsWith('http') ? req.institutePublicUrl : `https://${req.institutePublicUrl}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-accent hover:underline flex items-center gap-1">
+                           {req.institutePublicUrl || 'N/A'} <Eye size={14} />
+                        </a>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{req.senderRole === 'institute' ? 'Sender Public URL' : 'Professional Portfolio'}</p>
+                        <a href={req.professionalPublicUrl?.startsWith('http') ? req.professionalPublicUrl : `https://${req.professionalPublicUrl}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-primary hover:underline flex items-center gap-1">
+                           View Portfolio/Link <Eye size={14} />
+                        </a>
+                      </div>
+                    </div>
+                    <div className="space-y-4 text-left">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Mentorship Date/Time</p>
+                        <p className="text-sm font-semibold text-brand-primary">{req.mentorshipTime || 'Not specified'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Message to Admin</p>
+                        <p className="text-sm text-text-secondary italic">"{req.message}"</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Admin Response Section */}
+                  <div className="p-4 bg-brand-surface rounded-xl space-y-3">
+                    <p className="text-[10px] font-bold text-brand-primary uppercase tracking-widest">Admin Response / Notes</p>
+                    <textarea 
+                      className="w-full bg-white border-gray-100 rounded-lg text-sm p-3 focus:ring-1 focus:ring-brand-accent min-h-[80px]"
+                      placeholder="Type your response to the user here..."
+                      defaultValue={req.responseMessage || ''}
+                      id={`resp-${req.id}`}
+                    />
+                  </div>
+
+                   {/* Sharing History Section */}
+                   {((specialRequestSubTab === 'professional' && req.professionalId) || (specialRequestSubTab === 'institute' && req.instituteId)) && (
+                     <div className="px-4 py-3 bg-brand-surface/50 rounded-xl border border-gray-100/50 space-y-2">
+                       <p className="text-[10px] font-bold text-brand-primary uppercase tracking-widest flex items-center gap-2">
+                         <History size={12} /> {specialRequestSubTab === 'professional' ? 'Previously Shared With' : 'Admin Recommendations Sent'}
+                       </p>
+                       <div className="flex flex-wrap gap-2">
+                         {specialRequests
+                           .filter(r => r.senderRole === 'admin' && (
+                             (specialRequestSubTab === 'professional' && r.professionalId === req.professionalId) ||
+                             (specialRequestSubTab === 'institute' && r.instituteId === req.instituteId)
+                           ))
+                           .map(share => (
+                             <Badge key={share.id} variant="success" className="bg-emerald-50 text-emerald-700 border-emerald-100 flex items-center gap-1 py-1 px-3">
+                               {specialRequestSubTab === 'professional' ? (share.institute?.instituteName || 'Institute') : (share.professionalName || 'Professional')}
+                               <span className="text-[8px] opacity-60 ml-1">• {new Date(share.createdAt).toLocaleDateString()}</span>
+                             </Badge>
+                           ))}
+                         {specialRequests.filter(r => r.senderRole === 'admin' && (
+                             (specialRequestSubTab === 'professional' && r.professionalId === req.professionalId) ||
+                             (specialRequestSubTab === 'institute' && r.instituteId === req.instituteId)
+                           )).length === 0 && (
+                           <p className="text-[10px] text-text-muted italic">No recommendations sent for this request yet.</p>
+                         )}
+                       </div>
+                     </div>
+                   )}
+
+                    <div className="pt-4 flex items-center justify-end gap-3 border-t border-gray-50">
+                      {req.senderRole === 'professional' && (
+                        <Button 
+                          variant="ghost" 
+                          className="px-6 py-2 text-xs text-brand-accent hover:bg-brand-surface"
+                          onClick={() => { setSharingReq(req); setIsShareModalOpen(true); }}
+                        >
+                          <Share2 size={16} className="mr-2" /> Share with Institute
+                        </Button>
+                      )}
+                      {req.status === 'pending' && (
+                      <Button 
+                        variant="secondary" 
+                        className="px-6 py-2 text-xs text-red-500 border-red-100 hover:bg-red-50"
+                        loading={actionLoading === `${req.id}-rejected`}
+                        onClick={() => handleSpecialStatusUpdate(req.id, 'rejected')}
+                      >
+                        Reject
+                      </Button>
+                    )}
+                    {req.status !== 'contacted' && req.status !== 'closed' && (
+                      <Button 
+                        className="px-6 py-2 text-xs bg-brand-primary"
+                        loading={actionLoading === `${req.id}-contacted`}
+                        onClick={() => handleSpecialStatusUpdate(req.id, 'contacted')}
+                      >
+                        Mark as Contacted
+                      </Button>
+                    )}
+                    {req.status === 'contacted' && (
+                      <Button 
+                        className="px-6 py-2 text-xs bg-emerald-500 hover:bg-emerald-600"
+                        loading={actionLoading === `${req.id}-closed`}
+                        onClick={() => {
+                          const msg = (document.getElementById(`resp-${req.id}`) as HTMLTextAreaElement)?.value;
+                          handleSpecialStatusUpdate(req.id, 'closed', msg);
+                        }}
+                      >
+                        Close Request
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
                 <Filter size={16} className="text-text-muted" />
@@ -361,8 +596,9 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
               ))
             )}
           </div>
-        </div>
+        </>
       )}
+
 
       {/* User Details Modal */}
       <Modal 
@@ -370,6 +606,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         onClose={() => setIsDetailsModalOpen(false)}
         title="Application Details Explorer"
         size="xl"
+        showFooter={false}
         message={
           selectedUser && (
             <div className="space-y-10 text-left py-4">
@@ -451,6 +688,60 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             </div>
           )
+        }
+      />
+      {/* Share Modal */}
+      <Modal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title="Share Professional with Institute"
+        size="lg"
+        showFooter={false}
+        message={
+          <div className="space-y-4 sm:space-y-6 text-left py-2 sm:py-4">
+            <div className="space-y-2">
+              <label className="text-[10px] sm:text-xs font-bold text-brand-primary uppercase tracking-wider">Search Institute</label>
+              <div className="relative">
+                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                <input 
+                  className="w-full bg-brand-surface border-none rounded-xl text-sm p-4 pl-12 focus:ring-2 focus:ring-brand-accent/20"
+                  placeholder="Type institute name..."
+                  value={shareSearch}
+                  onChange={(e) => setShareSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
+              {users
+                .filter(u => u.role === 'institute' && u.status === 'approved' && (u.institute?.instituteName?.toLowerCase().includes(shareSearch.toLowerCase()) || u.email.toLowerCase().includes(shareSearch.toLowerCase())))
+                .map(inst => (
+                  <Card key={inst.id} className="p-3 sm:p-4 bg-brand-surface border-transparent hover:border-brand-accent/30 transition-premium flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg sm:rounded-xl flex items-center justify-center text-brand-primary shadow-sm">
+                        <GraduationCap size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-bold text-brand-primary text-xs sm:text-sm truncate">{inst.institute?.instituteName}</h5>
+                        <p className="text-[9px] sm:text-[10px] text-text-muted uppercase font-bold tracking-widest truncate">{inst.email}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      className="w-full sm:w-auto px-4 py-2 text-[10px] sm:text-xs bg-brand-primary"
+                      loading={actionLoading === `share-${inst.institute?.id}`}
+                      onClick={() => handleShareToInstitute(inst.institute?.id)}
+                    >
+                      Send
+                    </Button>
+                  </Card>
+                ))}
+              {users.filter(u => u.role === 'institute' && u.status === 'approved').length === 0 && (
+                <div className="py-10 text-center text-text-muted italic text-sm">
+                  No approved institutes found to share with.
+                </div>
+              )}
+            </div>
+          </div>
         }
       />
     </div>

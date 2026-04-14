@@ -36,5 +36,13 @@ export const API_ENDPOINTS = {
     SEND_REQUEST: `${BASE_URL}/api/collaboration`,
     GET_MY_REQUESTS: `${BASE_URL}/api/collaboration/my-requests`,
     RESPOND: (id: number) => `${BASE_URL}/api/collaboration/${id}/respond`,
+  },
+  SPECIAL_REQUESTS: {
+    BASE: `${BASE_URL}/api/special-requests`,
+    CREATE: `${BASE_URL}/api/special-requests`,
+    GET_ALL: `${BASE_URL}/api/special-requests`,
+    GET_MY: `${BASE_URL}/api/special-requests/my`,
+    UPDATE_STATUS: (id: number) => `${BASE_URL}/api/special-requests/${id}/status`,
   }
 };
+
