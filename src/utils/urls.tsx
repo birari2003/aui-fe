@@ -1,7 +1,7 @@
-const ENV: string = 'local'; // Set to 'production' for production API, 'local' for local API
+const ENV: string = 'production'; // Set to 'production' for production API, 'local' for local API
 
 export const BASE_URL = ENV === 'production' 
-  ? 'https://aui-api.onrender.com' // Replace with actual production URL when ready
+  ? 'https://api.auitalent.com' // Replace with actual production URL when ready
   : 'http://localhost:5000';
 
 export const API_ENDPOINTS = {
