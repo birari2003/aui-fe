@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History } from 'lucide-react';
+import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 
 const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios'>('overview');
   const [users, setUsers] = React.useState<any[]>([]);
   const [specialRequests, setSpecialRequests] = React.useState<any[]>([]);
   const [analytics, setAnalytics] = React.useState<any>(null);
@@ -277,6 +277,126 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     </div>
   );
 
+  const renderUserList = (tab: string) => {
+    const roleMap: Record<string, string> = {
+      'professionals': 'professional',
+      'studios': 'studio',
+      'institutes': 'institute'
+    };
+    const role = roleMap[tab];
+    const filteredUsers = users.filter(u => u.role === role);
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+           <div className="space-y-1">
+             <h3 className="text-2xl font-display font-bold text-brand-primary capitalize">{tab} Directory</h3>
+             <p className="text-text-muted text-sm uppercase font-bold tracking-widest">Manage and view registered {tab}</p>
+           </div>
+           <button onClick={loadData} className="text-sm font-bold text-brand-primary hover:underline">Refresh</button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {loading ? (
+            <div className="py-20 text-center space-y-4">
+              <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-text-muted font-bold uppercase tracking-widest text-xs">Loading {tab}...</p>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="py-20 text-center bg-brand-surface rounded-3xl border-2 border-dashed border-gray-200">
+              <p className="text-text-secondary">No {tab} registered yet.</p>
+            </div>
+          ) : (
+            filteredUsers.map(user => {
+              const profile = getProfileData(user);
+              const name = profile ? (profile.fullName || profile.full_name || profile.instituteName || profile.studioName || 'N/A') : 'N/A';
+              const publicUrl = profile ? (profile.portfolioUrl || profile.portfolio_url || profile.website || profile.showreelUrl || profile.showreel_url) : null;
+              const talentCode = user.talentId?.talentCode;
+
+              return (
+                <motion.div 
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  key={user.id}
+                >
+                  <Card className="p-4 sm:p-6 bg-white border-gray-100 shadow-premium flex flex-col lg:flex-row lg:items-center gap-6 hover:shadow-premium-hover transition-premium">
+                    <div className="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
+                      <div className="w-12 h-12 bg-brand-surface rounded-xl flex items-center justify-center text-brand-primary shrink-0">
+                        {user.role === 'professional' ? <Briefcase size={24} /> : user.role === 'studio' ? <Users size={24} /> : <GraduationCap size={24} />}
+                      </div>
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h4 className="font-bold text-brand-primary text-lg truncate max-w-[200px]">{name}</h4>
+                          <Badge variant={user.status === 'approved' ? 'success' : user.status === 'rejected' ? 'warning' : 'info'}>{user.status}</Badge>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <p className="text-sm font-medium text-text-secondary truncate">{user.email}</p>
+                          {talentCode && (
+                            <p className="text-[10px] font-bold text-brand-accent uppercase tracking-wider">Internal ID: {talentCode}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex justify-center min-w-0">
+                      <div className="space-y-1 text-center min-w-0">
+                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Public Profile</p>
+                        {talentCode ? (
+                          <a 
+                            href={`${window.location.origin}/${user.role === 'institute' ? 'institute' : 'talent'}/${talentCode}`}
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="text-brand-primary hover:underline text-xs font-bold flex items-center gap-1 truncate"
+                          >
+                            View Public Profile <ExternalLink size={12} />
+                          </a>
+                        ) : (
+                          <p className="text-[10px] text-text-muted italic">No platform ID generated</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="w-full lg:w-auto flex items-center justify-end gap-3 shrink-0">
+                      <Button 
+                        variant="ghost" 
+                        className="px-4 py-2 text-xs" 
+                        onClick={() => { setSelectedUser(user); setIsDetailsModalOpen(true); }}
+                      >
+                        <Eye size={14} className="mr-2" /> Details
+                      </Button>
+                      
+                      {user.status !== 'rejected' && (
+                        <Button 
+                          variant="secondary" 
+                          className="px-4 py-2 text-xs text-red-500 hover:bg-red-50 border-red-100" 
+                          loading={actionLoading === `${user.id}-rejected`}
+                          onClick={() => handleStatusUpdate(user.id, 'rejected')}
+                        >
+                          <XCircle size={14} className="mr-2" /> Reject
+                        </Button>
+                      )}
+                      
+                      {user.status !== 'approved' && (
+                        <Button 
+                          className="px-4 py-2 text-xs bg-emerald-500 hover:bg-emerald-600" 
+                          loading={actionLoading === `${user.id}-approved`}
+                          onClick={() => handleStatusUpdate(user.id, 'approved')}
+                        >
+                          <CheckCircle size={14} className="mr-2" /> Approve
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 space-y-8 sm:space-y-12 text-left">
       <div className="space-y-4">
@@ -299,6 +419,24 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
             className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'special_requests' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
           >
             <Users size={18} /> Special Requests {specialRequests.filter(r => r.status === 'pending').length > 0 && <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{specialRequests.filter(r => r.status === 'pending').length}</span>}
+          </button>
+          <button 
+            onClick={() => setActiveTab('professionals')}
+            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'professionals' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
+          >
+            <Briefcase size={18} /> Professionals
+          </button>
+          <button 
+            onClick={() => setActiveTab('studios')}
+            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'studios' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
+          >
+            <Users size={18} /> Studios
+          </button>
+          <button 
+            onClick={() => setActiveTab('institutes')}
+            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'institutes' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
+          >
+            <GraduationCap size={18} /> Institutes
           </button>
 
         </div>
@@ -387,13 +525,13 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                     <div className="space-y-4 text-left">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{req.senderRole === 'institute' ? 'Institute URL' : 'Target Institute URL'}</p>
-                        <a href={req.institutePublicUrl?.startsWith('http') ? req.institutePublicUrl : `https://${req.institutePublicUrl}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-accent hover:underline flex items-center gap-1">
+                        <a href={req.institutePublicUrl?.startsWith('http') ? req.institutePublicUrl : req.institutePublicUrl?.includes('/') ? `${window.location.origin}/${req.institutePublicUrl}` : `https://${req.institutePublicUrl}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-accent hover:underline flex items-center gap-1">
                            {req.institutePublicUrl || 'N/A'} <Eye size={14} />
                         </a>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{req.senderRole === 'institute' ? 'Sender Public URL' : 'Professional Portfolio'}</p>
-                        <a href={req.professionalPublicUrl?.startsWith('http') ? req.professionalPublicUrl : `https://${req.professionalPublicUrl}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-primary hover:underline flex items-center gap-1">
+                        <a href={req.professionalPublicUrl?.startsWith('http') ? req.professionalPublicUrl : req.professionalPublicUrl?.includes('/') ? `${window.location.origin}/${req.professionalPublicUrl}` : `https://${req.professionalPublicUrl}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-primary hover:underline flex items-center gap-1">
                            View Portfolio/Link <Eye size={14} />
                         </a>
                       </div>
@@ -498,7 +636,10 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         </div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {['professionals', 'studios', 'institutes'].includes(activeTab) && renderUserList(activeTab)}
+          {activeTab === 'applications' && (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
@@ -558,7 +699,12 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                           <h4 className="font-bold text-brand-primary break-all">{user.email}</h4>
                           <Badge variant={user.status === 'approved' ? 'success' : user.status === 'rejected' ? 'warning' : 'info'}>{user.status}</Badge>
                         </div>
-                        <p className="text-xs text-text-muted uppercase font-bold tracking-widest">{user.role} • {new Date(user.createdAt).toLocaleDateString()}</p>
+                        <div className="flex flex-col">
+                          <p className="text-xs text-text-muted uppercase font-bold tracking-widest">{user.role} • {new Date(user.createdAt).toLocaleDateString()}</p>
+                          {user.talentId?.talentCode && (
+                            <p className="text-[10px] font-bold text-brand-accent uppercase tracking-wider">{user.talentId.talentCode}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="w-full sm:w-auto flex items-center justify-end sm:justify-start gap-2 sm:gap-3 flex-wrap">
@@ -598,6 +744,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           </div>
         </>
       )}
+    </>
+  )}
 
 
       {/* User Details Modal */}

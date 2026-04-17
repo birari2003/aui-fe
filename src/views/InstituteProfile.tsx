@@ -47,7 +47,7 @@ const InstituteProfile = ({ setView }: { setView: (v: View) => void }) => {
   }
 
   const isProfileComplete = !!profile;
-  const talentCode = profile?.talentId?.talentCode;
+  const talentCode = profile?.user?.talentId?.talentCode;
   const displayName = profile?.instituteName || 'Institute';
 
   const handleViewPublicPage = () => {

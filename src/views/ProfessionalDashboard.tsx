@@ -116,7 +116,7 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
           <div className="flex gap-3 text-left">
             <Button 
               variant="secondary" 
-              onClick={() => navigate(`/talent/${profile?.talentId?.talentCode || ''}`)}
+              onClick={() => navigate(`/talent/${profile?.user?.talentId?.talentCode || ''}`)}
               disabled={!isProfileComplete}
               className="px-6 border border-gray-100 hover:bg-white disabled:opacity-50"
             >
@@ -186,7 +186,14 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       <Button 
                         variant="outline" 
                         className="w-full py-1.5 text-xs font-bold gap-2"
-                        onClick={() => window.open(req.publicUrl.startsWith('http') ? req.publicUrl : `https://${req.publicUrl}`, '_blank')}
+                        onClick={() => {
+                          const url = req.publicUrl.startsWith('http') 
+                            ? req.publicUrl 
+                            : req.publicUrl.includes('/') 
+                              ? `${window.location.origin}/${req.publicUrl}`
+                              : `https://${req.publicUrl}`;
+                          window.open(url, '_blank');
+                        }}
                       >
                         <ArrowRight size={14} /> View Institute URL
                       </Button>

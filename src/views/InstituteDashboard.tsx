@@ -336,7 +336,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                         <Button
                           variant="secondary"
                           className="flex-1 py-3 text-sm"
-                          onClick={() => talent.talentId?.talentCode && navigate(`/talent/${talent.talentId.talentCode}`)}
+                          onClick={() => talent.user?.talentId?.talentCode && navigate(`/talent/${talent.user.talentId.talentCode}`)}
                         >
                           View Full Profile
                         </Button>
@@ -392,7 +392,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       </div>
                     </div>
                     <div className="flex gap-3">
-                      <Button variant="secondary" className="flex-1 text-xs py-2" onClick={() => talent.talentId?.talentCode && navigate(`/talent/${talent.talentId.talentCode}`)}>View Profile</Button>
+                      <Button variant="secondary" className="flex-1 text-xs py-2" onClick={() => talent.user?.talentId?.talentCode && navigate(`/talent/${talent.user.talentId.talentCode}`)}>View Profile</Button>
                       {requests.find(r => r.professionalId === talent.id && r.senderRole === 'institute') ? (
                         <Button className="flex-1 text-xs py-2 opacity-50 cursor-not-allowed uppercase" disabled>
                           {(() => {
@@ -533,7 +533,11 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                             Portfolio:
                           </p>
                           <a 
-                            href={req.professionalPublicUrl?.startsWith('http') ? req.professionalPublicUrl : `https://${req.professionalPublicUrl}`} 
+                            href={req.professionalPublicUrl?.startsWith('http') 
+                              ? req.professionalPublicUrl 
+                              : req.professionalPublicUrl?.includes('/')
+                                ? `${window.location.origin}/${req.professionalPublicUrl}`
+                                : `https://${req.professionalPublicUrl}`} 
                             target="_blank" 
                             rel="noreferrer" 
                             className="text-xs font-bold text-brand-accent hover:underline flex items-center gap-1"
@@ -583,7 +587,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                           <Button
                             variant="ghost"
                             className="w-full py-1 text-[10px] font-bold text-brand-accent hover:bg-brand-surface"
-                            onClick={() => req.professional?.talentId?.talentCode && navigate(`/talent/${req.professional.talentId.talentCode}`)}
+                            onClick={() => req.professional?.user?.talentId?.talentCode && navigate(`/talent/${req.professional.user.talentId.talentCode}`)}
                           >
                             View Profile
                           </Button>
