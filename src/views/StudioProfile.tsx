@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import { View } from '../types';
 import ManageStudioProfileModal from '../components/ManageStudioProfileModal';
+import ManageStudioInfoModal from '../components/ManageStudioInfoModal';
 import { getMyStudioPublicProfile } from '../services/studioProfileService';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../utils/urls';
@@ -12,6 +13,7 @@ import { API_ENDPOINTS } from '../utils/urls';
 const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
   const [isManageModalOpen, setIsManageModalOpen] = React.useState(false);
+  const [isStudioInfoModalOpen, setIsStudioInfoModalOpen] = React.useState(false);
   const [studioProfile, setStudioProfile] = React.useState<any>(null);
 
   React.useEffect(() => {
@@ -61,12 +63,16 @@ const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
                 alert('Please manage your public profile first to generate your ID.');
               }
             }}>View Public Page</Button>
-            <Button onClick={() => {}}>Edit Studio Info</Button>
+            <Button onClick={() => setIsStudioInfoModalOpen(true)}>Edit Studio Info</Button>
           </div>
         </div>
         
         {isManageModalOpen && (
           <ManageStudioProfileModal onClose={() => setIsManageModalOpen(false)} />
+        )}
+
+        {isStudioInfoModalOpen && (
+          <ManageStudioInfoModal onClose={() => setIsStudioInfoModalOpen(false)} />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">

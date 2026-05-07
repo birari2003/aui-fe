@@ -78,24 +78,29 @@ const InstitutePublicProfile = () => {
     );
   }
 
-  if (error || !profile) {
+  const isIncomplete = profile && !profile.name;
+
+  if (error || !profile || isIncomplete) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6 text-center">
         <div className="w-20 h-20 bg-white rounded-[24px] shadow-premium flex items-center justify-center mb-6 border border-gray-100">
           <GraduationCap size={32} className="text-gray-300" />
         </div>
         <h1 className="text-3xl font-black text-gray-900 tracking-tighter mb-2">
-          {error === 'Institute profile not published' ? 'Profile Not Published Yet' : (error || 'Profile Not Found')}
+          {isIncomplete ? 'Profile Not Completed' : (error === 'Institute profile not published' ? 'Profile Not Published Yet' : (error || 'Profile Not Found'))}
         </h1>
         <p className="text-gray-500 font-medium mb-8 max-w-sm">
-          {error === 'Institute profile not published' 
-            ? "This institute hasn't set up their public portfolio yet. Check back later!" 
-            : "We couldn't find the institute profile you're looking for."}
+          {isIncomplete 
+            ? "This institute hasn't completed their public profile setup yet. Check back soon!"
+            : (error === 'Institute profile not published' 
+                ? "This institute hasn't set up their public portfolio yet. Check back later!" 
+                : "We couldn't find the institute profile you're looking for.")}
         </p>
         <button 
           onClick={() => navigate(-1)}
-          className="bg-brand-primary text-white px-8 py-3 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl"
+          className="bg-brand-primary text-white px-8 py-3 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
         >
+          <ArrowRight size={16} className="rotate-180" />
           Go Back
         </button>
       </div>
@@ -319,10 +324,10 @@ const InstitutePublicProfile = () => {
          </div>
 
          <div 
-          ref={programsRef}
-          className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth pb-8"
+            ref={programsRef}
+            className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth pb-8"
          >
-            {(profile.programs && profile.programs.length > 0 ? profile.programs : [
+            {(Array.isArray(profile.programs) && profile.programs.length > 0 ? profile.programs : [
                { name: 'B.Sc. in Animation & VFX', duration: '3 Years', type: 'Full Time' },
                { name: 'Diploma in 3D Animation', duration: '18 Months', type: 'Full Time' },
                { name: 'Diploma in VFX', duration: '18 Months', type: 'Full Time' },
@@ -365,7 +370,7 @@ const InstitutePublicProfile = () => {
           <div className="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4 flex flex-col min-h-[350px]">
              <h3 className="text-base font-black text-slate-900 uppercase tracking-tighter">Why Choose {profile.name?.split(' ')[0]}?</h3>
              <div className="space-y-3">
-                {(profile.whyChooseUs && profile.whyChooseUs.length > 0 ? profile.whyChooseUs : [
+                {(Array.isArray(profile.whyChooseUs) && profile.whyChooseUs.length > 0 ? profile.whyChooseUs : [
                    'Industry-relevant curriculum and practical training',
                    'Learning from experienced industry professionals',
                    'Regular workshops, masterclasses & industry visits',
@@ -393,7 +398,7 @@ const InstitutePublicProfile = () => {
                <button className="text-[9px] font-black text-brand-primary uppercase tracking-widest hover:underline">View All</button>
             </div>
             <div className="grid grid-cols-3 gap-3">
-               {(profile.industryPartners && profile.industryPartners.length > 0 ? profile.industryPartners : [1,2,3,4,5,6]).map((p: any, i: number) => (
+               {(Array.isArray(profile.industryPartners) && profile.industryPartners.length > 0 ? profile.industryPartners : [1,2,3,4,5,6]).map((p: any, i: number) => (
                   <div key={i} className="aspect-square bg-slate-50 rounded-xl flex items-center justify-center p-3 hover:scale-110 transition-transform cursor-pointer">
                      {typeof p === 'string' ? (
                         <img src={getFileUrl(p)} className="max-h-full max-w-full object-contain transition-all" />
@@ -416,7 +421,7 @@ const InstitutePublicProfile = () => {
                </div>
             </div>
 
-            {(profile.testimonials && profile.testimonials.length > 0 ? profile.testimonials : [
+            {(Array.isArray(profile.testimonials) && profile.testimonials.length > 0 ? profile.testimonials : [
                { name: 'Ananya Sharma', role: 'VFX Artist, MPC', text: 'Framebox gave me the skills, confidence, and exposure I needed. The mentors and hands-on learning made all the difference.' }
             ]).slice(0, 1).map((t: any, i: number) => (
                <div key={i} className="space-y-6 flex-1 flex flex-col justify-center text-center">

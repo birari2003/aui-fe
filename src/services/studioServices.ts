@@ -86,3 +86,22 @@ export const getStudioJobPostings = async (token: string) => {
     },
   });
 };
+
+export const getStudioInfo = async (token: string) => {
+  return fetch(API_ENDPOINTS.STUDIO.PROFILE, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const updateStudioInfo = async (token: string, data: any) => {
+  return fetch(API_ENDPOINTS.STUDIO.PROFILE, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+};

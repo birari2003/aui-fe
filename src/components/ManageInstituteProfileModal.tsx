@@ -164,7 +164,8 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
       data.append('features', JSON.stringify(formData.features));
 
       // Handle Programs
-      const updatedPrograms = formData.programs.map((p, idx) => {
+      const updatedPrograms = (Array.isArray(formData.programs) ? formData.programs : []).map((p, idx) => {
+        if (typeof p !== 'object' || p === null) return { name: String(p), duration: '', type: '', thumbnail: '' };
         const file = programThumbnailFiles[idx];
         if (file) return { ...p, thumbnail: `PENDING_UPLOAD:${file.name}` };
         return p;
@@ -172,7 +173,8 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
       data.append('programs', JSON.stringify(updatedPrograms));
 
       // Handle Testimonials
-      const updatedTestimonials = formData.testimonials.map((t, idx) => {
+      const updatedTestimonials = (Array.isArray(formData.testimonials) ? formData.testimonials : []).map((t, idx) => {
+        if (typeof t !== 'object' || t === null) return { name: String(t), role: '', text: '', photo: '' };
         const file = testimonialPhotoFiles[idx];
         if (file) return { ...t, photo: `PENDING_UPLOAD:${file.name}` };
         return t;
@@ -180,7 +182,7 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
       data.append('testimonials', JSON.stringify(updatedTestimonials));
 
       // Handle Industry Partners
-      const updatedPartners = formData.industryPartners.map((p, idx) => {
+      const updatedPartners = (Array.isArray(formData.industryPartners) ? formData.industryPartners : []).map((p, idx) => {
         const file = partnerLogoFiles[idx];
         if (file) return `PENDING_UPLOAD:${file.name}`;
         return p;
@@ -438,13 +440,13 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {formData.features.map((feat, idx) => (
+                  {Array.isArray(formData.features) && formData.features.map((feat, idx) => (
                     <div key={idx} className="flex gap-2">
                       <input
                         type="text"
                         value={feat}
                         onChange={(e) => {
-                          const newList = [...formData.features];
+                          const newList = Array.isArray(formData.features) ? [...formData.features] : [];
                           newList[idx] = e.target.value;
                           setFormData({...formData, features: newList});
                         }}
@@ -452,7 +454,7 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                         placeholder="e.g. Expert Mentorship"
                       />
                       <button onClick={() => {
-                        const newList = formData.features.filter((_, i) => i !== idx);
+                        const newList = (Array.isArray(formData.features) ? formData.features : []).filter((_, i) => i !== idx);
                         setFormData({...formData, features: newList});
                       }} className="p-3 text-red-500 hover:bg-red-50 rounded-xl">
                         <Trash2 size={16} />
@@ -476,7 +478,7 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {formData.programs.map((program, idx) => (
+                  {Array.isArray(formData.programs) && formData.programs.map((program, idx) => (
                     <div key={idx} className="p-6 bg-brand-surface/30 rounded-3xl border border-brand-accent/10 space-y-4">
                       <div className="flex items-center gap-4">
                         <div className="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden shrink-0 border border-gray-100">
@@ -506,8 +508,12 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                           type="text"
                           value={program.name}
                           onChange={(e) => {
-                            const newList = [...formData.programs];
-                            newList[idx].name = e.target.value;
+                            const newList = Array.isArray(formData.programs) ? [...formData.programs] : [];
+                            if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                              newList[idx] = { name: e.target.value, duration: '', type: '', thumbnail: '' };
+                            } else {
+                              newList[idx].name = e.target.value;
+                            }
                             setFormData({...formData, programs: newList});
                           }}
                           placeholder="Program Name (e.g. B.Sc. in VFX)"
@@ -518,8 +524,12 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                             type="text"
                             value={program.duration}
                             onChange={(e) => {
-                              const newList = [...formData.programs];
-                              newList[idx].duration = e.target.value;
+                              const newList = Array.isArray(formData.programs) ? [...formData.programs] : [];
+                              if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                                newList[idx] = { name: '', duration: e.target.value, type: '', thumbnail: '' };
+                              } else {
+                                newList[idx].duration = e.target.value;
+                              }
                               setFormData({...formData, programs: newList});
                             }}
                             placeholder="Duration (e.g. 3 Years)"
@@ -529,8 +539,12 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                             type="text"
                             value={program.type}
                             onChange={(e) => {
-                              const newList = [...formData.programs];
-                              newList[idx].type = e.target.value;
+                              const newList = Array.isArray(formData.programs) ? [...formData.programs] : [];
+                              if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                                newList[idx] = { name: '', duration: '', type: e.target.value, thumbnail: '' };
+                              } else {
+                                newList[idx].type = e.target.value;
+                              }
                               setFormData({...formData, programs: newList});
                             }}
                             placeholder="Type (e.g. Full Time)"
@@ -572,7 +586,7 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {formData.industryPartners.map((partner, idx) => (
+                  {Array.isArray(formData.industryPartners) && formData.industryPartners.map((partner, idx) => (
                     <div key={idx} className="relative group">
                       <div className="aspect-video bg-white rounded-xl border border-gray-100 overflow-hidden flex items-center justify-center p-2">
                         <img src={getFilePreview(partnerLogoFiles[idx] || null, partner)} className="max-h-full max-w-full object-contain" />
@@ -603,7 +617,7 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {formData.testimonials.map((t, idx) => (
+                  {Array.isArray(formData.testimonials) && formData.testimonials.map((t, idx) => (
                     <div key={idx} className="p-6 bg-brand-surface/30 rounded-3xl border border-brand-accent/10 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                       <div className="md:col-span-3 space-y-4">
                         <div className="w-20 h-20 bg-gray-200 rounded-full overflow-hidden mx-auto border-2 border-white shadow-lg">
@@ -623,8 +637,12 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                             type="text"
                             value={t.name}
                             onChange={(e) => {
-                              const newList = [...formData.testimonials];
-                              newList[idx].name = e.target.value;
+                              const newList = Array.isArray(formData.testimonials) ? [...formData.testimonials] : [];
+                              if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                                newList[idx] = { name: e.target.value, role: '', text: '', photo: '' };
+                              } else {
+                                newList[idx].name = e.target.value;
+                              }
                               setFormData({...formData, testimonials: newList});
                             }}
                             placeholder="Student Name"
@@ -634,8 +652,12 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                             type="text"
                             value={t.role}
                             onChange={(e) => {
-                              const newList = [...formData.testimonials];
-                              newList[idx].role = e.target.value;
+                              const newList = Array.isArray(formData.testimonials) ? [...formData.testimonials] : [];
+                              if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                                newList[idx] = { name: '', role: e.target.value, text: '', photo: '' };
+                              } else {
+                                newList[idx].role = e.target.value;
+                              }
                               setFormData({...formData, testimonials: newList});
                             }}
                             placeholder="Current Role/Company"
@@ -645,8 +667,12 @@ const ManageInstituteProfileModal = ({ onClose }: { onClose: () => void }) => {
                         <textarea
                           value={t.text}
                           onChange={(e) => {
-                            const newList = [...formData.testimonials];
-                            newList[idx].text = e.target.value;
+                            const newList = Array.isArray(formData.testimonials) ? [...formData.testimonials] : [];
+                            if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                              newList[idx] = { name: '', role: '', text: e.target.value, photo: '' };
+                            } else {
+                              newList[idx].text = e.target.value;
+                            }
                             setFormData({...formData, testimonials: newList});
                           }}
                           placeholder="The student's feedback..."

@@ -80,19 +80,23 @@ const StudioTalentID = () => {
     );
   }
 
-  if (error || !profile) {
+  const isIncomplete = profile && !profile.name;
+
+  if (error || !profile || isIncomplete) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6 text-center">
         <div className="w-20 h-20 bg-white rounded-[24px] shadow-premium flex items-center justify-center mb-6 border border-gray-100">
           <Building2 size={32} className="text-gray-300" />
         </div>
         <h1 className="text-3xl font-black text-gray-900 tracking-tighter mb-2">
-          {error === 'Studio profile not published' ? 'Profile Not Published Yet' : (error || 'Profile Not Found')}
+          {isIncomplete ? 'Profile Not Completed' : (error === 'Studio profile not published' ? 'Profile Not Published Yet' : (error || 'Profile Not Found'))}
         </h1>
         <p className="text-gray-500 font-medium mb-8 max-w-sm">
-          {error === 'Studio profile not published' 
-            ? "Studio hasn't set up their public portfolio yet. Check back later!" 
-            : "Studio hasn't set up their public portfolio yet. Check back later!"}
+          {isIncomplete 
+            ? "This studio hasn't completed their public profile setup yet. Check back soon!"
+            : (error === 'Studio profile not published' 
+                ? "Studio hasn't set up their public portfolio yet. Check back later!" 
+                : "Studio hasn't set up their public portfolio yet. Check back later!")}
         </p>
         <button 
           onClick={() => navigate(-1)}
@@ -251,7 +255,7 @@ const StudioTalentID = () => {
         <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 h-full border border-gray-100 hover:-translate-y-0.5 transition-all duration-500">
           <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2 mb-3">What We Do</h3>
           <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-            {(profile.whatWeDo && profile.whatWeDo.length > 0 ? profile.whatWeDo : ['Concept Development', 'Lighting & Rendering', 'Animation Production', 'Post Production', 'Visual Effects', 'Real-time Engines']).slice(0, 6).map((service: string, i: number) => (
+            {(Array.isArray(profile.whatWeDo) && profile.whatWeDo.length > 0 ? profile.whatWeDo : ['Concept Development', 'Lighting & Rendering', 'Animation Production', 'Post Production', 'Visual Effects', 'Real-time Engines']).slice(0, 6).map((service: string, i: number) => (
               <div key={i} className="flex items-center gap-2 group">
                 <div className="w-8 h-8 bg-[#EEF2FF] rounded-lg flex items-center justify-center text-[#4F46E5] shrink-0 group-hover:bg-[#4F46E5] group-hover:text-white transition-all shadow-sm">
                   {i === 0 ? <Zap size={14} /> : i === 1 ? <Target size={14} /> : i === 2 ? <Layout size={14} /> : i === 3 ? <Clock size={14} /> : i === 4 ? <ShieldCheck size={14} /> : <Zap size={14} />}
@@ -266,7 +270,7 @@ const StudioTalentID = () => {
         <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 h-full border border-gray-100 hover:-translate-y-0.5 transition-all duration-500">
           <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2 mb-3">Why Work With Us</h3>
           <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-            {(profile.whyWorkWithUs && profile.whyWorkWithUs.length > 0 ? profile.whyWorkWithUs : ['Creative Team', 'On-time Delivery', 'Global Standards', 'Learning Hub', 'Cutting-edge Tech', 'Vibrant Culture']).slice(0, 6).map((point: string, i: number) => (
+            {(Array.isArray(profile.whyWorkWithUs) && profile.whyWorkWithUs.length > 0 ? profile.whyWorkWithUs : ['Creative Team', 'On-time Delivery', 'Global Standards', 'Learning Hub', 'Cutting-edge Tech', 'Vibrant Culture']).slice(0, 6).map((point: string, i: number) => (
               <div key={i} className="flex items-center gap-2 group">
                 <div className="w-8 h-8 bg-[#EEF2FF] rounded-lg flex items-center justify-center text-[#4F46E5] shrink-0 group-hover:bg-[#4F46E5] group-hover:text-white transition-all shadow-sm">
                    {i % 2 === 0 ? <CheckCircle2 size={14} /> : <Star size={14} />}
@@ -370,7 +374,7 @@ const StudioTalentID = () => {
             className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 items-start snap-x snap-mandatory"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {(profile.projects && profile.projects.length > 0 ? profile.projects : [
+            {(Array.isArray(profile.projects) && profile.projects.length > 0 ? profile.projects : [
               { name: 'The Last Kingdom', type: 'Feature Film', year: '2023', thumbnail: '' },
               { name: 'Cyber City 2099', type: 'Sci-Fi Series', year: '2022', thumbnail: '' },
               { name: 'Hanuman Chronicles', type: 'Feature Film', year: '2022', thumbnail: '' },
@@ -445,7 +449,7 @@ const StudioTalentID = () => {
         <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 flex flex-col border border-gray-100 hover:shadow-xl transition-all duration-500">
           <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2 mb-3">Our Clients</h3>
           <div className="grid grid-cols-3 gap-6 flex-1 items-start mt-4">
-            {(profile.clients && profile.clients.length > 0 ? profile.clients : [1,2,3,4,5,6,7,8,9]).map((c: any, i: number) => (
+            {(Array.isArray(profile.clients) && profile.clients.length > 0 ? profile.clients : [1,2,3,4,5,6,7,8,9]).map((c: any, i: number) => (
               <div key={i} className="h-12 flex items-center justify-center transition-all duration-500 transform hover:scale-125 opacity-80 hover:opacity-100 cursor-pointer">
                 {typeof c === 'string' ? (
                   <img src={getFileUrl(c)} className="max-h-full max-w-full object-contain filter drop-shadow-sm" alt="Client" />

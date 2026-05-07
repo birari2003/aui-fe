@@ -40,8 +40,6 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
 
   React.useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
   }, [fetchNotifications]);
 
 
@@ -147,7 +145,10 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
               <>
                 <div className="relative">
                   <button 
-                    onClick={() => setShowNotifications(!showNotifications)}
+                    onClick={() => {
+                      if (!showNotifications) fetchNotifications();
+                      setShowNotifications(!showNotifications);
+                    }}
                     className="p-2.5 text-text-muted hover:text-brand-primary hover:bg-brand-surface rounded-xl relative transition-premium"
                   >
                     <Bell size={20} />

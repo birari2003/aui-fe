@@ -159,7 +159,8 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
       data.append('socialLinks', JSON.stringify(formData.socialLinks));
 
       // Handle Projects with thumbnails
-      const updatedProjects = (formData.projects || []).map((p, idx) => {
+      const updatedProjects = (Array.isArray(formData.projects) ? formData.projects : []).map((p, idx) => {
+        if (typeof p !== 'object' || p === null) return { name: String(p), type: '', year: '', thumbnail: '' };
         const file = projectThumbnailFiles[idx];
         if (file) {
           return { ...p, thumbnail: `PENDING_UPLOAD:${file.name}` };
@@ -169,7 +170,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
       data.append('projects', JSON.stringify(updatedProjects));
 
       // Handle Clients with logos
-      const updatedClients = (formData.clients || []).map((c, idx) => {
+      const updatedClients = (Array.isArray(formData.clients) ? formData.clients : []).map((c, idx) => {
         const file = clientLogoFiles[idx];
         if (file) {
           return `PENDING_UPLOAD:${file.name}`;
@@ -402,13 +403,14 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(formData.whatWeDo || []).map((service, idx) => (
+                  {Array.isArray(formData.whatWeDo) && formData.whatWeDo.map((service, idx) => (
                     <div key={idx} className="flex gap-2">
                       <input
                         type="text"
                         value={service}
                         onChange={(e) => {
-                          const newList = [...formData.whatWeDo];
+                          const currentList = Array.isArray(formData.whatWeDo) ? [...formData.whatWeDo] : [];
+                          const newList = [...currentList];
                           newList[idx] = e.target.value;
                           setFormData({...formData, whatWeDo: newList});
                         }}
@@ -437,13 +439,14 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(formData.whyWorkWithUs || []).map((point, idx) => (
+                  {Array.isArray(formData.whyWorkWithUs) && formData.whyWorkWithUs.map((point, idx) => (
                     <div key={idx} className="flex gap-2">
                       <input
                         type="text"
                         value={point}
                         onChange={(e) => {
-                          const newList = [...formData.whyWorkWithUs];
+                          const currentList = Array.isArray(formData.whyWorkWithUs) ? [...formData.whyWorkWithUs] : [];
+                          const newList = [...currentList];
                           newList[idx] = e.target.value;
                           setFormData({...formData, whyWorkWithUs: newList});
                         }}
@@ -494,7 +497,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {(formData.projects || []).map((project, idx) => (
+                  {Array.isArray(formData.projects) && formData.projects.map((project, idx) => (
                     <div key={idx} className="p-6 bg-brand-surface/30 rounded-3xl border border-brand-accent/10 space-y-4">
                       <div className="flex items-center gap-4">
                         <div className="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden shrink-0 border border-gray-100">
@@ -525,7 +528,11 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                           value={project.name}
                           onChange={(e) => {
                             const newList = [...formData.projects];
-                            newList[idx].name = e.target.value;
+                            if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                              newList[idx] = { name: e.target.value, type: '', year: '', thumbnail: '' };
+                            } else {
+                              newList[idx].name = e.target.value;
+                            }
                             setFormData({...formData, projects: newList});
                           }}
                           placeholder="Project Name"
@@ -537,7 +544,11 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                             value={project.type}
                             onChange={(e) => {
                               const newList = [...formData.projects];
-                              newList[idx].type = e.target.value;
+                              if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                                newList[idx] = { name: '', type: e.target.value, year: '', thumbnail: '' };
+                              } else {
+                                newList[idx].type = e.target.value;
+                              }
                               setFormData({...formData, projects: newList});
                             }}
                             placeholder="Type (e.g. VFX)"
@@ -548,7 +559,11 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                             value={project.year}
                             onChange={(e) => {
                               const newList = [...formData.projects];
-                              newList[idx].year = e.target.value;
+                              if (typeof newList[idx] !== 'object' || newList[idx] === null) {
+                                newList[idx] = { name: '', type: '', year: e.target.value, thumbnail: '' };
+                              } else {
+                                newList[idx].year = e.target.value;
+                              }
                               setFormData({...formData, projects: newList});
                             }}
                             placeholder="Year"
@@ -573,7 +588,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {(formData.clients || []).map((client, idx) => (
+                  {Array.isArray(formData.clients) && formData.clients.map((client, idx) => (
                     <div key={idx} className="relative group">
                       <div className="aspect-video bg-white rounded-xl border border-gray-100 overflow-hidden flex items-center justify-center p-2">
                         <img src={getFilePreview(clientLogoFiles[idx] || null, client)} className="max-h-full max-w-full object-contain" />
