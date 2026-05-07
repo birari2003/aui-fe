@@ -25,8 +25,9 @@ import { getMe } from '../services/userServices';
 import { addTalentToBench, createStudioRequestProfessional } from '../services/studioServices';
 import EngagementModal from '../components/EngagementModal';
 import { View, UserRole } from '../types';
+import { BASE_URL } from '../utils/urls';
 
-const BACKEND_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const BACKEND_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || BASE_URL;
 
 const getYouTubeId = (url: string) => {
   if (!url) return 'default';

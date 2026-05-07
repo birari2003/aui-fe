@@ -1,4 +1,6 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { BASE_URL } from '../utils/urls';
+
+const API_URL = `${BASE_URL}/api`;
 
 export const getPublicProfileByCode = async (talentCode: string) => {
   return fetch(`${API_URL}/public-profile/code/${talentCode}`);

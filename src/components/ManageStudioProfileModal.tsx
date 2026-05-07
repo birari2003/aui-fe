@@ -6,6 +6,7 @@ import {
   Linkedin, Instagram, Youtube, Twitter
 } from 'lucide-react';
 import { getMyStudioPublicProfile, upsertStudioPublicProfile } from '../services/studioProfileService';
+import { BASE_URL } from '../utils/urls';
 
 interface Project {
   name: string;
@@ -206,7 +207,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
     if (file) return URL.createObjectURL(file);
     if (existing) {
       if (existing.startsWith('http')) return existing;
-      return `http://localhost:5000/${existing}`;
+      return `${BASE_URL}/${existing}`;
     }
     return '/assets/placeholder-image.png'; // Make sure this exists or use a generic path
   };

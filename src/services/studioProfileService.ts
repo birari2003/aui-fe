@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:5000/api/studio-public-profile';
+import { BASE_URL } from '../utils/urls';
+
+const API_URL = `${BASE_URL}/api/studio-public-profile`;
 
 export const getMyStudioPublicProfile = async (token: string) => {
   return fetch(`${API_URL}/me`, {

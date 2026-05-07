@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from '../utils/urls';
+import { BASE_URL } from '../utils/urls';
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
@@ -13,8 +13,7 @@ export const fetchAdminUsers = async (filters: { role?: string; status?: string 
   if (filters.role && filters.role !== 'all') queryParams.append('role', filters.role);
   if (filters.status && filters.status !== 'all') queryParams.append('status', filters.status);
 
-  const baseUrl = API_ENDPOINTS.AUTH.REGISTER.split('/auth/register')[0];
-  const adminUsersUrl = `${baseUrl}/admin/users?${queryParams.toString()}`;
+  const adminUsersUrl = `${BASE_URL}/api/admin/users?${queryParams.toString()}`;
 
   const response = await fetch(adminUsersUrl, {
     headers: getHeaders(),
@@ -23,8 +22,7 @@ export const fetchAdminUsers = async (filters: { role?: string; status?: string 
 };
 
 export const updateUserStatus = async (userId: number, status: 'approved' | 'rejected' | 'pending') => {
-  const baseUrl = API_ENDPOINTS.AUTH.REGISTER.split('/auth/register')[0];
-  const response = await fetch(`${baseUrl}/admin/users/${userId}/status`, {
+  const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/status`, {
     method: 'PATCH',
     headers: getHeaders(),
     body: JSON.stringify({ status }),
@@ -33,8 +31,7 @@ export const updateUserStatus = async (userId: number, status: 'approved' | 'rej
 };
 
 export const fetchAnalytics = async () => {
-  const baseUrl = API_ENDPOINTS.AUTH.REGISTER.split('/auth/register')[0];
-  const response = await fetch(`${baseUrl}/admin/analytics`, {
+  const response = await fetch(`${BASE_URL}/api/admin/analytics`, {
     headers: getHeaders(),
   });
   return response;

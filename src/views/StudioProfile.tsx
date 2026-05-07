@@ -7,6 +7,7 @@ import { View } from '../types';
 import ManageStudioProfileModal from '../components/ManageStudioProfileModal';
 import { getMyStudioPublicProfile } from '../services/studioProfileService';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../utils/urls';
 
 const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
             setStudioProfile(payload.data);
           } else {
             // If public profile not created, fetch basic user info to get talentCode
-            const userRes = await fetch('http://localhost:5000/api/auth/me', {
+            const userRes = await fetch(API_ENDPOINTS.AUTH.ME, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             if (userRes.ok) {

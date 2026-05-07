@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Video, Image as ImageIcon, Layout, History, Sparkles, Send, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import Button from './Button';
 import { getMyPublicProfile, upsertPublicProfile } from '../services/publicProfileServices';
+import { BASE_URL } from '../utils/urls';
 
 interface ManagePublicProfileModalProps {
   isOpen: boolean;
@@ -308,7 +309,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                 <div className="flex items-center gap-6">
                   <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-brand-accent/20 shrink-0">
                     <img 
-                      src={profileImageFile ? URL.createObjectURL(profileImageFile) : (formData.profileImage ? (formData.profileImage.startsWith('http') ? formData.profileImage : `http://localhost:5000/${formData.profileImage}`) : '/assets/sarah_chen_profile_1777487447512.png')} 
+                      src={profileImageFile ? URL.createObjectURL(profileImageFile) : (formData.profileImage ? (formData.profileImage.startsWith('http') ? formData.profileImage : `${BASE_URL}/${formData.profileImage}`) : '/assets/sarah_chen_profile_1777487447512.png')} 
                       className="w-full h-full object-cover" 
                       alt="Profile"
                     />
@@ -496,7 +497,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                 <div className="flex items-center gap-6">
                   <div className="w-40 h-24 rounded-2xl overflow-hidden border-2 border-brand-accent/20 shrink-0">
                     <img 
-                      src={workLedgerImageFile ? URL.createObjectURL(workLedgerImageFile) : (formData.workLedgerImage ? (formData.workLedgerImage.startsWith('http') ? formData.workLedgerImage : `http://localhost:5000/${formData.workLedgerImage}`) : '/assets/superhero_team_thumbnail_1777487519840.png')} 
+                      src={workLedgerImageFile ? URL.createObjectURL(workLedgerImageFile) : (formData.workLedgerImage ? (formData.workLedgerImage.startsWith('http') ? formData.workLedgerImage : `${BASE_URL}/${formData.workLedgerImage}`) : '/assets/superhero_team_thumbnail_1777487519840.png')} 
                       className="w-full h-full object-cover" 
                       alt="Project Primary"
                     />
@@ -656,7 +657,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                         {/* Existing Images */}
                         {(project.shotSamples || []).map((sample: string, sIdx: number) => {
                           if (sample.startsWith('PENDING_UPLOAD:')) return null;
-                          const url = sample.startsWith('http') ? sample : `http://localhost:5000/${sample}`;
+                          const url = sample.startsWith('http') ? sample : `${BASE_URL}/${sample}`;
                           return (
                             <div key={`existing-${sIdx}`} className="w-24 h-24 rounded-2xl overflow-hidden border border-gray-100 relative group">
                               <img src={url} className="w-full h-full object-cover" />

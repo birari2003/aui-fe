@@ -7,11 +7,12 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { View } from '../types';
 import { getAllStudioProfiles } from '../services/studioProfileService';
+import { BASE_URL } from '../utils/urls';
 
 const getFileUrl = (path: string) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  return `http://localhost:5000/${path.replace(/\\/g, '/')}`;
+  return `${BASE_URL}/${path.replace(/\\/g, '/')}`;
 };
 
 const StudioList = ({ setView }: { setView: (v: View) => void }) => {
