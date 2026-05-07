@@ -96,7 +96,16 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
         if (res.ok) {
           const payload = await res.json();
           if (payload.data) {
-            setFormData(payload.data);
+            setFormData({
+              ...INITIAL_DATA,
+              ...payload.data,
+              whatWeDo: payload.data.whatWeDo || [],
+              whyWorkWithUs: payload.data.whyWorkWithUs || [],
+              extraVideos: payload.data.extraVideos || [],
+              projects: payload.data.projects || [],
+              clients: payload.data.clients || [],
+              socialLinks: payload.data.socialLinks || {},
+            });
           }
         }
       } catch (err) {
@@ -150,7 +159,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
       data.append('socialLinks', JSON.stringify(formData.socialLinks));
 
       // Handle Projects with thumbnails
-      const updatedProjects = formData.projects.map((p, idx) => {
+      const updatedProjects = (formData.projects || []).map((p, idx) => {
         const file = projectThumbnailFiles[idx];
         if (file) {
           return { ...p, thumbnail: `PENDING_UPLOAD:${file.name}` };
@@ -160,7 +169,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
       data.append('projects', JSON.stringify(updatedProjects));
 
       // Handle Clients with logos
-      const updatedClients = formData.clients.map((c, idx) => {
+      const updatedClients = (formData.clients || []).map((c, idx) => {
         const file = clientLogoFiles[idx];
         if (file) {
           return `PENDING_UPLOAD:${file.name}`;
@@ -393,7 +402,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {formData.whatWeDo.map((service, idx) => (
+                  {(formData.whatWeDo || []).map((service, idx) => (
                     <div key={idx} className="flex gap-2">
                       <input
                         type="text"
@@ -428,7 +437,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {formData.whyWorkWithUs.map((point, idx) => (
+                  {(formData.whyWorkWithUs || []).map((point, idx) => (
                     <div key={idx} className="flex gap-2">
                       <input
                         type="text"
@@ -485,7 +494,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {formData.projects.map((project, idx) => (
+                  {(formData.projects || []).map((project, idx) => (
                     <div key={idx} className="p-6 bg-brand-surface/30 rounded-3xl border border-brand-accent/10 space-y-4">
                       <div className="flex items-center gap-4">
                         <div className="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden shrink-0 border border-gray-100">
@@ -564,7 +573,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {formData.clients.map((client, idx) => (
+                  {(formData.clients || []).map((client, idx) => (
                     <div key={idx} className="relative group">
                       <div className="aspect-video bg-white rounded-xl border border-gray-100 overflow-hidden flex items-center justify-center p-2">
                         <img src={getFilePreview(clientLogoFiles[idx] || null, client)} className="max-h-full max-w-full object-contain" />

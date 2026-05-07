@@ -45,17 +45,17 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
       }
       if (reqRes.ok) {
         const reqData = await reqRes.json();
-        setRequests(reqData.data);
+        setRequests(Array.isArray(reqData.data) ? reqData.data : []);
       }
 
       if (studioReqRes.ok) {
         const studioReqData = await studioReqRes.json();
-        setStudioRequests(studioReqData.data);
+        setStudioRequests(Array.isArray(studioReqData.data) ? studioReqData.data : []);
       }
 
       if (studioJobRes.ok) {
         const studioJobData = await studioJobRes.json();
-        setStudioJobPostings(studioJobData.data);
+        setStudioJobPostings(Array.isArray(studioJobData.data) ? studioJobData.data : []);
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);

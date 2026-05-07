@@ -27,7 +27,7 @@ const StudioList = ({ setView }: { setView: (v: View) => void }) => {
         const response = await getAllStudioProfiles();
         const data = await response.json();
         if (data.ok) {
-          setStudios(data.data);
+          setStudios(Array.isArray(data.data) ? data.data : []);
         }
       } catch (err) {
         console.error('Failed to fetch studios:', err);

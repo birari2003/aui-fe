@@ -170,9 +170,9 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const displayTalentId = talentId?.talentCode || 'AUI-000000';
   
   const insight = publicProfile?.auiInsight || 'Senior creative professional with a proven track record in high-impact projects. Consistently delivers exceptional results and excels in collaborative environments.';
-  const timeline = publicProfile?.experienceTimeline || [];
+  const timeline = Array.isArray(publicProfile?.experienceTimeline) ? publicProfile.experienceTimeline : [];
   const showreel = publicProfile?.showreel || { type: 'youtube', url: 'https://youtube.com', title: 'Professional Showreel', duration: '02:30' };
-  const workLedger = publicProfile?.workLedger || [];
+  const workLedger = Array.isArray(publicProfile?.workLedger) ? publicProfile.workLedger : [];
 
   return (
     <div className="min-h-screen bg-[#F8F9FB] text-[#111827] font-sans pb-8">
@@ -444,7 +444,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                         <div className="space-y-3">
                           <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Contribution</div>
                           <ul className="space-y-2 text-[11px] text-[#374151] font-medium leading-relaxed">
-                            {project.contribution?.split('\n').map((line: string, i: number) => (
+                            {(project.contribution || '').split('\n').map((line: string, i: number) => (
                                <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
                             ))}
                           </ul>
@@ -452,7 +452,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                         <div className="space-y-3">
                           <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Scope</div>
                           <ul className="space-y-2 text-[11px] text-[#374151] font-medium leading-relaxed">
-                            {project.scope?.split('\n').map((line: string, i: number) => (
+                            {(project.scope || '').split('\n').map((line: string, i: number) => (
                                <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
                             ))}
                           </ul>

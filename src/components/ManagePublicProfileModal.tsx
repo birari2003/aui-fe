@@ -55,9 +55,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
         if (data.data) {
           setFormData({
             auiInsight: data.data.auiInsight || '',
-            experienceTimeline: data.data.experienceTimeline || [],
+            experienceTimeline: Array.isArray(data.data.experienceTimeline) ? data.data.experienceTimeline : [],
             showreel: data.data.showreel || { type: 'youtube', url: '', title: '', duration: '' },
-            workLedger: data.data.workLedger || [],
+            workLedger: Array.isArray(data.data.workLedger) ? data.data.workLedger : [],
             profileImage: data.data.profileImage || '',
             workLedgerImage: data.data.workLedgerImage || '',
           });
@@ -149,7 +149,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
     data.append('profileImage', formData.profileImage);
     data.append('workLedgerImage', formData.workLedgerImage);
 
-    const updatedWorkLedger = formData.workLedger.map((project, idx) => {
+    const updatedWorkLedger = (formData.workLedger || []).map((project, idx) => {
       const newImages = projectImages[idx] || [];
       return {
         ...project,
@@ -180,6 +180,11 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
       data.append('projectImages', file);
     });
 
+    // Log the final FormData keys being sent
+    const entries: any = {};
+    data.forEach((value, key) => { entries[key] = value; });
+    console.log('Final FormData Payload:', entries);
+
     try {
       const res = await upsertPublicProfile(token, data);
       if (res.ok) {
@@ -197,22 +202,23 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
   if (!isOpen) return null;
 
   const addTimelineItem = () => {
-    setFormData({
-      ...formData,
-      experienceTimeline: [...formData.experienceTimeline, { date: '', role: '', company: '' }]
-    });
+    setFormData(prev => ({
+      ...prev,
+      experienceTimeline: [...(prev.experienceTimeline || []), { date: '', role: '', company: '' }]
+    }));
   };
 
   const removeTimelineItem = (index: number) => {
-    const newTimeline = [...formData.experienceTimeline];
-    newTimeline.splice(index, 1);
-    setFormData({ ...formData, experienceTimeline: newTimeline });
+    setFormData(prev => ({
+      ...prev,
+      experienceTimeline: (prev.experienceTimeline || []).filter((_, i) => i !== index)
+    }));
   };
 
   const addWorkLedgerItem = () => {
-    setFormData({
-      ...formData,
-      workLedger: [...formData.workLedger, { 
+    setFormData(prev => ({
+      ...prev,
+      workLedger: [...(prev.workLedger || []), { 
         projectName: '', 
         status: 'Completed', 
         role: '', 
@@ -222,13 +228,14 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
         scope: '',
         shotSamples: []
       }]
-    });
+    }));
   };
 
   const removeWorkLedgerItem = (index: number) => {
-    const newLedger = [...formData.workLedger];
-    newLedger.splice(index, 1);
-    setFormData({ ...formData, workLedger: newLedger });
+    setFormData(prev => ({
+      ...prev,
+      workLedger: (prev.workLedger || []).filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -345,7 +352,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
               </div>
               
               <div className="space-y-4">
-                {formData.experienceTimeline.map((item, idx) => (
+                {(formData.experienceTimeline || []).map((item, idx) => (
                   <div key={idx} className="p-6 bg-brand-surface rounded-3xl border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4 relative group">
                     <button 
                       onClick={() => removeTimelineItem(idx)}
@@ -360,8 +367,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                         placeholder="e.g. 2023 - Present"
                         value={item.date}
                         onChange={(e) => {
-                          const newTimeline = [...formData.experienceTimeline];
-                          newTimeline[idx].date = e.target.value;
+                          const newTimeline = formData.experienceTimeline.map((item, i) => 
+                            i === idx ? { ...item, date: e.target.value } : item
+                          );
                           setFormData({ ...formData, experienceTimeline: newTimeline });
                         }}
                         className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 focus:border-brand-accent outline-none text-sm font-bold"
@@ -374,8 +382,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                         placeholder="e.g. Senior Artist"
                         value={item.role}
                         onChange={(e) => {
-                          const newTimeline = [...formData.experienceTimeline];
-                          newTimeline[idx].role = e.target.value;
+                          const newTimeline = formData.experienceTimeline.map((item, i) => 
+                            i === idx ? { ...item, role: e.target.value } : item
+                          );
                           setFormData({ ...formData, experienceTimeline: newTimeline });
                         }}
                         className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 focus:border-brand-accent outline-none text-sm font-bold"
@@ -388,8 +397,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                         placeholder="e.g. Marvel Studios"
                         value={item.company}
                         onChange={(e) => {
-                          const newTimeline = [...formData.experienceTimeline];
-                          newTimeline[idx].company = e.target.value;
+                          const newTimeline = formData.experienceTimeline.map((item, i) => 
+                            i === idx ? { ...item, company: e.target.value } : item
+                          );
                           setFormData({ ...formData, experienceTimeline: newTimeline });
                         }}
                         className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 focus:border-brand-accent outline-none text-sm font-bold"
@@ -522,7 +532,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
               </div>
 
               <div className="space-y-6">
-                {formData.workLedger.map((project, idx) => (
+                {(formData.workLedger || []).map((project, idx) => (
                   <div key={idx} className="p-8 bg-brand-surface rounded-[32px] border border-gray-100 space-y-6 relative group">
                     <button 
                       onClick={() => removeWorkLedgerItem(idx)}
@@ -538,8 +548,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                           type="text"
                           value={project.projectName}
                           onChange={(e) => {
-                            const newLedger = [...formData.workLedger];
-                            newLedger[idx].projectName = e.target.value;
+                            const newLedger = formData.workLedger.map((proj, i) => 
+                              i === idx ? { ...proj, projectName: e.target.value } : proj
+                            );
                             setFormData({ ...formData, workLedger: newLedger });
                           }}
                           className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent outline-none font-bold"
@@ -551,8 +562,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                           type="text"
                           value={project.year}
                           onChange={(e) => {
-                            const newLedger = [...formData.workLedger];
-                            newLedger[idx].year = e.target.value;
+                            const newLedger = formData.workLedger.map((proj, i) => 
+                              i === idx ? { ...proj, year: e.target.value } : proj
+                            );
                             setFormData({ ...formData, workLedger: newLedger });
                           }}
                           className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent outline-none font-bold"
@@ -567,8 +579,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                           type="text"
                           value={project.role}
                           onChange={(e) => {
-                            const newLedger = [...formData.workLedger];
-                            newLedger[idx].role = e.target.value;
+                            const newLedger = formData.workLedger.map((proj, i) => 
+                              i === idx ? { ...proj, role: e.target.value } : proj
+                            );
                             setFormData({ ...formData, workLedger: newLedger });
                           }}
                           className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 focus:border-brand-accent outline-none text-sm font-bold"
@@ -580,8 +593,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                           type="text"
                           value={project.type}
                           onChange={(e) => {
-                            const newLedger = [...formData.workLedger];
-                            newLedger[idx].type = e.target.value;
+                            const newLedger = formData.workLedger.map((proj, i) => 
+                              i === idx ? { ...proj, type: e.target.value } : proj
+                            );
                             setFormData({ ...formData, workLedger: newLedger });
                           }}
                           className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 focus:border-brand-accent outline-none text-sm font-bold"
@@ -592,8 +606,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                         <select
                           value={project.status}
                           onChange={(e) => {
-                            const newLedger = [...formData.workLedger];
-                            newLedger[idx].status = e.target.value;
+                            const newLedger = formData.workLedger.map((proj, i) => 
+                              i === idx ? { ...proj, status: e.target.value } : proj
+                            );
                             setFormData({ ...formData, workLedger: newLedger });
                           }}
                           className="w-full px-4 py-3 bg-white rounded-xl border border-gray-100 focus:border-brand-accent outline-none text-sm font-bold appearance-none"
@@ -610,8 +625,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                       <textarea
                         value={project.contribution}
                         onChange={(e) => {
-                          const newLedger = [...formData.workLedger];
-                          newLedger[idx].contribution = e.target.value;
+                          const newLedger = formData.workLedger.map((proj, i) => 
+                            i === idx ? { ...proj, contribution: e.target.value } : proj
+                          );
                           setFormData({ ...formData, workLedger: newLedger });
                         }}
                         rows={3}
@@ -624,8 +640,9 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                       <textarea
                         value={project.scope}
                         onChange={(e) => {
-                          const newLedger = [...formData.workLedger];
-                          newLedger[idx].scope = e.target.value;
+                          const newLedger = formData.workLedger.map((proj, i) => 
+                            i === idx ? { ...proj, scope: e.target.value } : proj
+                          );
                           setFormData({ ...formData, workLedger: newLedger });
                         }}
                         rows={3}
@@ -717,7 +734,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
           <div className="flex gap-3">
             {currentStepIndex < tabs.length - 1 ? (
               <Button onClick={handleNext} className="px-8 gap-2 shadow-premium">
-                Save & Next <ArrowRight size={18} />
+                Next <ArrowRight size={18} />
               </Button>
             ) : (
               <Button onClick={handleSubmit} loading={saving} className="px-10 gap-2 shadow-premium bg-emerald-600 hover:bg-emerald-700">
