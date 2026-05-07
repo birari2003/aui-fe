@@ -4,8 +4,45 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import { View } from '../types';
+import ManageStudioProfileModal from '../components/ManageStudioProfileModal';
+import { getMyStudioPublicProfile } from '../services/studioProfileService';
+import { useNavigate } from 'react-router-dom';
 
 const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
+  const navigate = useNavigate();
+  const [isManageModalOpen, setIsManageModalOpen] = React.useState(false);
+  const [studioProfile, setStudioProfile] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await getMyStudioPublicProfile(token);
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload.data) {
+            setStudioProfile(payload.data);
+          } else {
+            // If public profile not created, fetch basic user info to get talentCode
+            const userRes = await fetch('http://localhost:5000/api/auth/me', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (userRes.ok) {
+              const userPayload = await userRes.json();
+              if (userPayload.data?.talentId) {
+                setStudioProfile({ talentCode: userPayload.data.talentId.talentCode });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Fetch profile error:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   return (
     <div className="min-h-screen bg-white no-scrollbar text-left">
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-12 text-left">
@@ -15,10 +52,21 @@ const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
             <p className="text-text-secondary text-left">Manage your studio profile and hiring activity.</p>
           </div>
           <div className="flex gap-3 text-left">
-            <Button variant="secondary" onClick={() => {}}>View Public Page</Button>
+            <Button variant="secondary" onClick={() => setIsManageModalOpen(true)}>Manage Public Profile</Button>
+            <Button variant="secondary" onClick={() => {
+              if (studioProfile?.talentCode) {
+                navigate(`/talent/${studioProfile.talentCode}`);
+              } else {
+                alert('Please manage your public profile first to generate your ID.');
+              }
+            }}>View Public Page</Button>
             <Button onClick={() => {}}>Edit Studio Info</Button>
           </div>
         </div>
+        
+        {isManageModalOpen && (
+          <ManageStudioProfileModal onClose={() => setIsManageModalOpen(false)} />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
           {[

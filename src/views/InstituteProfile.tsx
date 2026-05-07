@@ -7,12 +7,14 @@ import { View } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { getMyInstituteProfile } from '../services/instituteServices';
 import EditInstituteModal from '../components/EditInstituteModal';
+import ManageInstituteProfileModal from '../components/ManageInstituteProfileModal';
 
 const InstituteProfile = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
   const [profile, setProfile] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = React.useState(false);
 
   const fetchProfile = React.useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -52,7 +54,7 @@ const InstituteProfile = ({ setView }: { setView: (v: View) => void }) => {
 
   const handleViewPublicPage = () => {
     if (talentCode) {
-      navigate(`/institute/${talentCode}`);
+      navigate(`/talent/${talentCode}`);
     } else {
       alert('Talent ID not generated yet. Please save your profile first.');
     }
@@ -66,6 +68,10 @@ const InstituteProfile = ({ setView }: { setView: (v: View) => void }) => {
         profile={profile} 
         onUpdate={fetchProfile}
       />
+
+      {isManageModalOpen && (
+        <ManageInstituteProfileModal onClose={() => setIsManageModalOpen(false)} />
+      )}
 
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-12 text-left">
         {!isProfileComplete && (
@@ -105,6 +111,13 @@ const InstituteProfile = ({ setView }: { setView: (v: View) => void }) => {
               className="px-6 border border-gray-100 hover:bg-white disabled:opacity-50"
             >
               View Public Page
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={() => setIsManageModalOpen(true)}
+              className="px-6 border border-gray-100 hover:bg-white"
+            >
+              Manage Public Profile
             </Button>
             <Button onClick={() => setIsEditModalOpen(true)} className="px-8 shadow-premium">
               {isProfileComplete ? 'Edit Institute Info' : 'Setup Profile'}

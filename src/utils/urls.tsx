@@ -1,7 +1,7 @@
 const ENV: string = 'production'; // Set to 'production' for production API, 'local' for local API
 
 export const BASE_URL = ENV === 'production' 
-  ? 'https://api.auitalent.com' // Replace with actual production URL when ready
+  ? 'https://api.auitalent.com'
   : 'http://localhost:5000';
 
 export const API_ENDPOINTS = {
@@ -22,6 +22,11 @@ export const API_ENDPOINTS = {
     GET_PROFILE: `${BASE_URL}/api/professionals/profile`,
     UPDATE_PROFILE: `${BASE_URL}/api/professionals/profile`,
     PUBLIC_PROFILE: (talentCode: string) => `${BASE_URL}/api/professionals/profile/public/${talentCode}`,
+    STUDIO_REQUESTS: `${BASE_URL}/api/professionals/studio-requests`,
+    RESPOND_STUDIO_REQUEST: (requestId: number) => `${BASE_URL}/api/professionals/studio-requests/${requestId}/status`,
+    STUDIO_JOB_POSTINGS: `${BASE_URL}/api/professionals/studio-job-postings`,
+    NOTIFICATIONS: `${BASE_URL}/api/professionals/notifications`,
+    MARK_READ: (id: number) => `${BASE_URL}/api/professionals/notifications/${id}/read`,
   },
   INSTITUTE: {
     GET_PROFILE: `${BASE_URL}/api/institutes/profile`,
@@ -31,6 +36,14 @@ export const API_ENDPOINTS = {
   SEARCH: {
     PROFESSIONALS: `${BASE_URL}/api/search/professionals`,
     INSTITUTES: `${BASE_URL}/api/search/institutes`,
+    STUDIO_JOB_POSTINGS: `${BASE_URL}/api/search/studio-job-postings`,
+  },
+  STUDIO: {
+    PROFILE: `${BASE_URL}/api/studios/profile`,
+    TALENT_BENCH: `${BASE_URL}/api/studios/talent-bench`,
+    REMOVE_TALENT_BENCH: (professionalId: number) => `${BASE_URL}/api/studios/talent-bench/${professionalId}`,
+    REQUEST_PROFESSIONALS: `${BASE_URL}/api/studios/request-professionals`,
+    JOB_POSTINGS: `${BASE_URL}/api/studios/job-postings`,
   },
   COLLABORATION: {
     SEND_REQUEST: `${BASE_URL}/api/collaboration`,

@@ -1,21 +1,46 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Search, MapPin, Users, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
-import { MOCK_STUDIOS } from '../data/mockData';
 import { View } from '../types';
+import { getAllStudioProfiles } from '../services/studioProfileService';
+
+const getFileUrl = (path: string) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `http://localhost:5000/${path.replace(/\\/g, '/')}`;
+};
 
 const StudioList = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [studios, setStudios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredStudios = MOCK_STUDIOS.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.type.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    const fetchStudios = async () => {
+      try {
+        const response = await getAllStudioProfiles();
+        const data = await response.json();
+        if (data.ok) {
+          setStudios(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch studios:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudios();
+  }, []);
+
+  const filteredStudios = studios.filter(s => 
+    s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.specialty?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -48,10 +73,10 @@ const StudioList = ({ setView }: { setView: (v: View) => void }) => {
               className="text-left"
             >
               <Card className="group p-8 bg-white border-gray-100 shadow-premium hover:shadow-premium-hover transition-premium flex flex-col md:flex-row gap-8 items-center text-left">
-                <div className="w-32 h-32 bg-brand-surface rounded-[32px] overflow-hidden flex-shrink-0 text-left">
+                <div className="w-32 h-32 bg-brand-surface rounded-[32px] overflow-hidden flex-shrink-0 text-left border border-gray-100 p-2">
                   <img 
-                    src={`https://picsum.photos/seed/${studio.id}/200/200`} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-premium" 
+                    src={getFileUrl(studio.logo) || `https://picsum.photos/seed/${studio.id}/200/200`} 
+                    className="w-full h-full object-contain group-hover:scale-110 transition-premium" 
                     alt={studio.name} 
                   />
                 </div>
@@ -64,7 +89,7 @@ const StudioList = ({ setView }: { setView: (v: View) => void }) => {
                     </div>
                     <div className="flex items-center gap-4 text-sm text-text-secondary font-medium text-left">
                       <span className="flex items-center gap-1"><MapPin size={14} /> {studio.location}</span>
-                      <span className="flex items-center gap-1"><Users size={14} /> {studio.size}</span>
+                      <span className="flex items-center gap-1"><Users size={14} /> {studio.artistsHired || '0'} Artists</span>
                     </div>
                   </div>
                   
@@ -73,11 +98,11 @@ const StudioList = ({ setView }: { setView: (v: View) => void }) => {
                   </p>
                   
                   <div className="flex items-center justify-between pt-4 border-t border-gray-50 text-left">
-                    <Badge variant="outline" className="bg-brand-surface/30 border-none">{studio.type}</Badge>
+                    <Badge variant="outline" className="bg-brand-surface/30 border-none">{studio.specialty || 'VFX & Post'}</Badge>
                     <Button 
                       variant="ghost" 
                       className="text-brand-accent font-bold gap-2 p-0 hover:bg-transparent"
-                      onClick={() => navigate(`/studio/${studio.id}`)}
+                      onClick={() => navigate(`/talent/${studio.talentCode}`)}
                     >
                       View Showcase <ArrowRight size={18} />
                     </Button>

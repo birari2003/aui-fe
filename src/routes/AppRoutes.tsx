@@ -19,6 +19,8 @@ import StudioShowcase from '../views/StudioShowcase';
 import InstitutePublicProfile from '../views/InstitutePublicProfile';
 import AdminPanel from '../views/AdminPanel';
 import PendingApprovalPage from '../views/PendingApproval';
+import StudioTalentID from '../views/StudioTalentID';
+import { useParams } from 'react-router-dom';
 
 interface AppRoutesProps {
   view: View;
@@ -27,6 +29,17 @@ interface AppRoutesProps {
   setUserRole: (r: UserRole) => void;
   setIsLoggedIn: (v: boolean) => void;
 }
+
+const TalentRouter = ({ setView }: { setView: (v: View) => void }) => {
+  const { talentCode } = useParams();
+  if (talentCode?.includes('-STU-')) {
+    return <StudioTalentID />;
+  }
+  if (talentCode?.includes('-INST-')) {
+    return <InstitutePublicProfile />;
+  }
+  return <TalentIDPage setView={setView} />;
+};
 
 const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, setIsLoggedIn }) => {
   const navigate = useNavigate();
@@ -76,6 +89,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/dashboard/studio" element={<StudioProfile setView={handleSetView} />} />
       <Route path="/dashboard/institute" element={<InstituteProfile setView={handleSetView} />} />
       <Route path="/dashboard/pro" element={<ProfessionalDashboard setView={handleSetView} />} />
+      <Route path="/dashboard/pro/studio-requests" element={<ProfessionalDashboard setView={handleSetView} />} />
+      <Route path="/dashboard/pro/jobs-by-studios" element={<ProfessionalDashboard setView={handleSetView} />} />
       
       {/* Functional Lists */}
       <Route path="/hire" element={<StudioDashboard setView={handleSetView} />} />
@@ -83,9 +98,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/studios" element={<StudioList setView={handleSetView} />} />
       <Route path="/institutes" element={<InstituteList setView={handleSetView} />} />
       
-      <Route path="/talent/:id" element={<TalentIDPage setView={handleSetView} />} />
+      <Route path="/talent/:talentCode" element={<TalentRouter setView={handleSetView} />} />
       <Route path="/studio/:id" element={<StudioShowcase setView={handleSetView} />} />
-      <Route path="/institute/:id" element={<InstitutePublicProfile setView={handleSetView} />} />
       <Route path="/admin" element={<AdminPanel setView={handleSetView} />} />
       <Route path="/pending-approval" element={<PendingApprovalPage onBack={() => handleSetView('landing')} />} />
       <Route path="*" element={<Navigate to="/" replace />} />

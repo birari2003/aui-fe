@@ -276,7 +276,7 @@ const InstituteList = ({ setView }: { setView: (v: View) => void }) => {
                         <Button 
                           variant="outline" 
                           className="text-xs py-1.5 px-4"
-                          onClick={() => inst.user?.talentId?.talentCode && navigate(`/institute/${inst.user.talentId.talentCode}`)}
+                          onClick={() => inst.user?.talentId?.talentCode && navigate(`/talent/${inst.user.talentId.talentCode}`)}
                         >
                           See Profile
                         </Button>
@@ -329,7 +329,7 @@ const InstituteList = ({ setView }: { setView: (v: View) => void }) => {
                         <Button 
                           variant="ghost" 
                           className="flex-1 py-1 text-[10px] font-bold text-brand-accent hover:bg-brand-surface"
-                          onClick={() => req.institute?.user?.talentId?.talentCode && navigate(`/institute/${req.institute.user.talentId.talentCode}`)}
+                          onClick={() => req.institute?.user?.talentId?.talentCode && navigate(`/talent/${req.institute.user.talentId.talentCode}`)}
                         >
                           Profile
                         </Button>
@@ -381,7 +381,7 @@ const InstituteList = ({ setView }: { setView: (v: View) => void }) => {
                         <Button 
                           variant="ghost" 
                           className="w-full py-1 text-[10px] font-bold text-brand-accent hover:bg-brand-surface"
-                          onClick={() => req.institute?.user?.talentId?.talentCode && navigate(`/institute/${req.institute.user.talentId.talentCode}`)}
+                          onClick={() => req.institute?.user?.talentId?.talentCode && navigate(`/talent/${req.institute.user.talentId.talentCode}`)}
                         >
                           View Profile
                         </Button>

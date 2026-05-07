@@ -5,17 +5,24 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import { View } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { getMyProfile } from '../services/professionalServices';
+import { getMyProfile, getStudioJobPostings, getStudioRequests, respondToStudioRequest } from '../services/professionalServices';
 import { getMyCollaborationRequests, respondToCollaborationRequest } from '../services/collaborationServices';
 import EditProfileModal from '../components/EditProfileModal';
-import { ArrowRight, BookOpen } from 'lucide-react';
+import ManagePublicProfileModal from '../components/ManagePublicProfileModal';
+import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [profile, setProfile] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isPublicModalOpen, setIsPublicModalOpen] = React.useState(false);
   const [requests, setRequests] = React.useState<any[]>([]);
+  const [studioRequests, setStudioRequests] = React.useState<any[]>([]);
+  const [studioJobPostings, setStudioJobPostings] = React.useState<any[]>([]);
+  const [requestLoadingId, setRequestLoadingId] = React.useState<number | null>(null);
 
   const fetchDashboardData = React.useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -27,6 +34,11 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
         getMyCollaborationRequests(token)
       ]);
 
+      const [studioReqRes, studioJobRes] = await Promise.all([
+        getStudioRequests(token),
+        getStudioJobPostings(token),
+      ]);
+
       if (profRes.ok) {
         const data = await profRes.json();
         setProfile(data.data);
@@ -34,6 +46,16 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
       if (reqRes.ok) {
         const reqData = await reqRes.json();
         setRequests(reqData.data);
+      }
+
+      if (studioReqRes.ok) {
+        const studioReqData = await studioReqRes.json();
+        setStudioRequests(studioReqData.data);
+      }
+
+      if (studioJobRes.ok) {
+        const studioJobData = await studioJobRes.json();
+        setStudioJobPostings(studioJobData.data);
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -53,6 +75,23 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
     }
   };
 
+  const handleStudioRequestResponse = async (id: number, status: 'accepted' | 'rejected') => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      setRequestLoadingId(id);
+      const res = await respondToStudioRequest(token, id, { status });
+      if (res.ok) {
+        await fetchDashboardData();
+      }
+    } catch (err) {
+      console.error('Failed to respond to studio request:', err);
+    } finally {
+      setRequestLoadingId(null);
+    }
+  };
+
   React.useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
@@ -67,6 +106,11 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
   const isProfileComplete = !!profile;
   const displayName = profile?.fullName?.split(' ')[0] || 'Professional';
+  const activeSection = location.pathname.endsWith('/studio-requests')
+    ? 'studio_requests'
+    : location.pathname.endsWith('/jobs-by-studios')
+      ? 'studio_jobs'
+      : 'overview';
 
   return (
     <div className="min-h-screen bg-white no-scrollbar text-left">
@@ -75,6 +119,11 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
         onClose={() => setIsEditModalOpen(false)} 
         profile={profile} 
         onUpdate={fetchDashboardData} 
+      />
+      <ManagePublicProfileModal
+        isOpen={isPublicModalOpen}
+        onClose={() => setIsPublicModalOpen(false)}
+        onUpdate={fetchDashboardData}
       />
       
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-12 text-left">
@@ -122,12 +171,22 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
             >
               View Public Profile
             </Button>
+            <Button 
+              variant="secondary" 
+              onClick={() => setIsPublicModalOpen(true)}
+              disabled={!isProfileComplete}
+              className="px-6 border border-gray-100 hover:bg-white disabled:opacity-50 gap-2"
+            >
+              <Sparkles size={16} className="text-brand-accent" /> Manage Public Profile
+            </Button>
             <Button onClick={() => setIsEditModalOpen(true)} className="px-8 shadow-premium">
               {isProfileComplete ? 'Edit Profile' : 'Setup Profile'}
             </Button>
           </div>
         </div>
 
+        {activeSection === 'overview' && (
+          <>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
           {[
             { label: 'Experience Score', val: `${profile?.experienceScore || 0}%`, icon: TrendingUp, trend: isProfileComplete ? '+12%' : '0%', color: 'text-brand-accent' },
@@ -284,6 +343,112 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
             </div>
           </section>
         </div>
+          </>
+        )}
+
+        {activeSection === 'studio_requests' && (
+          <section className="space-y-6 text-left">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="text-2xl font-display font-bold text-brand-primary">Studio Request</h2>
+                <p className="text-sm text-text-secondary">Requests sent by studios that added you to their bench.</p>
+              </div>
+              <Badge variant="info">{studioRequests.filter((item) => item.status === 'pending').length} Pending</Badge>
+            </div>
+
+            {studioRequests.length === 0 ? (
+              <div className="p-12 bg-brand-surface/30 rounded-brand border border-dashed border-gray-200 text-center space-y-3">
+                <p className="text-sm font-bold text-brand-primary">No studio requests yet</p>
+                <p className="text-xs text-text-secondary">When studios approach you, their requests will appear here.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {studioRequests.map((request) => (
+                  <Card key={request.id} className="p-6 space-y-4 border border-gray-100 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted font-bold">{request.studio?.studioName || 'Studio'}</p>
+                        <h3 className="text-xl font-bold text-brand-primary mt-1">{request.engagementBrief}</h3>
+                      </div>
+                      <Badge variant={request.status === 'accepted' ? 'success' : request.status === 'rejected' ? 'warning' : 'info'}>
+                        {request.status}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-text-secondary">
+                      <div><span className="font-semibold text-brand-primary">Timeline:</span> {request.projectTimeline}</div>
+                      <div><span className="font-semibold text-brand-primary">Type:</span> {request.productionType}</div>
+                      <div><span className="font-semibold text-brand-primary">Budget:</span> {request.proposedBudget || 'Not shared'}</div>
+                      <div><span className="font-semibold text-brand-primary">Start:</span> {request.startDate || 'Flexible'}</div>
+                    </div>
+
+                    {request.status === 'pending' && (
+                      <div className="flex gap-3 pt-2">
+                        <Button
+                          variant="secondary"
+                          className="flex-1 text-xs uppercase tracking-[0.15em]"
+                          loading={requestLoadingId === request.id}
+                          onClick={() => handleStudioRequestResponse(request.id, 'rejected')}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          className="flex-1 text-xs uppercase tracking-[0.15em]"
+                          loading={requestLoadingId === request.id}
+                          onClick={() => handleStudioRequestResponse(request.id, 'accepted')}
+                        >
+                          Accept
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeSection === 'studio_jobs' && (
+          <section className="space-y-6 text-left">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="text-2xl font-display font-bold text-brand-primary">Jobs by Studios</h2>
+                <p className="text-sm text-text-secondary">Browse openings posted by studios.</p>
+              </div>
+              <Badge variant="info">{studioJobPostings.length} Openings</Badge>
+            </div>
+
+            {studioJobPostings.length === 0 ? (
+              <div className="p-12 bg-brand-surface/30 rounded-brand border border-dashed border-gray-200 text-center space-y-3">
+                <p className="text-sm font-bold text-brand-primary">No job postings yet</p>
+                <p className="text-xs text-text-secondary">Studio job postings will show up here when available.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {studioJobPostings.map((job) => (
+                  <Card key={job.id} className="p-6 space-y-4 border border-gray-100 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-text-muted font-bold">{job.studio?.studioName || 'Studio'}</p>
+                        <h3 className="text-xl font-bold text-brand-primary mt-1">{job.title}</h3>
+                      </div>
+                      <Badge variant={job.status === 'open' ? 'success' : 'warning'}>{job.status}</Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-text-secondary">
+                      <div><span className="font-semibold text-brand-primary">Project:</span> {job.projectType || '-'}</div>
+                      <div><span className="font-semibold text-brand-primary">Experience:</span> {job.experienceRequired || '-'}</div>
+                      <div><span className="font-semibold text-brand-primary">Artists:</span> {job.artistCount}</div>
+                      <div><span className="font-semibold text-brand-primary">Start:</span> {job.startDate || '-'}</div>
+                    </div>
+
+                    {job.description && <p className="text-sm text-text-secondary leading-relaxed">{job.description}</p>}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </main>
     </div>
   );

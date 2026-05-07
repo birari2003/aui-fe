@@ -1,291 +1,545 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { ShieldCheck, Share2, Download, TrendingUp, Shield, Briefcase, GraduationCap as GraduationCapIcon, Search, ArrowRight, CheckCircle2, Users } from 'lucide-react';
-import Button from '../components/Button';
-import Badge from '../components/Badge';
-import ShareModal from '../components/ShareModal';
-import TalentIDCard from '../components/TalentIDCard';
-import { MOCK_TALENT } from '../data/mockData';
-import { View } from '../types';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
+  ShieldCheck, 
+  Copy, 
+  Send, 
+  Bookmark, 
+  ChevronDown, 
+  ChevronUp, 
+  Play, 
+  ArrowRight,
+  UserCheck,
+  Award,
+  History,
+  Layout,
+  QrCode,
+  Star, 
+  CheckCircle2, 
+  Briefcase, 
+  History as HistoryIcon,
+  ArrowLeft
+} from 'lucide-react';
+import { getPublicProfileByCode } from '../services/publicProfileServices';
+import { getMe } from '../services/userServices';
+import { addTalentToBench, createStudioRequestProfessional } from '../services/studioServices';
+import EngagementModal from '../components/EngagementModal';
+import { View, UserRole } from '../types';
 
-import { useParams, useNavigate } from 'react-router-dom';
-import { getPublicProfile } from '../services/professionalServices';
-import { getEmbedUrl } from '../utils/videoUtils';
+const BACKEND_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+
+const getYouTubeId = (url: string) => {
+  if (!url) return 'default';
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : 'default';
+};
 
 const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [talent, setTalent] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
+  const { talentCode } = useParams<{ talentCode: string }>();
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isWorkLedgerOpen, setIsWorkLedgerOpen] = useState(true);
+  
+  const [me, setMe] = useState<any>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isEngagementModalOpen, setIsEngagementModalOpen] = useState(false);
+  const [isSubmittingEngagement, setIsSubmittingEngagement] = useState(false);
 
-  React.useEffect(() => {
-    const fetchTalent = async () => {
-      if (!id) return;
-      try {
-        const response = await getPublicProfile(id);
-        if (response.ok) {
-          const data = await response.json();
-          setTalent(data.data);
+  useEffect(() => {
+    const fetchSession = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await getMe(token);
+          if (res.ok) {
+            const data = await res.json();
+            setMe(data.data);
+            setUserRole(data.data.role);
+          }
+        } catch (err) {
+          console.error('Failed to fetch session:', err);
         }
-      } catch (err) {
-        console.error('Failed to fetch talent:', err);
-      } finally {
-        setLoading(false);
       }
     };
-    fetchTalent();
-  }, [id]);
+
+    fetchSession();
+    if (talentCode) {
+      fetchProfile();
+    }
+  }, [talentCode]);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const res = await getPublicProfileByCode(talentCode!);
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData(data.data);
+      } else {
+        setError('Profile not found');
+      }
+    } catch (err) {
+      setError('Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isOwnProfile = me?.id === profileData?.id;
+  const isStudio = userRole === 'studio';
+
+  const handleToggleBench = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !profileData?.professional?.id) return;
+    
+    try {
+      await addTalentToBench(token, profileData.professional.id);
+      // Navigate to bench section in Studio Dashboard
+      navigate('/hire');
+      // We could use a query param but StudioDashboard currently uses state
+    } catch (err) {
+      console.error('Failed to add to bench:', err);
+    }
+  };
+
+  const handleRequestEngagement = async (formData: any) => {
+    const token = localStorage.getItem('token');
+    if (!token || !profileData?.professional?.id) return;
+
+    try {
+      setIsSubmittingEngagement(true);
+      const res = await createStudioRequestProfessional(token, {
+        professionalId: profileData.professional.id,
+        ...formData
+      });
+      if (res.ok) {
+        setIsEngagementModalOpen(false);
+        // Maybe navigate to engagements tab
+        navigate('/hire');
+      }
+    } catch (err) {
+      console.error('Failed to request engagement:', err);
+    } finally {
+      setIsSubmittingEngagement(false);
+    }
+  };
+
+  const colors = {
+    primary: '#2563EB',
+    primaryHover: '#1D4ED8',
+    surface: '#F8F9FB',
+    card: '#FFFFFF',
+    text: '#111827',
+    muted: '#6B7280',
+    accent: '#EFF6FF',
+    dark: '#1E1B4B'
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-12">
-        <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#F8F9FB] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  if (!talent) {
+  if (error || !profileData) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-12 text-center space-y-6">
-        <h2 className="text-2xl font-display font-bold text-brand-primary">Talent Not Found</h2>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      <div className="min-h-screen bg-[#F8F9FB] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-gray-800">{error || 'Profile not found'}</h2>
+          <p className="text-gray-500">The Talent ID you are looking for does not exist or is inactive.</p>
+        </div>
       </div>
     );
   }
 
-  const shareUrl = `${window.location.origin}/talent/${id}`;
-  const shareMessage = `I’m a verified professional on AUI (Production Talent Network).\n\nTalent ID: ${id}\nRole: ${talent.primarySkill}\n\nView my verified profile: ${shareUrl}`;
+  const getFileUrl = (path: string) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return `${BACKEND_URL}/${path.replace(/\\/g, '/')}`;
+  };
+
+  const { professional, publicProfile, talentId } = profileData;
+  const displayName = professional?.fullName || 'Professional';
+  const avatarUrl = publicProfile?.profileImage ? getFileUrl(publicProfile.profileImage) : (professional?.avatarUrl || '/assets/sarah_chen_profile_1777487447512.png');
+  const displayTalentId = talentId?.talentCode || 'AUI-000000';
+  
+  const insight = publicProfile?.auiInsight || 'Senior creative professional with a proven track record in high-impact projects. Consistently delivers exceptional results and excels in collaborative environments.';
+  const timeline = publicProfile?.experienceTimeline || [];
+  const showreel = publicProfile?.showreel || { type: 'youtube', url: 'https://youtube.com', title: 'Professional Showreel', duration: '02:30' };
+  const workLedger = publicProfile?.workLedger || [];
 
   return (
-    <div className="min-h-screen bg-white no-scrollbar text-left">
-      <ShareModal 
-        isOpen={isShareModalOpen} 
-        onClose={() => setIsShareModalOpen(false)} 
-        title="Share Talent ID"
-        subtitle="Share your verified professional identity with studios and institutes."
-        shareUrl={shareUrl}
-        shareMessage={shareMessage}
-      >
-        <TalentIDCard talent={talent} />
-      </ShareModal>
-      <main className="no-scrollbar pb-32">
-        {/* Back Button Sub-header */}
-        <div className="max-w-7xl mx-auto px-6 pt-8 text-left">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="flex items-center gap-2 text-text-muted hover:text-brand-primary transition-premium text-xs font-bold uppercase tracking-widest"
-          >
-            <ArrowRight size={14} className="rotate-180" />
-            Back to Talent Discovery
-          </button>
-        </div>
-        {/* Profile Header */}
-        <section className="bg-brand-surface py-20 border-b border-gray-100 text-left">
-          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row gap-12 items-center md:items-start text-left">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative"
+    <div className="min-h-screen bg-[#F8F9FB] text-[#111827] font-sans pb-8">
+      {/* Top Header */}
+      <header className="bg-white border-b border-[#E5E7EB] sticky top-0 z-50">
+        <div className="max-w-[1100px] mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => navigate(-1)}
+              className="p-1.5 hover:bg-gray-100 rounded-lg text-[#6B7280] transition-colors"
+              title="Go Back"
             >
-                <img src={talent.avatarUrl || 'https://picsum.photos/seed/placeholder/200/200'} className="w-48 h-48 rounded-brand object-cover shadow-premium" alt="" />
-              <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-brand-accent rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                <ShieldCheck size={24} className="text-white" />
+              <ArrowLeft size={20} />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-[#111827] rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">⚡</span>
               </div>
-            </motion.div>
-            
-            <div className="flex-1 space-y-6 text-center md:text-left">
-              <div className="space-y-2">
-                <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                  <Badge variant="success" className="px-3 py-1">Available Now</Badge>
-                  <Badge variant="info" className="px-3 py-1">Verified Professional</Badge>
-                </div>
-                <h1 className="text-5xl font-display font-bold tracking-tight text-brand-primary">{talent.fullName}</h1>
-                <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-text-secondary font-medium">
-                  <span className="text-brand-accent font-bold uppercase tracking-widest text-xs">{id}</span>
-                  <span>•</span>
-                  <span>{talent.primarySkill}</span>
-                  <span>•</span>
-                  <span>{talent.experienceYears}y Experience</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Button variant="secondary" onClick={() => setIsShareModalOpen(true)} className="px-8 py-3 border border-gray-100 hover:bg-brand-surface">
-                <Share2 size={18} />
-                Share Talent ID
-              </Button>
-              <Button 
-                variant="secondary" 
-                className="px-8 py-3"
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Talent ID: ${id}\nName: ${talent.fullName}\nRole: ${talent.primarySkill}\nExperience: ${talent.experienceYears}y`);
-                  link.download = `TalentID_${id}.txt`;
-                  link.click();
-                }}
-              >
-                <Download size={18} />
-                Download Talent ID
-              </Button>
+              <span className="font-bold text-lg tracking-tight">AUI <span className="text-[#6B7280] font-normal text-base uppercase tracking-widest ml-1">Studio</span></span>
             </div>
           </div>
-        </section>
-
-        <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-3 gap-16 text-left">
-          {/* Left Column: Details */}
-          <div className="lg:col-span-2 space-y-20 text-left">
-            {/* Confidence Score Section */}
-            <section className="space-y-8 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Confidence Scores</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                {[
-                  { label: 'Experience Score', val: talent.experienceScore, icon: TrendingUp, color: 'text-brand-accent' },
-                  { label: 'Reliability Score', val: talent.reliabilityScore, icon: Shield, color: 'text-emerald-500' },
-                  { label: 'Project Count', val: talent.projectCount, icon: Briefcase, color: 'text-brand-primary' },
-                ].map(s => (
-                  <div key={s.label} className="p-8 bg-brand-surface rounded-brand border border-gray-50 text-center space-y-4">
-                    <div className={`w-12 h-12 mx-auto rounded-xl bg-white flex items-center justify-center shadow-sm ${s.color}`}>
-                      <s.icon size={24} />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-3xl font-bold text-brand-primary">{s.val}{s.label.includes('Score') ? '%' : ''}</p>
-                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{s.label}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Showreel Section */}
-            <section className="space-y-8 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Showreel</h3>
-              <div className="aspect-video bg-brand-surface rounded-brand overflow-hidden border border-gray-100 shadow-premium relative text-left">
-                <iframe 
-                  src={getEmbedUrl(talent.showreelUrl)} 
-                  className="w-full h-full border-none" 
-                  title="Showreel"
-                  allowFullScreen
-                />
-              </div>
-            </section>
-
-            {/* Responsibility Scope */}
-            <section className="space-y-8 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Responsibility Scope</h3>
-              <div className="p-10 bg-brand-surface rounded-brand border border-gray-50 text-left">
-                <p className="text-brand-primary text-lg leading-relaxed font-medium">{talent.responsibilityScope}</p>
-              </div>
-            </section>
-
-            {/* Work Ledger (Responsive View) */}
-            <section className="space-y-8 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Work Ledger</h3>
-              
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto text-left">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-left">
-                      <th className="py-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">Project Name</th>
-                      <th className="py-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">Studio / Institute</th>
-                      <th className="py-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">Role</th>
-                      <th className="py-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">Duration</th>
-                      <th className="py-4 text-[10px] font-bold uppercase tracking-widest text-text-muted">Completion Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {talent.workLedgers?.map((entry: any) => (
-                      <tr key={entry.id} className="border-b border-gray-50 hover:bg-brand-surface transition-premium group text-left">
-                        <td className="py-6 font-bold text-brand-primary">{entry.projectName}</td>
-                        <td className="py-6 text-text-secondary">{entry.organizationType === 'studio' ? 'Studio' : 'Institute'}</td>
-                        <td className="py-6 text-text-secondary">{entry.role}</td>
-                        <td className="py-6 text-text-secondary">{entry.duration}</td>
-                        <td className="py-6 text-text-secondary">{entry.completionDate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-4">
-                {talent.workLedgers?.map((entry: any) => (
-                  <div key={entry.id} className="p-6 bg-brand-surface rounded-2xl border border-gray-100 space-y-4 shadow-sm">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Project</p>
-                        <h4 className="text-lg font-bold text-brand-primary">{entry.projectName}</h4>
-                      </div>
-                      <Badge variant="info" className="text-[9px] px-2 py-0.5">{entry.duration}</Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100/50">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Type</p>
-                        <p className="text-sm font-medium text-text-secondary">{entry.organizationType === 'studio' ? 'Studio' : 'Institute'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Role</p>
-                        <p className="text-sm font-medium text-text-secondary">{entry.role}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Date</p>
-                        <p className="text-sm font-medium text-text-secondary">{entry.completionDate}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+          
+          <div className="flex items-center gap-6">
+            <div className="text-xs font-medium">
+              <span className="text-[#6B7280]">Talent ID</span> <span className="text-[#2563EB] font-bold">{displayTalentId}</span>
+            </div>
+            {!isOwnProfile && isStudio && (
+              <>
+                <button 
+                  onClick={() => setIsEngagementModalOpen(true)}
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all"
+                >
+                  Request Engagement <Send size={14} />
+                </button>
+                <button 
+                  onClick={handleToggleBench}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg text-[#6B7280]"
+                >
+                  <Bookmark size={18} />
+                </button>
+              </>
+            )}
           </div>
-
-          {/* Right Column: Timeline & Work */}
-          <aside className="space-y-16 text-left">
-            {/* Career Timeline */}
-            <section className="space-y-8 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Career Timeline</h3>
-              <div className="flex items-center justify-between relative py-12 px-2 text-left">
-                <div className="absolute left-0 right-0 h-1 bg-brand-surface border border-gray-100/50 top-1/2 -translate-y-1/2 rounded-full text-left" />
-                {[
-                  { label: 'Junior', active: true },
-                  { label: 'Mid', active: true },
-                  { label: 'Senior', active: true },
-                  { label: 'Lead', active: false },
-                ].map((step, i) => (
-                  <div key={step.label} className="relative z-10 flex flex-col items-center gap-3 text-left">
-                    <div className={`w-6 h-6 rounded-full border-4 border-white shadow-md ${step.active ? 'bg-brand-accent scale-110' : 'bg-gray-200'} transition-transform text-left`} />
-                    <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] ${step.active ? 'text-brand-primary' : 'text-text-muted'} text-left`}>{step.label}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-6 text-left">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted border-b border-gray-100 pb-4 text-left">Mentorship & Industry Work</h3>
-              <div className="space-y-4 text-left">
-                {[
-                  { label: 'Workshops Conducted', val: talent.workshopsConducted || 0, icon: GraduationCapIcon },
-                  { label: 'Mentorship Sessions', val: talent.mentorshipSessions || 0, icon: Users },
-                  { label: 'Portfolio Reviews', val: talent.portfolioReviews || 0, icon: Search },
-                ].map(item => (
-                  <div key={item.label} className="p-6 flex items-center justify-between hover:bg-brand-surface transition-colors border-none bg-brand-surface/30 rounded-3xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-primary shadow-sm">
-                        <item.icon size={18} />
-                      </div>
-                      <span className="text-sm font-bold text-brand-primary">{item.label}</span>
-                    </div>
-                    <span className="text-2xl font-display font-bold text-brand-primary">{item.val}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </aside>
         </div>
+      </header>
+
+      <main className="max-w-[1100px] mx-auto px-6 pt-5 space-y-5">
+        {/* Profile Card Section */}
+        <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col md:flex-row min-h-[400px]">
+          {/* Left Column: Vertical Image */}
+          <div className="w-full md:w-[320px] relative shrink-0">
+            <img 
+              src={avatarUrl} 
+              alt={displayName} 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20"></div>
+            
+            {/* Reviewing Badge */}
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#374151]">
+              Verified
+            </div>
+
+            {/* Star Icon */}
+            <div className="absolute top-4 right-4 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md">
+              <div className="w-7 h-7 bg-[#2563EB] rounded-full flex items-center justify-center text-white">
+                <Star size={14} fill="white" />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Info */}
+          <div className="flex-1 p-6 flex flex-col space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-[#6B7280] font-bold text-[10px] uppercase tracking-widest">
+                  <ShieldCheck size={14} className="text-[#94A3B8]" />
+                  AUI Verified Talent
+                </div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-bold tracking-tight">{displayName}</h1>
+                  <CheckCircle2 size={20} className="text-[#94A3B8]" />
+                </div>
+              </div>
+              <div className="bg-[#1E1B4B] text-white px-4 py-2.5 rounded-xl flex flex-col items-center justify-center leading-tight">
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{professional?.position || 'Mid'}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Level</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[0.2em]">Talent ID</div>
+              <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-2xl p-3 flex items-center justify-center">
+                <span className="text-3xl font-bold tracking-[0.3em] text-[#0F172A] font-mono uppercase">{displayTalentId}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 py-2 border-b border-[#F1F5F9]">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
+                   <Star size={12} />
+                   Experience Level
+                </div>
+                <div className="text-sm font-bold">{professional?.experienceYears || '0'}+ Years</div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
+                   <Briefcase size={12} />
+                   Production Types
+                </div>
+                <div className="text-sm font-bold">{professional?.productionType || 'Feature Film'} • {professional?.primarySkill || 'Artist'}</div>
+              </div>
+            </div>
+
+            <div className="bg-[#EFF6FF] rounded-xl p-3.5 flex items-center gap-4">
+              <div className="w-2.5 h-2.5 bg-[#2563EB] rounded-full"></div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#2563EB]">Industry Experienced</span>
+                <span className="text-xs text-[#64748B]">Proven track record</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
+               <div className="flex items-center gap-1.5"><ShieldCheck size={14} /> Identity Verified</div>
+               <div className="flex items-center gap-1.5"><Briefcase size={14} /> Work Verified</div>
+               <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Trusted by AUI</div>
+            </div>
+
+            {!isOwnProfile && isStudio && (
+              <div className="flex gap-3 mt-auto pt-4">
+                <button 
+                  onClick={() => setIsEngagementModalOpen(true)}
+                  className="flex-1 bg-black hover:bg-gray-900 text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition-all"
+                >
+                  Request Engagement
+                </button>
+                <button 
+                  onClick={handleToggleBench}
+                  className="w-14 bg-[#2563EB] hover:bg-[#1D4ED8] text-white flex items-center justify-center rounded-xl transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)]"
+                >
+                  <Bookmark size={20} fill="white" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Insight & Timeline Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* AUI Insight */}
+          <div className="bg-white p-5 rounded-[24px] border border-[#E5E7EB] space-y-3 relative overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center text-white">
+                  <span className="font-bold text-sm">✨</span>
+                </div>
+                <h3 className="font-bold text-lg">AUI Insight</h3>
+              </div>
+            </div>
+            <div className="relative">
+              <span className="absolute -left-1 -top-1 text-2xl text-[#E5E7EB] font-serif italic">“</span>
+              <p className="text-[#374151] text-sm leading-relaxed font-medium pl-5">
+                {insight}
+              </p>
+            </div>
+          </div>
+
+          {/* Experience Timeline */}
+          <div className="bg-white p-5 rounded-[24px] border border-[#E5E7EB] space-y-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <History className="text-[#111827]" size={20} />
+              <h3 className="font-bold text-lg">Experience Timeline</h3>
+            </div>
+            
+            <div className="space-y-3 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-[#F1F5F9]">
+              {timeline.length > 0 ? timeline.map((item: any, index: number) => (
+                <div key={index} className="flex gap-4 relative">
+                  <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm shrink-0 z-10 mt-1 ${index === 0 ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]'}`}></div>
+                  <div className="space-y-0">
+                    <div className="text-[9px] font-bold text-[#2563EB] uppercase">{item.date}</div>
+                    <div className="text-sm font-bold text-[#111827]">{item.role}</div>
+                    <div className="text-[11px] text-[#6B7280]">{item.company}</div>
+                  </div>
+                </div>
+              )) : (
+                <p className="text-xs text-gray-400 pl-6 italic">No timeline entries provided.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Showreel Section */}
+        <div className="bg-white p-5 rounded-[24px] border border-[#E5E7EB] space-y-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center text-white">
+              <Play size={16} fill="white" />
+            </div>
+            <h3 className="font-bold text-lg">Showreel</h3>
+          </div>
+          
+          <div 
+            className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium"
+          >
+            {showreel.type === 'youtube' ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${getYouTubeId(showreel.url)}?autoplay=0`}
+                title={showreel.title}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <video 
+                src={getFileUrl(showreel.url)} 
+                controls 
+                className="w-full h-full object-contain"
+                poster={'/assets/showreel_thumbnail_1777487470036.png'}
+              />
+            )}
+            <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
+              <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
+              <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Work Ledger Section */}
+        <div className="bg-white p-6 rounded-[24px] border border-[#E5E7EB] space-y-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 flex items-center justify-center text-[#111827]">
+                <Briefcase size={20} />
+              </div>
+              <h3 className="font-bold text-xl">Work Ledger</h3>
+            </div>
+            <button className="text-[#2563EB] text-sm font-bold flex items-center gap-1 hover:underline">
+              View All Projects <ArrowRight size={16} />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {workLedger.length > 0 ? workLedger.map((project: any, idx: number) => (
+              <div key={idx} className="border border-[#F1F5F9] rounded-[20px] overflow-hidden">
+                <div 
+                  className="p-5 flex items-center gap-6 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
+                  onClick={() => setIsWorkLedgerOpen(idx === 0 ? !isWorkLedgerOpen : true)}
+                >
+                  <div className="w-[180px] h-[180px] md:h-auto md:aspect-square bg-gray-900 rounded-xl overflow-hidden shrink-0">
+                    <img 
+                      src={publicProfile?.workLedgerImage ? getFileUrl(publicProfile.workLedgerImage) : (project.shotSamples?.length > 0 ? getFileUrl(project.shotSamples[0]) : '/assets/superhero_team_thumbnail_1777487519840.png')} 
+                      alt={project.projectName} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 self-start pt-2">
+                    <div className="flex justify-between items-start w-full">
+                      <div className="space-y-1">
+                        <h4 className="text-xl font-bold">{project.projectName}</h4>
+                        <div className="text-[#64748B] text-sm font-medium">{project.role}  •  {project.year}  •  {project.type}</div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="bg-[#DCFCE7] text-[#166534] px-4 py-1.5 rounded-full text-xs font-bold">{project.status}</span>
+                        {(idx === 0 && isWorkLedgerOpen) ? <ChevronUp size={20} className="text-[#94A3B8]" /> : <ChevronDown size={20} className="text-[#94A3B8]" />}
+                      </div>
+                    </div>
+
+                    {(idx === 0 && isWorkLedgerOpen) && (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 pt-6 border-t border-[#F1F5F9]">
+                        <div className="space-y-3">
+                          <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Contribution</div>
+                          <ul className="space-y-2 text-[11px] text-[#374151] font-medium leading-relaxed">
+                            {project.contribution?.split('\n').map((line: string, i: number) => (
+                               <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Scope</div>
+                          <ul className="space-y-2 text-[11px] text-[#374151] font-medium leading-relaxed">
+                            {project.scope?.split('\n').map((line: string, i: number) => (
+                               <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="space-y-3 relative">
+                          <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Shot Samples</div>
+                          <div className="flex flex-wrap gap-2">
+                            {(publicProfile?.workLedgerImage ? project.shotSamples : project.shotSamples?.slice(1))?.slice(0, 3).map((sample: string, i: number) => (
+                              <div key={i} className="w-[70px] h-[50px] bg-gray-200 rounded-lg overflow-hidden border border-[#F1F5F9] shadow-sm">
+                                 <img 
+                                  src={getFileUrl(sample)} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              </div>
+                            ))}
+                            {(!project.shotSamples || project.shotSamples.length <= 1) && (
+                              <p className="text-[10px] text-[#64748B] italic">No additional samples.</p>
+                            )}
+                          </div>
+                          <div className="absolute -bottom-2 right-0">
+                            <button className="text-[10px] font-bold text-[#2563EB] flex items-center gap-1 hover:underline">
+                              View Shot Samples <ArrowRight size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )) : (
+              <div className="p-12 text-center bg-brand-surface/30 rounded-3xl border border-dashed border-gray-200">
+                <p className="text-sm text-text-muted font-medium">No projects showcase available yet.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer Verification Bar */}
+        <div className="bg-[#EFF6FF]/40 p-5 rounded-[24px] border border-[#E5E7EB] flex flex-wrap items-center justify-between gap-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-[#2563EB] shadow-sm border border-[#E5E7EB]">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs uppercase tracking-tight">AUI Verified Talent</h4>
+              <p className="text-[9px] text-[#6B7280] font-medium leading-tight">Verified by AUI Studio. Trusted Worldwide.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-6">
+            {[
+              { label: 'Identity', icon: UserCheck },
+              { label: 'Experience', icon: Award },
+              { label: 'Background', icon: ShieldCheck },
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <div className="w-7 h-7 bg-[#2563EB] rounded-full flex items-center justify-center text-white">
+                  <item.icon size={14} />
+                </div>
+                <span className="text-[7px] font-bold uppercase tracking-widest">{item.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 pl-5 border-l border-gray-200">
+            <div className="w-10 h-10 bg-white p-1 rounded-lg border border-[#E5E7EB]">
+              <QrCode className="w-full h-full text-[#111827]" />
+            </div>
+            <div className="text-[7px] font-bold uppercase tracking-wider leading-tight">
+              Scan to verify
+            </div>
+          </div>
+        </div>
+
+        <EngagementModal
+          isOpen={isEngagementModalOpen}
+          onClose={() => setIsEngagementModalOpen(false)}
+          onSubmit={handleRequestEngagement}
+          professionalName={displayName}
+          loading={isSubmittingEngagement}
+        />
       </main>
     </div>
   );
 };
 
 export default TalentIDPage;
+
+
+

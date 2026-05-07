@@ -4,6 +4,8 @@ import WorkspaceLayout from './components/WorkspaceLayout';
 import AppRoutes from './routes/AppRoutes';
 import { View, UserRole } from './types';
 import { BrowserRouter } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { getMe } from './services/userServices';
 
@@ -80,6 +82,7 @@ function App() {
           setUserRole={setUserRole} 
           setIsLoggedIn={setIsLoggedIn} 
         />
+        <ToastContainer position="bottom-right" theme="dark" />
       </WorkspaceLayout>
     </BrowserRouter>
   );
