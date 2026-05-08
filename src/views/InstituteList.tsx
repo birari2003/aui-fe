@@ -9,11 +9,11 @@ import { searchInstitutes } from '../services/searchServices';
 import { sendCollaborationRequest, getMyCollaborationRequests, respondToCollaborationRequest } from '../services/collaborationServices';
 import { createProfessionalSpecialRequest, getMySpecialRequests } from '../services/specialRequestServices';
 import { getMyProfile } from '../services/professionalServices';
-import { View } from '../types';
+import { UserRole, View } from '../types';
 
 import Input from '../components/Input';
 
-const InstituteList = ({ setView }: { setView: (v: View) => void }) => {
+const InstituteList = ({ setView, userRole }: { setView: (v: View) => void, userRole: UserRole | null }) => {
   const navigate = useNavigate();
   const [institutes, setInstitutes] = React.useState<any[]>([]);
   const [requests, setRequests] = React.useState<any[]>([]);
@@ -85,7 +85,7 @@ const InstituteList = ({ setView }: { setView: (v: View) => void }) => {
 
   const fetchProfile = React.useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token || userRole !== 'professional') return;
     try {
       const res = await getMyProfile(token);
       if (res.ok) {

@@ -96,7 +96,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/hire" element={<StudioDashboard setView={handleSetView} />} />
       <Route path="/experts" element={<InstituteDashboard setView={handleSetView} />} />
       <Route path="/studios" element={<StudioList setView={handleSetView} />} />
-      <Route path="/institutes" element={<InstituteList setView={handleSetView} />} />
+      <Route path="/institutes" element={<InstituteList setView={handleSetView} userRole={userRole} />} />
       
       <Route path="/talent/:talentCode" element={<TalentRouter setView={handleSetView} />} />
       <Route path="/studio/:id" element={<StudioShowcase setView={handleSetView} />} />

@@ -16,6 +16,8 @@ const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
   const [isStudioInfoModalOpen, setIsStudioInfoModalOpen] = React.useState(false);
   const [studioProfile, setStudioProfile] = React.useState<any>(null);
 
+  console.log("DEBUG: Modal states - Manage:", isManageModalOpen, "Info:", isStudioInfoModalOpen);
+
   React.useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
@@ -55,24 +57,38 @@ const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
             <p className="text-text-secondary text-left">Manage your studio profile and hiring activity.</p>
           </div>
           <div className="flex gap-3 text-left">
-            <Button variant="secondary" onClick={() => setIsManageModalOpen(true)}>Manage Public Profile</Button>
             <Button variant="secondary" onClick={() => {
+              console.log("DEBUG: Manage Public Profile button clicked");
+              setIsManageModalOpen(true);
+            }}>Manage Public Profile</Button>
+            <Button variant="secondary" onClick={() => {
+              console.log("DEBUG: View Public Page button clicked", studioProfile?.talentCode);
               if (studioProfile?.talentCode) {
                 navigate(`/talent/${studioProfile.talentCode}`);
               } else {
                 alert('Please manage your public profile first to generate your ID.');
               }
             }}>View Public Page</Button>
-            <Button onClick={() => setIsStudioInfoModalOpen(true)}>Edit Studio Info</Button>
+            <Button onClick={() => {
+              console.log("DEBUG: Edit Studio Info button clicked");
+              setIsStudioInfoModalOpen(true);
+            }}>Edit Studio Info</Button>
+        
           </div>
         </div>
-        
+
         {isManageModalOpen && (
-          <ManageStudioProfileModal onClose={() => setIsManageModalOpen(false)} />
+          <ManageStudioProfileModal onClose={() => {
+            console.log("DEBUG: Closing Manage Modal");
+            setIsManageModalOpen(false);
+          }} />
         )}
 
         {isStudioInfoModalOpen && (
-          <ManageStudioInfoModal onClose={() => setIsStudioInfoModalOpen(false)} />
+          <ManageStudioInfoModal onClose={() => {
+            console.log("DEBUG: Closing Info Modal");
+            setIsStudioInfoModalOpen(false);
+          }} />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
