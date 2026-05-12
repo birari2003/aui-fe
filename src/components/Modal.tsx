@@ -9,8 +9,9 @@ interface ModalProps {
   title: string;
   message: React.ReactNode;
   type?: 'info' | 'success' | 'warning' | 'error';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   showFooter?: boolean;
+  className?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({ 
@@ -20,7 +21,8 @@ const Modal: React.FC<ModalProps> = ({
   message, 
   type = 'info', 
   size = 'md',
-  showFooter = true 
+  showFooter = true,
+  className = ''
 }) => {
   const icons = {
     info: <Info className="text-blue-500" size={32} />,
@@ -41,6 +43,8 @@ const Modal: React.FC<ModalProps> = ({
     md: 'max-w-md',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
+    '2xl': 'max-w-6xl',
+    '3xl': 'max-w-7xl',
   };
 
   return (
@@ -60,16 +64,18 @@ const Modal: React.FC<ModalProps> = ({
               <X size={20} />
             </button>
 
-            <div className="p-6 sm:p-8 md:p-10 pt-10 sm:pt-12 overflow-y-auto custom-scrollbar flex-1">
-              <div className="text-center space-y-4 sm:space-y-6 mb-6 sm:mb-8">
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 ${bgColors[type]} rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-2`}>
-                  {icons[type]}
+            <div className={`p-6 sm:p-8 md:p-10 pt-10 sm:pt-12 overflow-y-auto custom-scrollbar flex-1 ${className}`}>
+              {title && (
+                <div className="text-center space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+                  <div className={`w-14 h-14 sm:w-16 sm:h-16 ${bgColors[type]} rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-2`}>
+                    {icons[type]}
+                  </div>
+                  
+                  <div className="space-y-1 sm:space-y-2">
+                    <h3 className="text-xl sm:text-2xl font-bold text-brand-primary">{title}</h3>
+                  </div>
                 </div>
-                
-                <div className="space-y-1 sm:space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-brand-primary">{title}</h3>
-                </div>
-              </div>
+              )}
 
               <div className="text-left">
                 {message}

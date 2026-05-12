@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { View, UserRole } from '../types';
 
 // Views
@@ -43,6 +43,20 @@ const TalentRouter = ({ setView }: { setView: (v: View) => void }) => {
 
 const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, setIsLoggedIn }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith('/talent/')) setView('talent_id');
+    else if (path === '/experts') setView('experts');
+    else if (path === '/hire') setView('hire');
+    else if (path === '/studios') setView('studio_list');
+    else if (path === '/institutes') setView('institute_list');
+    else if (path === '/dashboard/studio') setView('dashboard_studio');
+    else if (path === '/dashboard/institute') setView('dashboard_institute');
+    else if (path === '/dashboard/pro') setView('dashboard_pro');
+    else if (path === '/admin') setView('admin');
+  }, [location.pathname, setView]);
 
   // Helper to sync legacy state-based setView with URL-based navigate
   const handleSetView = (v: View) => {
@@ -55,9 +69,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       case 'dashboard_studio': navigate('/dashboard/studio'); break;
       case 'dashboard_institute': navigate('/dashboard/institute'); break;
       case 'dashboard_pro': navigate('/dashboard/pro'); break;
-      case 'talent_id': navigate('/talent/AUI-000123'); break; // Mock ID
-      case 'showcase_studio': navigate('/studio/STU-001'); break; // Mock ID
-      case 'showcase_institute': navigate('/institute/INS-001'); break; // Mock ID
+      case 'talent_id': break; 
+      case 'showcase_studio': break; 
+      case 'showcase_institute': break; 
       case 'admin': navigate('/admin'); break;
       case 'pending_approval': navigate('/pending-approval'); break;
       case 'hire': navigate('/hire'); break;

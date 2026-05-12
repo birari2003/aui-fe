@@ -56,6 +56,9 @@ export const API_ENDPOINTS = {
     GET_ALL: `${BASE_URL}/api/special-requests`,
     GET_MY: `${BASE_URL}/api/special-requests/my`,
     UPDATE_STATUS: (id: number) => `${BASE_URL}/api/special-requests/${id}/status`,
+  },
+  NEXUS: {
+    BASE: `${BASE_URL}/api/nexus`,
   }
 };
 
