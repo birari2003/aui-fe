@@ -27,7 +27,7 @@ import EngagementModal from '../components/EngagementModal';
 import { View, UserRole } from '../types';
 import { BASE_URL } from '../utils/urls';
 
-const BACKEND_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || BASE_URL;
+const BACKEND_URL = BASE_URL;
 
 const getYouTubeId = (url: string) => {
   if (!url) return 'default';

@@ -1,7 +1,9 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_ENDPOINTS } from '../utils/urls';
+
+const API_URL = API_ENDPOINTS.INSTITUTE.WORKSHOPS;
 
 export const fetchAllWorkshops = async () => {
-  return fetch(`${API_URL}/institute-workshops`, {
+  return fetch(`${API_URL}`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
@@ -9,7 +11,7 @@ export const fetchAllWorkshops = async () => {
 };
 
 export const createInstituteWorkshop = async (data: any) => {
-  return fetch(`${API_URL}/institute-workshops`, {
+  return fetch(`${API_URL}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -20,7 +22,7 @@ export const createInstituteWorkshop = async (data: any) => {
 };
 
 export const updateInstituteWorkshop = async (id: number, data: any) => {
-  return fetch(`${API_URL}/institute-workshops/${id}`, {
+  return fetch(`${API_URL}/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -31,7 +33,7 @@ export const updateInstituteWorkshop = async (id: number, data: any) => {
 };
 
 export const deleteInstituteWorkshop = async (id: number) => {
-  return fetch(`${API_URL}/institute-workshops/${id}`, {
+  return fetch(`${API_URL}/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,

@@ -1,7 +1,9 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_ENDPOINTS } from '../utils/urls';
+
+const API_URL = API_ENDPOINTS.WORKSHOP_REQUESTS.BASE;
 
 export const createWorkshopRequest = async (data: any) => {
-  return fetch(`${API_URL}/workshop-requests`, {
+  return fetch(`${API_URL}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -12,7 +14,7 @@ export const createWorkshopRequest = async (data: any) => {
 };
 
 export const getMyWorkshopRequests = async () => {
-  return fetch(`${API_URL}/workshop-requests/my-requests`, {
+  return fetch(API_ENDPOINTS.WORKSHOP_REQUESTS.MY_REQUESTS, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
@@ -20,7 +22,7 @@ export const getMyWorkshopRequests = async () => {
 };
 
 export const getAllWorkshopRequests = async () => {
-  return fetch(`${API_URL}/workshop-requests/all`, {
+  return fetch(API_ENDPOINTS.WORKSHOP_REQUESTS.ALL, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
@@ -28,7 +30,7 @@ export const getAllWorkshopRequests = async () => {
 };
 
 export const updateWorkshopRequestStatus = async (id: number, status: string) => {
-  return fetch(`${API_URL}/workshop-requests/${id}/status`, {
+  return fetch(API_ENDPOINTS.WORKSHOP_REQUESTS.STATUS(id), {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

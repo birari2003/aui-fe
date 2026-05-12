@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
     GET_PROFILE: `${BASE_URL}/api/institutes/profile`,
     UPDATE_PROFILE: `${BASE_URL}/api/institutes/profile`,
     PUBLIC_PROFILE: (talentCode: string) => `${BASE_URL}/api/institutes/profile/public/${talentCode}`,
+    WORKSHOPS: `${BASE_URL}/api/institute-workshops`,
   },
   SEARCH: {
     PROFESSIONALS: `${BASE_URL}/api/search/professionals`,
@@ -56,6 +57,17 @@ export const API_ENDPOINTS = {
     GET_ALL: `${BASE_URL}/api/special-requests`,
     GET_MY: `${BASE_URL}/api/special-requests/my`,
     UPDATE_STATUS: (id: number) => `${BASE_URL}/api/special-requests/${id}/status`,
+  },
+  WORKSHOP_REQUESTS: {
+    BASE: `${BASE_URL}/api/workshop-requests`,
+    MY_REQUESTS: `${BASE_URL}/api/workshop-requests/my-requests`,
+    ALL: `${BASE_URL}/api/workshop-requests/all`,
+    STATUS: (id: number) => `${BASE_URL}/api/workshop-requests/${id}/status`,
+  },
+  ADMIN_EXTRA: {
+    USERS: `${BASE_URL}/api/admin/users`,
+    USER_STATUS: (userId: number) => `${BASE_URL}/api/admin/users/${userId}/status`,
+    ANALYTICS: `${BASE_URL}/api/admin/analytics`,
   },
   NEXUS: {
     BASE: `${BASE_URL}/api/nexus`,

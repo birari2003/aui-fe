@@ -1,4 +1,4 @@
-import { BASE_URL } from '../utils/urls';
+import { API_ENDPOINTS } from '../utils/urls';
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
@@ -13,7 +13,7 @@ export const fetchAdminUsers = async (filters: { role?: string; status?: string 
   if (filters.role && filters.role !== 'all') queryParams.append('role', filters.role);
   if (filters.status && filters.status !== 'all') queryParams.append('status', filters.status);
 
-  const adminUsersUrl = `${BASE_URL}/api/admin/users?${queryParams.toString()}`;
+  const adminUsersUrl = `${API_ENDPOINTS.ADMIN_EXTRA.USERS}?${queryParams.toString()}`;
 
   const response = await fetch(adminUsersUrl, {
     headers: getHeaders(),
@@ -22,7 +22,7 @@ export const fetchAdminUsers = async (filters: { role?: string; status?: string 
 };
 
 export const updateUserStatus = async (userId: number, status: 'approved' | 'rejected' | 'pending') => {
-  const response = await fetch(`${BASE_URL}/api/admin/users/${userId}/status`, {
+  const response = await fetch(API_ENDPOINTS.ADMIN_EXTRA.USER_STATUS(userId), {
     method: 'PATCH',
     headers: getHeaders(),
     body: JSON.stringify({ status }),
@@ -31,7 +31,7 @@ export const updateUserStatus = async (userId: number, status: 'approved' | 'rej
 };
 
 export const fetchAnalytics = async () => {
-  const response = await fetch(`${BASE_URL}/api/admin/analytics`, {
+  const response = await fetch(API_ENDPOINTS.ADMIN_EXTRA.ANALYTICS, {
     headers: getHeaders(),
   });
   return response;
