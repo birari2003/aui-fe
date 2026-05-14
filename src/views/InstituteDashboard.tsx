@@ -372,7 +372,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
               <span className="text-xl font-bold tracking-tighter text-brand-primary leading-none">INHUB</span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-brand-purple mt-1">CONNECT WITH INDUSTRY</span>
             </div>
-            
+
             <div className="w-[1px] h-8 bg-gray-100 mx-4" />
 
             <nav className="flex items-center gap-8">
@@ -384,13 +384,12 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveSubTab(tab.id as any)}
-                  className={`relative py-5 text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                    activeSubTab === tab.id ? 'text-brand-purple' : 'text-brand-primary/30 hover:text-brand-primary'
-                  }`}
+                  className={`relative py-5 text-[11px] font-bold uppercase tracking-widest transition-colors ${activeSubTab === tab.id ? 'text-brand-purple' : 'text-brand-primary/30 hover:text-brand-primary'
+                    }`}
                 >
                   {tab.label}
                   {activeSubTab === tab.id && (
-                    <motion.div 
+                    <motion.div
                       layoutId="sub-nav-underline"
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-purple rounded-full"
                     />
@@ -400,7 +399,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
             </nav>
           </div>
 
-          <button 
+          <button
             onClick={() => {
               const talentCode = profile?.user?.talentId?.talentCode;
               if (talentCode) {
@@ -422,7 +421,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
             <section className="bg-white pt-20 pb-24 relative overflow-hidden">
               <div className="max-w-7xl mx-auto px-6 relative z-10">
                 <div className="flex flex-col items-center text-center space-y-8">
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-purple/5 border border-brand-purple/10 rounded-full"
@@ -445,7 +444,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     </p>
                   </motion.div>
 
-                  <motion.h1 
+                  <motion.h1
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -454,7 +453,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     Architecting the <span className="text-brand-purple">Future of Learning</span>
                   </motion.h1>
 
-                  <motion.p 
+                  <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
@@ -487,11 +486,10 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
                       onClick={() => setSelectedModel(model.id)}
-                      className={`group relative p-10 rounded-[40px] border-2 transition-all duration-500 cursor-pointer shadow-sm hover:shadow-2xl hover:-translate-y-2 ${
-                        selectedModel === model.id 
-                          ? 'border-brand-purple bg-white ring-8 ring-brand-purple/5' 
+                      className={`group relative p-10 rounded-[40px] border-2 transition-all duration-500 cursor-pointer shadow-sm hover:shadow-2xl hover:-translate-y-2 ${selectedModel === model.id
+                          ? 'border-brand-purple bg-white ring-8 ring-brand-purple/5'
                           : 'border-gray-100 bg-white hover:border-brand-purple/30'
-                      }`}
+                        }`}
                     >
                       {selectedModel === model.id && (
                         <div className="absolute top-6 right-6 w-6 h-6 bg-brand-purple rounded-full flex items-center justify-center text-white">
@@ -500,9 +498,8 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       )}
 
                       <div className="space-y-8">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-500 ${
-                          selectedModel === model.id ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/20' : 'bg-gray-50 text-brand-primary/40 group-hover:bg-brand-purple/10 group-hover:text-brand-purple'
-                        }`}>
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-500 ${selectedModel === model.id ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/20' : 'bg-gray-50 text-brand-primary/40 group-hover:bg-brand-purple/10 group-hover:text-brand-purple'
+                          }`}>
                           <model.icon size={28} />
                         </div>
 
@@ -548,38 +545,40 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   <div className="flex p-2 bg-gray-50 rounded-2xl w-full md:w-auto">
                     <button
                       onClick={() => setBookMode('classes')}
-                      className={`flex-1 md:flex-none px-12 py-4 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${
-                        bookMode === 'classes' ? 'bg-brand-primary text-white shadow-xl' : 'text-brand-primary/40 hover:text-brand-primary'
-                      }`}
+                      className={`flex-1 md:flex-none px-12 py-4 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${bookMode === 'classes' ? 'bg-brand-primary text-white shadow-xl' : 'text-brand-primary/40 hover:text-brand-primary'
+                        }`}
                     >
                       Industry Expert Classes
                     </button>
                     <button
                       onClick={() => setBookMode('search')}
-                      className={`flex-1 md:flex-none px-12 py-4 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${
-                        bookMode === 'search' ? 'bg-brand-primary text-white shadow-xl' : 'text-brand-primary/40 hover:text-brand-primary'
-                      }`}
+                      className={`flex-1 md:flex-none px-12 py-4 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${bookMode === 'search' ? 'bg-brand-primary text-white shadow-xl' : 'text-brand-primary/40 hover:text-brand-primary'
+                        }`}
                     >
                       Direct Expert Search
                     </button>
                   </div>
 
-                  <div className="flex flex-col md:flex-row items-center gap-8 w-full md:w-auto">
-                    <div className="text-right hidden lg:block">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30">STEP 02: CHOOSE DEPARTMENT</p>
+                  {bookMode === 'classes' && (
+                    <div className="flex flex-col md:flex-row items-center gap-8 w-full md:w-auto">
+                      <div className="text-right hidden lg:block">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30">STEP 02: CHOOSE DEPARTMENT</p>
+                      </div>
+                      <div className="relative w-full md:w-64">
+                        <select className="w-full appearance-none bg-white border border-gray-200 rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-all outline-none">
+                          <option>All</option>
+                          <option>Character Animation</option>
+                          <option>Modeling</option>
+                          <option>Rigging</option>
+                          <option>Lighting</option>
+                          <option>FX</option>
+                        </select>
+                        <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-primary/30 pointer-events-none" size={16} />
+                      </div>
                     </div>
-                    <div className="relative w-full md:w-64">
-                      <select className="w-full appearance-none bg-white border border-gray-200 rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple transition-all outline-none">
-                        <option>Select Department</option>
-                        <option>Animation</option>
-                        <option>VFX</option>
-                        <option>Game Design</option>
-                      </select>
-                      <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-primary/30 pointer-events-none" size={16} />
-                    </div>
-                  </div>
+                  )}
                 </div>
-                
+
                 {/* ... existing content views ... */}
                 <div className="space-y-16">
                   {bookMode === 'classes' ? (
@@ -593,7 +592,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {(dynamicWorkshops.length > 0 
+                        {(dynamicWorkshops.length > 0
                           ? dynamicWorkshops.filter(w => w.modelType === selectedModel)
                           : staticWorkshops
                         ).map((workshop, i) => (
@@ -643,17 +642,16 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                                 <p className="text-lg font-bold text-brand-primary">{workshop.rate}</p>
                               </div>
                               {facilitationRequests.find(r => r.workshopId === workshop.id) ? (
-                                <div className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest border ${
-                                  facilitationRequests.find(r => r.workshopId === workshop.id).status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                  facilitationRequests.find(r => r.workshopId === workshop.id).status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                                  'bg-amber-50 text-amber-600 border-amber-100'
-                                }`}>
-                                  {facilitationRequests.find(r => r.workshopId === workshop.id).status === 'approved' ? <CheckCircle2 size={12} /> : 
-                                   facilitationRequests.find(r => r.workshopId === workshop.id).status === 'rejected' ? <XCircle size={12} /> : <Clock size={12} />}
+                                <div className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest border ${facilitationRequests.find(r => r.workshopId === workshop.id).status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                    facilitationRequests.find(r => r.workshopId === workshop.id).status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                      'bg-amber-50 text-amber-600 border-amber-100'
+                                  }`}>
+                                  {facilitationRequests.find(r => r.workshopId === workshop.id).status === 'approved' ? <CheckCircle2 size={12} /> :
+                                    facilitationRequests.find(r => r.workshopId === workshop.id).status === 'rejected' ? <XCircle size={12} /> : <Clock size={12} />}
                                   {facilitationRequests.find(r => r.workshopId === workshop.id).status}
                                 </div>
                               ) : (
-                                <Button 
+                                <Button
                                   onClick={() => {
                                     setSelectedWorkshopForFacilitation(workshop);
                                     setIsFacilitationModalOpen(true);
@@ -671,22 +669,25 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   ) : (
                     <div className="space-y-12">
                       {/* New Filter Bar for Search */}
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white rounded-[40px] p-10 shadow-premium border border-gray-100 max-w-5xl mx-auto"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
                           <div className="space-y-3">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">MANUAL SEARCH NEED</label>
+                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">Choose Department</label>
                             <select className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 transition-all outline-none">
                               <option>All</option>
                               <option>Character Animation</option>
-                              <option>VFX Supervisor</option>
+                              <option>Modeling</option>
+                              <option>Rigging</option>
+                              <option>Lighting</option>
+                              <option>FX</option>
                             </select>
                           </div>
                           <div className="space-y-3">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">DESIRED DATE</label>
+                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">DATE</label>
                             <div className="relative">
                               <input type="text" placeholder="Select Date" className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary placeholder:text-brand-primary/20 outline-none" />
                               <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-primary/30" size={16} />
@@ -747,13 +748,13 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                                 </div>
 
                                 <div className="flex gap-4 pt-4">
-                                  <Link 
+                                  <Link
                                     to={`/talent/${prof.user?.talentId?.talentCode || prof.talentId?.talentCode || 'AUI-PRO-001'}`}
                                     className="flex-1 py-4 px-6 bg-gray-50 hover:bg-gray-100 text-brand-primary text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all text-center no-underline"
                                   >
                                     VIEW PROFILE
                                   </Link>
-                                  <button 
+                                  <button
                                     onClick={() => setBookingExpert(expert)}
                                     className="flex-1 py-4 px-6 bg-brand-primary hover:bg-brand-purple text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl shadow-lg shadow-brand-primary/10 transition-all"
                                   >
@@ -824,12 +825,11 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                         <td className="px-10 py-8 font-bold text-brand-primary">{request.preferredMonth}</td>
                         <td className="px-10 py-8 text-text-secondary">{request.studentCount} Students</td>
                         <td className="px-10 py-8">
-                          <div className={`flex items-center gap-2 font-bold text-[10px] tracking-widest ${
-                            request.status === 'approved' ? 'text-emerald-500' : 
-                            request.status === 'rejected' ? 'text-red-500' : 'text-amber-500'
-                          }`}>
-                            {request.status === 'approved' ? <CheckCircle2 size={14} /> : 
-                             request.status === 'rejected' ? <X size={14} /> : <Clock size={14} />} 
+                          <div className={`flex items-center gap-2 font-bold text-[10px] tracking-widest ${request.status === 'approved' ? 'text-emerald-500' :
+                              request.status === 'rejected' ? 'text-red-500' : 'text-amber-500'
+                            }`}>
+                            {request.status === 'approved' ? <CheckCircle2 size={14} /> :
+                              request.status === 'rejected' ? <X size={14} /> : <Clock size={14} />}
                             {request.status.toUpperCase()}
                           </div>
                         </td>
@@ -913,7 +913,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     Exclusive opportunities and recently onboarded hall-of-fame veterans pushed strictly to partner institutes.
                   </p>
                 </div>
-                
+
                 <div className="flex items-center gap-3 px-6 py-3 bg-gray-50 rounded-full border border-gray-100">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-brand-primary/40">LIVE PULSE: 17:33</span>
@@ -941,7 +941,14 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                           </div>
                           <p className="text-sm text-text-secondary leading-relaxed">{opp.description}</p>
                         </div>
-                        <Button className="w-full py-4 rounded-2xl bg-brand-primary hover:bg-brand-purple text-white text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-primary/10 transition-all duration-300">
+                        <Button
+                          onClick={() => setBookingExpert({
+                            id: opp.id,
+                            name: opp.title,
+                            role: opp.tag || 'NEXUS OPPORTUNITY'
+                          })}
+                          className="w-full py-4 rounded-2xl bg-brand-primary hover:bg-brand-purple text-white text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-primary/10 transition-all duration-300"
+                        >
                           SECURE SEAT VIA AUI
                         </Button>
                       </div>
@@ -975,7 +982,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       <div key={idx} className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 group">
                         <div className="relative mb-8">
                           <img src={expert.image} className="w-full aspect-square rounded-[32px] object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="" />
-                          <button 
+                          <button
                             onClick={() => {
                               const talentCode = prof.user?.talentId?.talentCode;
                               if (talentCode) navigate(`/talent/${talentCode}`);
@@ -991,7 +998,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                           <h4 className="text-xl font-bold text-brand-primary">{expert.name}</h4>
                           <p className="text-sm text-text-secondary">{expert.role}</p>
                           <div className="pt-6">
-                            <Button 
+                            <Button
                               onClick={() => setBookingExpert(expert)}
                               className="w-full py-4 rounded-xl bg-brand-primary hover:bg-brand-purple text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-brand-primary/10 transition-all duration-300"
                             >
@@ -1026,7 +1033,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-purple text-white rounded-md">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em]">THE AUI EDGE</span>
                   </div>
-                  
+
                   <div className="space-y-6">
                     <h2 className="text-5xl font-display font-bold text-brand-primary leading-tight">
                       Zero Friction.<br />
@@ -1056,7 +1063,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 </div>
 
                 <div className="relative">
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-white rounded-[40px] p-10 shadow-2xl border border-gray-100 max-w-sm mx-auto relative z-10"
@@ -1096,10 +1103,9 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
         </section>
 
         {/* Collaboration Requests Section */}
-        <section className="bg-white py-12 border-b border-gray-100">
+        {/* <section className="bg-white py-12 border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-6 space-y-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* My Special Requests (Sent to Admin) */}
               <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4 text-left">
                   <div className="text-left">
@@ -1116,13 +1122,12 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     .filter(r => r.senderRole === 'institute')
                     .sort((a, b) => new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime())
                     .map((req) => (
-                      <Card 
-                        key={`sent-${req.id}`} 
-                        className={`p-5 space-y-4 border-l-4 shadow-premium bg-white transition-premium hover:-translate-y-1 ${
-                          req.status === 'closed' ? 'border-l-emerald-500' : 
-                          req.status === 'rejected' ? 'border-l-red-500' : 
-                          req.status === 'contacted' ? 'border-l-brand-accent' : 'border-l-gray-300'
-                        }`}
+                      <Card
+                        key={`sent-${req.id}`}
+                        className={`p-5 space-y-4 border-l-4 shadow-premium bg-white transition-premium hover:-translate-y-1 ${req.status === 'closed' ? 'border-l-emerald-500' :
+                            req.status === 'rejected' ? 'border-l-red-500' :
+                              req.status === 'contacted' ? 'border-l-brand-accent' : 'border-l-gray-300'
+                          }`}
                       >
                         <div className="flex justify-between items-start text-left">
                           <div className="flex gap-3 items-center text-left">
@@ -1141,8 +1146,8 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                               </p>
                             </div>
                           </div>
-                          <Badge 
-                            variant={req.status === 'closed' ? 'success' : req.status === 'rejected' ? 'warning' : 'info'} 
+                          <Badge
+                            variant={req.status === 'closed' ? 'success' : req.status === 'rejected' ? 'warning' : 'info'}
                             className="text-[10px] py-1 px-3 uppercase tracking-wider"
                           >
                             {req.status}
@@ -1167,7 +1172,6 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 </div>
               </section>
 
-              {/* Recommendations from Admin (Received) */}
               <section className="space-y-6">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4 text-left">
                   <div className="text-left">
@@ -1184,8 +1188,8 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     .filter(r => r.senderRole === 'admin')
                     .sort((a, b) => new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime())
                     .map((req) => (
-                      <Card 
-                        key={`rec-${req.id}`} 
+                      <Card
+                        key={`rec-${req.id}`}
                         className="p-5 space-y-4 border-l-4 border-l-brand-accent shadow-premium bg-white transition-premium hover:-translate-y-1"
                       >
                         <div className="flex justify-between items-start text-left">
@@ -1214,17 +1218,17 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                           <p className="text-[10px] font-bold text-brand-primary mb-1 uppercase tracking-wider flex items-center gap-1">
                             Portfolio:
                           </p>
-                          <a 
-                            href={req.professionalPublicUrl?.startsWith('http') 
-                              ? req.professionalPublicUrl 
+                          <a
+                            href={req.professionalPublicUrl?.startsWith('http')
+                              ? req.professionalPublicUrl
                               : req.professionalPublicUrl?.includes('/')
                                 ? `${window.location.origin}/${req.professionalPublicUrl}`
-                                : `https://${req.professionalPublicUrl}`} 
-                            target="_blank" 
-                            rel="noreferrer" 
+                                : `https://${req.professionalPublicUrl}`}
+                            target="_blank"
+                            rel="noreferrer"
                             className="text-xs font-bold text-brand-accent hover:underline flex items-center gap-1"
                           >
-                             View Link <ArrowRight size={12} />
+                            View Link <ArrowRight size={12} />
                           </a>
                         </div>
                       </Card>
@@ -1236,11 +1240,11 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   )}
                 </div>
               </section>
-
             </div>
           </div>
-    
-</section>
+        </section> */}
+
+
       </main>
 
       {/* New Booking Modal: Facilitate Expert Session */}
@@ -1253,8 +1257,8 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden text-left flex flex-col md:flex-row relative"
             >
-              <button 
-                onClick={() => setBookingExpert(null)} 
+              <button
+                onClick={() => setBookingExpert(null)}
                 className="absolute top-8 right-8 p-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors z-20"
               >
                 <X size={20} className="text-brand-primary/40" />
@@ -1292,7 +1296,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">STUDENT COUNT</label>
-                    <select 
+                    <select
                       value={bookingForm.studentCount}
                       onChange={(e) => setBookingForm(prev => ({ ...prev, studentCount: e.target.value }))}
                       className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 transition-all outline-none"
@@ -1305,7 +1309,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">PREFERRED MONTH</label>
-                    <select 
+                    <select
                       value={bookingForm.preferredMonth}
                       onChange={(e) => setBookingForm(prev => ({ ...prev, preferredMonth: e.target.value }))}
                       className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 transition-all outline-none"
@@ -1320,30 +1324,30 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">LEAD CONTACT PERSON</label>
-                    <input 
-                      type="text" 
-                      placeholder="Name of Dean or HOD" 
+                    <input
+                      type="text"
+                      placeholder="Name of Dean or HOD"
                       value={bookingForm.contactPerson}
                       onChange={(e) => setBookingForm(prev => ({ ...prev, contactPerson: e.target.value }))}
-                      className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary placeholder:text-brand-primary/10 outline-none focus:ring-2 focus:ring-brand-purple/20 transition-all" 
+                      className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary placeholder:text-brand-primary/10 outline-none focus:ring-2 focus:ring-brand-purple/20 transition-all"
                     />
                   </div>
 
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">OFFICIAL EMAIL ADDRESS</label>
-                    <input 
-                      type="email" 
-                      placeholder="inst-dept@university.edu" 
+                    <input
+                      type="email"
+                      placeholder="inst-dept@university.edu"
                       value={bookingForm.email}
                       onChange={(e) => setBookingForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary placeholder:text-brand-primary/10 outline-none focus:ring-2 focus:ring-brand-purple/20 transition-all" 
+                      className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary placeholder:text-brand-primary/10 outline-none focus:ring-2 focus:ring-brand-purple/20 transition-all"
                     />
                   </div>
 
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">SPECIAL REQUIREMENTS</label>
-                    <textarea 
-                      placeholder="e.g. Needs to focus specifically on bipedal walking 2D vs 3D..." 
+                    <textarea
+                      placeholder="e.g. Needs to focus specifically on bipedal walking 2D vs 3D..."
                       value={bookingForm.specialRequirements}
                       onChange={(e) => setBookingForm(prev => ({ ...prev, specialRequirements: e.target.value }))}
                       className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary placeholder:text-brand-primary/10 outline-none focus:ring-2 focus:ring-brand-purple/20 transition-all min-h-[120px] resize-none"
@@ -1351,7 +1355,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   </div>
                 </div>
 
-                <Button 
+                <Button
                   onClick={handleBookRequest}
                   className="w-full py-6 rounded-3xl bg-brand-primary hover:bg-brand-purple text-xs font-bold uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/20 transition-all duration-300 transform active:scale-95"
                 >
@@ -1488,10 +1492,10 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest ml-2">STUDENT COUNT</label>
-                  <select 
+                  <select
                     className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 transition-all outline-none appearance-none"
                     value={facilitationForm.studentCount}
-                    onChange={(e) => setFacilitationForm({...facilitationForm, studentCount: e.target.value})}
+                    onChange={(e) => setFacilitationForm({ ...facilitationForm, studentCount: e.target.value })}
                   >
                     <option>10-20</option>
                     <option>20-50</option>
@@ -1501,10 +1505,10 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest ml-2">PREFERRED MONTH</label>
-                  <select 
+                  <select
                     className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 transition-all outline-none appearance-none"
                     value={facilitationForm.preferredMonth}
-                    onChange={(e) => setFacilitationForm({...facilitationForm, preferredMonth: e.target.value})}
+                    onChange={(e) => setFacilitationForm({ ...facilitationForm, preferredMonth: e.target.value })}
                   >
                     <option>June 2026</option>
                     <option>July 2026</option>
@@ -1516,35 +1520,35 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
               <div className="space-y-2">
                 <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest ml-2">LEAD CONTACT PERSON</label>
-                <Input 
+                <Input
                   placeholder="Name of Dean or HOD"
                   value={facilitationForm.contactPerson}
-                  onChange={(e) => setFacilitationForm({...facilitationForm, contactPerson: e.target.value})}
+                  onChange={(e) => setFacilitationForm({ ...facilitationForm, contactPerson: e.target.value })}
                   className="!py-4"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest ml-2">OFFICIAL EMAIL ADDRESS</label>
-                <Input 
+                <Input
                   placeholder="inst-dept@university.edu"
                   value={facilitationForm.email}
-                  onChange={(e) => setFacilitationForm({...facilitationForm, email: e.target.value})}
+                  onChange={(e) => setFacilitationForm({ ...facilitationForm, email: e.target.value })}
                   className="!py-4"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest ml-2">SPECIAL REQUIREMENTS</label>
-                <textarea 
+                <textarea
                   className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 text-sm font-medium text-brand-primary focus:ring-2 focus:ring-brand-purple/20 transition-all outline-none min-h-[120px] resize-none"
                   placeholder="e.g. Needs to focus specifically on bipedal walking 2D vs 3D..."
                   value={facilitationForm.specialRequirements}
-                  onChange={(e) => setFacilitationForm({...facilitationForm, specialRequirements: e.target.value})}
+                  onChange={(e) => setFacilitationForm({ ...facilitationForm, specialRequirements: e.target.value })}
                 />
               </div>
 
-              <Button 
+              <Button
                 onClick={handleFacilitationSubmit}
                 isLoading={isSubmittingFacilitation}
                 className="w-full py-5 rounded-2xl bg-brand-primary hover:bg-brand-purple text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-primary/10 transition-all"
