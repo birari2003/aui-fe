@@ -158,12 +158,12 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
   ];
 
   const staticExperts = [
-    { id: '1', name: 'Alex Rivera', role: 'Lead Character Designer', verified: '98%', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200' },
-    { id: '2', name: 'Sarah Chen', role: 'VFX Supervisor', verified: '94%', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200' },
-    { id: '3', name: 'Marcus Thorne', role: 'Senior Animator', verified: '99%', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200' },
-    { id: '4', name: 'James Wilson', role: 'Lighting Lead', verified: '92%', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200' },
-    { id: '5', name: 'Elena Rossi', role: 'Art Director', verified: '96%', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200' },
-    { id: '6', name: 'David Wu', role: 'Pipeline Engineer', verified: '95%', image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200' }
+    { id: '1', name: 'Alex Rivera', role: 'Lead Character Designer', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200' },
+    { id: '2', name: 'Sarah Chen', role: 'VFX Supervisor', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200' },
+    { id: '3', name: 'Marcus Thorne', role: 'Senior Animator', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200' },
+    { id: '4', name: 'James Wilson', role: 'Lighting Lead', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200' },
+    { id: '5', name: 'Elena Rossi', role: 'Art Director', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200' },
+    { id: '6', name: 'David Wu', role: 'Pipeline Engineer', image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200' }
   ];
 
   const fetchDashboardData = async (query: any = {}) => {
@@ -697,8 +697,9 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                             <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/30 ml-2">SERVICE FORMAT</label>
                             <select className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-brand-primary focus:ring-2 focus:ring-brand-purple/20 transition-all outline-none">
                               <option>Select Type</option>
-                              <option>Full Semester</option>
-                              <option>One-off Workshop</option>
+                              <option>Intense Workshop</option>
+                              <option>Direct Mentorship</option>
+                              <option>Portfolio Review</option>
                             </select>
                           </div>
                           <Button className="w-full py-4 rounded-2xl bg-brand-primary hover:bg-brand-purple text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-brand-primary/10 transition-all duration-300">

@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import QRCode from 'react-qr-code';
 import { searchProfessionals } from '../services/searchServices';
 import {
   addTalentToBench,
@@ -377,86 +378,92 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
             <div className="flex flex-col justify-between px-4 py-4 md:px-5 md:py-4 bg-[#f7f7f8]">
               <div className="space-y-3.5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#55617a]">
-                      <ShieldCheck size={13} className="text-[#5f6d88]" />
-                      AUI Verified Talent
+                <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#55617a]">
+                        <ShieldCheck size={13} className="text-[#5f6d88]" />
+                        AUI Verified Talent
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 min-w-0">
+                        <h3 className="truncate text-[19px] md:text-[21px] font-semibold leading-[0.95] tracking-[-0.03em] text-[#1a1f28]">
+                          {talent.displayName}
+                        </h3>
+                        <BadgeCheck size={16} className="shrink-0 text-[#7d848e]" />
+                      </div>
                     </div>
-                    <div className="mt-2 flex items-center gap-2 min-w-0">
-                      <h3 className="truncate text-[19px] md:text-[21px] font-semibold leading-[0.95] tracking-[-0.03em] text-[#1a1f28]">
-                        {talent.displayName}
-                      </h3>
-                      <BadgeCheck size={16} className="shrink-0 text-[#7d848e]" />
+
+                    <div className={`min-w-[62px] rounded-[10px] px-2.5 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.08em] shadow-sm ${level.className}`}>
+                      <div>{level.label}</div>
+                      <div className="mt-0.5 text-[10px] font-medium tracking-[0.12em] opacity-90">Level</div>
                     </div>
                   </div>
 
-                  <div className={`min-w-[62px] rounded-[10px] px-2.5 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.08em] shadow-sm ${level.className}`}>
-                    <div>{level.label}</div>
-                    <div className="mt-0.5 text-[10px] font-medium tracking-[0.12em] opacity-90">Level</div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-[#4f46e5] bg-[#eeebff] px-3 py-1.5 rounded-full w-fit border border-[#4f46e5]/10">
+                    <Users size={12} />
+                    Benched by {talent.savedByStudios?.length || 0} Studios
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-[10px] font-bold text-[#4f46e5] bg-[#eeebff] px-3 py-1.5 rounded-full w-fit border border-[#4f46e5]/10">
-                  <Users size={12} />
-                  Benched by {talent.savedByStudios?.length || 0} Studios
                 </div>
 
                 <div>
                   <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#8b9099]">Talent ID</div>
-                  <div className="mt-1.5 rounded-[10px] border border-[#d9dce2] bg-[#fbfbfc] px-3.5 py-2.5">
-                    <div className="font-mono text-[20px] md:text-[24px] font-semibold leading-[0.95] tracking-[0.18em] text-[#1d2a44]">
+                  <div className="mt-1.5 flex items-center justify-between rounded-[10px] border border-[#d9dce2] bg-[#fbfbfc] px-3.5 py-2.5">
+                    <div className="font-mono text-[20px] md:text-[24px] font-bold leading-[0.95] tracking-[0.18em] bg-gradient-to-r from-[#18224e] to-[#4f46e5] bg-clip-text text-transparent">
                       {talent.talentCode}
                     </div>
+                    <BadgeCheck className="text-[#4f46e5] shrink-0" size={20} />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 border-b border-[#e5e7eb] pb-3.5 sm:grid-cols-2 sm:gap-0 sm:pb-4">
-                  <div className="sm:pr-4">
-                    <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
-                      <ShieldCheck size={11} /> Experience Level
-                    </div>
-                    <div className="mt-1 text-[13px] font-medium text-[#1d2532] capitalize">
-                      {talent.level}
-                    </div>
-                  </div>
-                  <div className="sm:border-l sm:border-[#e5e7eb] sm:pl-4">
-                    <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
-                      <Briefcase size={11} /> Production Types
-                    </div>
-                    <div className="mt-1 text-[13px] font-medium text-[#1d2532]">
-                      {productionLabel} • {roleLabel}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`rounded-[10px] px-4 py-3 ${highlight.className}`}>
-                  <div className="flex items-start gap-3">
-                    <span className={`mt-1 h-3 w-3 rounded-full ${highlight.dotClassName}`} />
-                    <div className="min-w-0">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
-                        {highlight.title}
+                <div>
+                  <div className="grid grid-cols-1 gap-3 border-b border-[#e5e7eb] pb-2.5 sm:grid-cols-2 sm:gap-0 sm:pb-2.5">
+                    <div className="sm:pr-4">
+                      <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
+                        <ShieldCheck size={11} /> Experience Level
                       </div>
-                      <div className="mt-1 text-[11px] leading-snug opacity-80">
-                        {highlight.subtitle}
+                      <div className="mt-1 text-[13px] font-medium text-[#1d2532] capitalize">
+                        {talent.level}
+                      </div>
+                    </div>
+                    <div className="sm:border-l sm:border-[#e5e7eb] sm:pl-4">
+                      <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
+                        <Briefcase size={11} /> Production Types
+                      </div>
+                      <div className="mt-1 text-[13px] font-medium text-[#1d2532]">
+                        {productionLabel} • {roleLabel}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`mt-2.5 rounded-[10px] px-4 py-3 ${highlight.className}`}>
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-1 h-3 w-3 rounded-full ${highlight.dotClassName}`} />
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
+                          {highlight.title}
+                        </div>
+                        <div className="mt-1 text-[11px] leading-snug opacity-80">
+                          {highlight.subtitle}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 text-[#6f7580]">
-                <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
-                  <ShieldCheck size={13} className="text-[#6d7480]" />
-                  Identity Verified
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 text-[#6f7580]">
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
+                    <ShieldCheck size={13} className="text-[#6d7480]" />
+                    Identity Verified
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
+                    <Briefcase size={13} className="text-[#6d7480]" />
+                    Work Verified
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
-                  <Briefcase size={13} className="text-[#6d7480]" />
-                  Work Verified
-                </div>
-                <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
-                  <BadgeCheck size={13} className="text-[#6d7480]" />
-                  Trusted by AUI
+                <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#E5E7EB] flex shrink-0 items-center justify-center self-start sm:self-auto shadow-sm">
+                  <QRCode value={`${window.location.origin}/talent/${talent.talentCode}`} size={56} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                 </div>
               </div>
 

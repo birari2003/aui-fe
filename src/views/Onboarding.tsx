@@ -47,8 +47,20 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
         { label: 'Phone Number', type: 'tel', placeholder: '+1 234 567 890' },
         { label: 'Years of Experience', type: 'number', placeholder: 'Enter years' }, 
         { label: 'Experience Level', type: 'text', readOnly: true, valueKey: 'Level' },
-        { label: 'Primary Specialization', type: 'select', options: ['Select Specialization', 'Animation', 'Lighting', 'FX', 'Layout', 'Compositing'] },
-        { label: 'Current Position', type: 'select', options: ['Select Position', 'Artist', 'Lead', 'Supervisor', 'Director', 'Other'] }
+        { label: 'Primary Specialization', type: 'select', options: ['Select Specialization', 'Animation', 'Lighting', 'FX', 'Layout', 'Compositing', 'Other'] },
+        { 
+          label: 'Custom Specialization', 
+          type: 'text', 
+          placeholder: 'Enter your specialization',
+          condition: (data: any) => data['Primary Specialization'] === 'Other'
+        },
+        { label: 'Current Position', type: 'select', options: ['Select Position', 'Artist', 'Lead', 'Supervisor', 'Director', 'Other'] },
+        { 
+          label: 'Custom Position', 
+          type: 'text', 
+          placeholder: 'Enter your position',
+          condition: (data: any) => data['Current Position'] === 'Other'
+        }
       ] 
     },
     { 
@@ -174,8 +186,8 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
         profileData = {
           fullName,
           experienceYears: Number(formData['Years of Experience']),
-          primarySkill: formData['Primary Specialization'],
-          position: formData['Current Position']?.toLowerCase(),
+          primarySkill: formData['Primary Specialization'] === 'Other' ? formData['Custom Specialization'] : formData['Primary Specialization'],
+          position: (formData['Current Position'] === 'Other' ? formData['Custom Position'] : formData['Current Position'])?.toLowerCase(),
           productionType: (formData['Industry Sector'] === 'Film' ? 'film' : 
                           formData['Industry Sector'] === 'TV' ? 'tv' : 
                           formData['Industry Sector'] === 'Web' ? 'web' : 

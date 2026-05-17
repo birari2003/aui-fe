@@ -14,12 +14,23 @@ import {
   History,
   Layout,
   QrCode,
-  Star, 
-  CheckCircle2, 
-  Briefcase, 
-  History as HistoryIcon,
-  ArrowLeft
+  ArrowLeft,
+  Share2,
+  Download as DownloadIcon,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Mail,
+  Link as LinkIcon,
+  MessageCircle,
+  Code,
+  Star,
+  CheckCircle2,
+  Briefcase
 } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import Modal from '../components/Modal';
+import QRCode from 'react-qr-code';
 import { getPublicProfileByCode } from '../services/publicProfileServices';
 import { getMe } from '../services/userServices';
 import { addTalentToBench, createStudioRequestProfessional } from '../services/studioServices';
@@ -47,7 +58,10 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const [me, setMe] = useState<any>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isEngagementModalOpen, setIsEngagementModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isSubmittingEngagement, setIsSubmittingEngagement] = useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -139,6 +153,8 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
     dark: '#1E1B4B'
   };
 
+
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8F9FB] flex items-center justify-center">
@@ -174,6 +190,67 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const showreel = publicProfile?.showreel || { type: 'youtube', url: 'https://youtube.com', title: 'Professional Showreel', duration: '02:30' };
   const workLedger = Array.isArray(publicProfile?.workLedger) ? publicProfile.workLedger : [];
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    // Check if it's mobile and navigator.share is available
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile && navigator.share) {
+      try {
+        await navigator.share({
+          title: `AUI Talent - ${displayName}`,
+          text: `Check out ${displayName}'s professional portfolio on AUI.`,
+          url: url,
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    } else {
+      setIsShareModalOpen(true);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const shareOptions = [
+    { name: 'WhatsApp', icon: MessageCircle, color: '#25D366', url: `https://wa.me/?text=${encodeURIComponent(`Check out ${displayName}'s portfolio: `)}${encodeURIComponent(window.location.href)}` },
+    { name: 'Facebook', icon: Facebook, color: '#1877F2', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}` },
+    { name: 'X', icon: Twitter, color: '#000000', url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${displayName}'s portfolio: `)}&url=${encodeURIComponent(window.location.href)}` },
+    { name: 'LinkedIn', icon: Linkedin, color: '#0A66C2', url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}` },
+    { name: 'Email', icon: Mail, color: '#EA4335', url: `mailto:?subject=${encodeURIComponent(`AUI Talent Portfolio: ${displayName}`)}&body=${encodeURIComponent(`Check out this professional portfolio on AUI: ${window.location.href}`)}` },
+    { name: 'Embed', icon: Code, color: '#6B7280', onClick: () => alert('Embed code copied to clipboard!') },
+  ];
+
+  const handleDownload = async () => {
+    if (cardRef.current === null) return;
+    
+    try {
+      const dataUrl = await toPng(cardRef.current, { 
+        cacheBust: true,
+        backgroundColor: '#F8F9FB', // Match the background
+        style: {
+          borderRadius: '24px'
+        }
+      });
+      const link = document.createElement('a');
+      link.download = `TalentID-${displayTalentId}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Error downloading:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F9FB] text-[#111827] font-sans pb-8">
       {/* Top Header */}
@@ -195,10 +272,21 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="text-xs font-medium">
-              <span className="text-[#6B7280]">Talent ID</span> <span className="text-[#2563EB] font-bold">{displayTalentId}</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleShare}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-xl text-xs font-bold text-[#111827] border border-[#E5E7EB] transition-all"
+            >
+              <Share2 size={14} className="text-[#2563EB]" />
+              Share Talent ID
+            </button>
+            <button 
+              onClick={handleDownload}
+              className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+            >
+              <DownloadIcon size={14} />
+              Download Talent ID
+            </button>
             {!isOwnProfile && isStudio && (
               <>
                 <button 
@@ -221,7 +309,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
       <main className="max-w-[1100px] mx-auto px-6 pt-5 space-y-5">
         {/* Profile Card Section */}
-        <div className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col md:flex-row min-h-[400px]">
+        <div ref={cardRef} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col md:flex-row min-h-[400px]">
           {/* Left Column: Vertical Image */}
           <div className="w-full md:w-[320px] relative shrink-0">
             <img 
@@ -519,8 +607,8 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           </div>
 
           <div className="flex items-center gap-2 pl-5 border-l border-gray-200">
-            <div className="w-10 h-10 bg-white p-1 rounded-lg border border-[#E5E7EB]">
-              <QrCode className="w-full h-full text-[#111827]" />
+            <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#E5E7EB] flex items-center justify-center">
+              <QRCode value={window.location.href} size={64} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
             </div>
             <div className="text-[7px] font-bold uppercase tracking-wider leading-tight">
               Scan to verify
@@ -536,6 +624,60 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           loading={isSubmittingEngagement}
         />
       </main>
+
+      {/* Share Modal */}
+      <Modal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title="Share"
+        showFooter={false}
+        className="!p-0"
+        message={
+          <div className="p-8 space-y-8">
+            <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-2">
+              {shareOptions.map((option) => (
+                <a
+                  key={option.name}
+                  href={option.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => {
+                    if (option.onClick) {
+                      e.preventDefault();
+                      option.onClick();
+                    }
+                  }}
+                  className="flex flex-col items-center gap-3 min-w-[70px] group transition-transform hover:-translate-y-1"
+                >
+                  <div 
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all group-hover:shadow-xl"
+                    style={{ backgroundColor: option.color }}
+                  >
+                    <option.icon size={24} />
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{option.name}</span>
+                </a>
+              ))}
+            </div>
+
+            <div className="relative">
+              <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-2xl p-4 pr-32 overflow-hidden">
+                <p className="text-xs text-[#111827] font-medium truncate">
+                  {window.location.href}
+                </p>
+              </div>
+              <button
+                onClick={copyToClipboard}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                  copied ? 'bg-emerald-500 text-white' : 'bg-[#111827] text-white hover:bg-gray-900'
+                }`}
+              >
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        }
+      />
     </div>
   );
 };
