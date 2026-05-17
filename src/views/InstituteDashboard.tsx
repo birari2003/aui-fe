@@ -744,7 +744,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                                       <CheckCircle2 size={14} className="text-emerald-500" />
                                     </div>
                                     <p className="text-sm font-medium text-brand-purple">{expert.role}</p>
-                                    <p className="text-[10px] font-bold text-emerald-600 mt-1 uppercase tracking-widest">{expert.verified} VERIFIED</p>
+
                                   </div>
                                 </div>
 
