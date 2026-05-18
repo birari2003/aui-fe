@@ -26,7 +26,9 @@ import {
   Code,
   Star,
   CheckCircle2,
-  Briefcase
+  Briefcase,
+  BadgeCheck,
+  Users
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import Modal from '../components/Modal';
@@ -39,6 +41,78 @@ import { View, UserRole } from '../types';
 import { BASE_URL } from '../utils/urls';
 
 const BACKEND_URL = BASE_URL;
+
+const levelStyles: Record<string, { label: string; className: string }> = {
+  fresher: { label: 'Fresher', className: 'bg-[#cfcfcf] text-[#30343a]' },
+  junior: { label: 'Junior', className: 'bg-[#3d7be0] text-white' },
+  mid: { label: 'Mid', className: 'bg-[#223a82] text-white' },
+  senior: { label: 'Senior', className: 'bg-[#18224e] text-white' },
+};
+
+const levelHighlightStyles: Record<string, { title: string; subtitle: string; className: string; dotClassName: string }> = {
+  fresher: {
+    title: 'Learning & Growing',
+    subtitle: 'Open to new opportunities',
+    className: 'bg-[#e9f7ee] text-[#1b7a48]',
+    dotClassName: 'bg-[#27c36b]',
+  },
+  junior: {
+    title: 'Building Experience',
+    subtitle: 'Ready for assignments',
+    className: 'bg-[#edf3ff] text-[#3065d7]',
+    dotClassName: 'bg-[#3f6de2]',
+  },
+  mid: {
+    title: 'Industry Experienced',
+    subtitle: 'Proven track record',
+    className: 'bg-[#e8eefc] text-[#243f8f]',
+    dotClassName: 'bg-[#233ea0]',
+  },
+  senior: {
+    title: 'Production Ready',
+    subtitle: 'Lead. Deliver. Inspire.',
+    className: 'bg-[#eef0ff] text-[#1d2358]',
+    dotClassName: 'bg-[#1d2358]',
+  },
+};
+
+const productionTypeLabels: Record<string, string> = {
+  film: 'Feature Film',
+  tv: 'TV',
+  web: 'Web',
+  ads: 'Ads',
+};
+
+const positionLabels: Record<string, string> = {
+  artist: 'Artist',
+  lead: 'Lead',
+  supervisor: 'Supervisor',
+  director: 'Director',
+  other: 'Other',
+};
+
+const isAvailableNow = (availability?: string) => {
+  if (!availability) return false;
+  return ['available', 'immediate', 'now', 'open'].some((word) =>
+    availability.toLowerCase().includes(word)
+  );
+};
+
+const convertUrlToBase64 = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url, { mode: 'cors' });
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("Failed to convert image to base64:", error);
+    return '';
+  }
+};
 
 const getYouTubeId = (url: string) => {
   if (!url) return 'default';
@@ -62,6 +136,28 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const [copied, setCopied] = useState(false);
   const [isSubmittingEngagement, setIsSubmittingEngagement] = useState(false);
   const cardRef = React.useRef<HTMLDivElement>(null);
+  const downloadCardRef = React.useRef<HTMLDivElement>(null);
+  const [downloadAvatarUrl, setDownloadAvatarUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (profileData) {
+      const getFileUrlLocal = (path: string) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        return `${BACKEND_URL}/${path.replace(/\\/g, '/')}`;
+      };
+      const { professional, publicProfile } = profileData;
+      const avatarUrlLocal = publicProfile?.profileImage ? getFileUrlLocal(publicProfile.profileImage) : (professional?.avatarUrl || '/assets/sarah_chen_profile_1777487447512.png');
+      
+      if (avatarUrlLocal) {
+        convertUrlToBase64(avatarUrlLocal).then(base64 => {
+          setDownloadAvatarUrl(base64);
+        }).catch(err => {
+          console.error('Error pre-converting avatar image:', err);
+        });
+      }
+    }
+  }, [profileData]);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -232,14 +328,14 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   ];
 
   const handleDownload = async () => {
-    if (cardRef.current === null) return;
+    if (downloadCardRef.current === null) return;
     
     try {
-      const dataUrl = await toPng(cardRef.current, { 
+      const dataUrl = await toPng(downloadCardRef.current, { 
         cacheBust: true,
-        backgroundColor: '#F8F9FB', // Match the background
+        backgroundColor: '#f7f7f8',
         style: {
-          borderRadius: '24px'
+          borderRadius: '16px'
         }
       });
       const link = document.createElement('a');
@@ -678,6 +774,158 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           </div>
         }
       />
+
+      {/* Hidden Parent Wrapper positioned off-screen */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          top: '100%', 
+          left: 0, 
+          width: '640px', 
+          zIndex: -9999,
+          pointerEvents: 'none',
+          overflow: 'hidden'
+        }}
+      >
+        {/* The actual card that we capture - it has NO offscreen inline styles! */}
+        <div 
+          ref={downloadCardRef}
+          className="bg-[#f7f7f8] p-0 text-left font-sans w-[640px]"
+        >
+          <div className="overflow-hidden rounded-[16px] border border-[#e1e1e6] bg-[#f7f7f8] p-0 shadow-[0_1px_0_rgba(17,24,39,0.02),0_8px_20px_rgba(15,23,42,0.05)]">
+          <div className="grid grid-cols-[162px_1fr] gap-0">
+            {/* Left Column: Image */}
+            <div className="relative min-h-[262px] bg-[#d8dbe2]">
+              <img
+                src={downloadAvatarUrl || avatarUrl}
+                alt={displayName}
+                className="h-full w-full object-cover object-center"
+              />
+              <div className="absolute left-3 top-3 rounded-full bg-[#ececec]/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#3a4048] shadow-sm backdrop-blur-sm">
+                {isAvailableNow(professional?.availability) ? 'AVAILABLE NOW' : 'REVIEWING'}
+              </div>
+              <div
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#7e8692] shadow-sm backdrop-blur-sm"
+              >
+                <Star
+                  size={15}
+                  className="fill-[#4f46e5] text-[#4f46e5]"
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Info */}
+            <div className="flex flex-col justify-between px-5 py-4 bg-[#f7f7f8]">
+              <div className="space-y-3.5">
+                <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#55617a]">
+                        <ShieldCheck size={13} className="text-[#5f6d88]" />
+                        AUI Verified Talent
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 min-w-0">
+                        <h3 className="truncate text-[21px] font-semibold leading-[0.95] tracking-[-0.03em] text-[#1a1f28]">
+                          {displayName}
+                        </h3>
+                        <BadgeCheck size={16} className="shrink-0 text-[#7d848e]" />
+                      </div>
+                    </div>
+
+                    <div className={`min-w-[62px] rounded-[10px] px-2.5 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.08em] shadow-sm ${(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).className}`}>
+                      <div>{(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).label}</div>
+                      <div className="mt-0.5 text-[10px] font-medium tracking-[0.12em] opacity-90">Level</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-[#4f46e5] bg-[#eeebff] px-3 py-1.5 rounded-full w-fit border border-[#4f46e5]/10">
+                    <Users size={12} />
+                    Benched by {professional?.savedByStudios?.length || 0} Studios
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#8b9099]">Talent ID</div>
+                  <div className="mt-1.5 flex items-center justify-between rounded-[10px] border border-[#d9dce2] bg-[#fbfbfc] px-3.5 py-2.5">
+                    <div className="font-mono text-[24px] font-bold leading-[0.95] tracking-[0.18em] bg-gradient-to-r from-[#18224e] to-[#4f46e5] bg-clip-text text-transparent">
+                      {displayTalentId}
+                    </div>
+                    <BadgeCheck className="text-[#4f46e5] shrink-0" size={20} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="grid grid-cols-2 gap-0 border-b border-[#e5e7eb] pb-2.5">
+                    <div className="pr-4">
+                      <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
+                        <ShieldCheck size={11} /> Experience Level
+                      </div>
+                      <div className="mt-1 text-[13px] font-medium text-[#1d2532] capitalize">
+                        {professional?.level || 'Junior'}
+                      </div>
+                    </div>
+                    <div className="border-l border-[#e5e7eb] pl-4">
+                      <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
+                        <Briefcase size={11} /> Production Types
+                      </div>
+                      <div className="mt-1 text-[13px] font-medium text-[#1d2532]">
+                        {productionTypeLabels[(professional?.productionType || 'film').toLowerCase()] || 'Feature Film'} • {positionLabels[(professional?.position || 'artist').toLowerCase()] || 'Artist'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`mt-2.5 rounded-[10px] px-4 py-3 ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).className}`}>
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-1 h-3 w-3 rounded-full ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).dotClassName}`} />
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
+                          {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).title}
+                        </div>
+                        <div className="mt-1 text-[11px] leading-snug opacity-80">
+                          {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).subtitle}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-3 text-[#6f7580]">
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
+                    <ShieldCheck size={13} className="text-[#6d7480]" />
+                    Identity Verified
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
+                    <Briefcase size={13} className="text-[#6d7480]" />
+                    Work Verified
+                  </div>
+                </div>
+                <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#E5E7EB] flex shrink-0 items-center justify-center shadow-sm animate-none">
+                  <QRCode value={`${window.location.origin}/talent/${displayTalentId}`} size={56} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+                <div
+                  className="h-10 rounded-[10px] bg-black px-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-white flex items-center justify-center"
+                >
+                  View Profile
+                </div>
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#5641ea] text-white shadow-[0_10px_20px_rgba(86,65,234,0.22)]"
+                >
+                  <Bookmark
+                    size={14}
+                    className="fill-white text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     </div>
   );
 };
