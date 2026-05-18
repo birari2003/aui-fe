@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  ShieldCheck, 
-  Copy, 
-  Send, 
-  Bookmark, 
-  ChevronDown, 
-  ChevronUp, 
-  Play, 
+import {
+  ShieldCheck,
+  Copy,
+  Send,
+  Bookmark,
+  ChevronDown,
+  ChevronUp,
+  Play,
   ArrowRight,
   UserCheck,
   Award,
@@ -128,7 +128,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isWorkLedgerOpen, setIsWorkLedgerOpen] = useState(true);
-  
+
   const [me, setMe] = useState<any>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isEngagementModalOpen, setIsEngagementModalOpen] = useState(false);
@@ -147,14 +147,19 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         return `${BACKEND_URL}/${path.replace(/\\/g, '/')}`;
       };
       const { professional, publicProfile } = profileData;
-      const avatarUrlLocal = publicProfile?.profileImage ? getFileUrlLocal(publicProfile.profileImage) : (professional?.avatarUrl || '/assets/sarah_chen_profile_1777487447512.png');
+      const base64FromServer = publicProfile?.profileImageBase64 || professional?.avatarBase64;
       
-      if (avatarUrlLocal) {
-        convertUrlToBase64(avatarUrlLocal).then(base64 => {
-          setDownloadAvatarUrl(base64);
-        }).catch(err => {
-          console.error('Error pre-converting avatar image:', err);
-        });
+      if (base64FromServer) {
+        setDownloadAvatarUrl(base64FromServer);
+      } else {
+        const avatarUrlLocal = publicProfile?.profileImage ? getFileUrlLocal(publicProfile.profileImage) : (professional?.avatarUrl || '/assets/sarah_chen_profile_1777487447512.png');
+        if (avatarUrlLocal) {
+          convertUrlToBase64(avatarUrlLocal).then(base64 => {
+            setDownloadAvatarUrl(base64);
+          }).catch(err => {
+            console.error('Error pre-converting avatar image:', err);
+          });
+        }
       }
     }
   }, [profileData]);
@@ -205,7 +210,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const handleToggleBench = async () => {
     const token = localStorage.getItem('token');
     if (!token || !profileData?.professional?.id) return;
-    
+
     try {
       await addTalentToBench(token, profileData.professional.id);
       // Navigate to bench section in Studio Dashboard
@@ -280,7 +285,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const displayName = professional?.fullName || 'Professional';
   const avatarUrl = publicProfile?.profileImage ? getFileUrl(publicProfile.profileImage) : (professional?.avatarUrl || '/assets/sarah_chen_profile_1777487447512.png');
   const displayTalentId = talentId?.talentCode || 'AUI-000000';
-  
+
   const insight = publicProfile?.auiInsight || 'Senior creative professional with a proven track record in high-impact projects. Consistently delivers exceptional results and excels in collaborative environments.';
   const timeline = Array.isArray(publicProfile?.experienceTimeline) ? publicProfile.experienceTimeline : [];
   const showreel = publicProfile?.showreel || { type: 'youtube', url: 'https://youtube.com', title: 'Professional Showreel', duration: '02:30' };
@@ -290,7 +295,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
     const url = window.location.href;
     // Check if it's mobile and navigator.share is available
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
+
     if (isMobile && navigator.share) {
       try {
         await navigator.share({
@@ -329,10 +334,11 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
   const handleDownload = async () => {
     if (downloadCardRef.current === null) return;
-    
+
     try {
-      const dataUrl = await toPng(downloadCardRef.current, { 
+      const dataUrl = await toPng(downloadCardRef.current, {
         cacheBust: true,
+        skipFonts: true,
         backgroundColor: '#f7f7f8',
         style: {
           borderRadius: '16px'
@@ -353,7 +359,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
       <header className="bg-white border-b border-[#E5E7EB] sticky top-0 z-50">
         <div className="max-w-[1100px] mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="p-1.5 hover:bg-gray-100 rounded-lg text-[#6B7280] transition-colors"
               title="Go Back"
@@ -367,16 +373,16 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               <span className="font-bold text-lg tracking-tight">AUI <span className="text-[#6B7280] font-normal text-base uppercase tracking-widest ml-1">Studio</span></span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={handleShare}
               className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-xl text-xs font-bold text-[#111827] border border-[#E5E7EB] transition-all"
             >
               <Share2 size={14} className="text-[#2563EB]" />
               Share Talent ID
             </button>
-            <button 
+            <button
               onClick={handleDownload}
               className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
             >
@@ -385,13 +391,13 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </button>
             {!isOwnProfile && isStudio && (
               <>
-                <button 
+                <button
                   onClick={() => setIsEngagementModalOpen(true)}
                   className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all"
                 >
                   Request Engagement <Send size={14} />
                 </button>
-                <button 
+                <button
                   onClick={handleToggleBench}
                   className="p-1.5 hover:bg-gray-100 rounded-lg text-[#6B7280]"
                 >
@@ -408,13 +414,13 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         <div ref={cardRef} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col md:flex-row min-h-[400px]">
           {/* Left Column: Vertical Image */}
           <div className="w-full md:w-[320px] relative shrink-0">
-            <img 
-              src={avatarUrl} 
-              alt={displayName} 
+            <img
+              src={avatarUrl}
+              alt={displayName}
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20"></div>
-            
+
             {/* Reviewing Badge */}
             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#374151]">
               Verified
@@ -457,15 +463,15 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <div className="grid grid-cols-2 gap-8 py-2 border-b border-[#F1F5F9]">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
-                   <Star size={12} />
-                   Experience Level
+                  <Star size={12} />
+                  Experience Level
                 </div>
                 <div className="text-sm font-bold">{professional?.experienceYears || '0'}+ Years</div>
               </div>
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
-                   <Briefcase size={12} />
-                   Production Types
+                  <Briefcase size={12} />
+                  Production Types
                 </div>
                 <div className="text-sm font-bold">{professional?.productionType || 'Feature Film'} • {professional?.primarySkill || 'Artist'}</div>
               </div>
@@ -480,20 +486,20 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </div>
 
             <div className="flex items-center justify-between text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
-               <div className="flex items-center gap-1.5"><ShieldCheck size={14} /> Identity Verified</div>
-               <div className="flex items-center gap-1.5"><Briefcase size={14} /> Work Verified</div>
-               <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Trusted by AUI</div>
+              <div className="flex items-center gap-1.5"><ShieldCheck size={14} /> Identity Verified</div>
+              <div className="flex items-center gap-1.5"><Briefcase size={14} /> Work Verified</div>
+              <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Trusted by AUI</div>
             </div>
 
             {!isOwnProfile && isStudio && (
               <div className="flex gap-3 mt-auto pt-4">
-                <button 
+                <button
                   onClick={() => setIsEngagementModalOpen(true)}
                   className="flex-1 bg-black hover:bg-gray-900 text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition-all"
                 >
                   Request Engagement
                 </button>
-                <button 
+                <button
                   onClick={handleToggleBench}
                   className="w-14 bg-[#2563EB] hover:bg-[#1D4ED8] text-white flex items-center justify-center rounded-xl transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)]"
                 >
@@ -530,7 +536,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               <History className="text-[#111827]" size={20} />
               <h3 className="font-bold text-lg">Experience Timeline</h3>
             </div>
-            
+
             <div className="space-y-3 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-[#F1F5F9]">
               {timeline.length > 0 ? timeline.map((item: any, index: number) => (
                 <div key={index} className="flex gap-4 relative">
@@ -556,8 +562,8 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </div>
             <h3 className="font-bold text-lg">Showreel</h3>
           </div>
-          
-          <div 
+
+          <div
             className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium"
           >
             {showreel.type === 'youtube' ? (
@@ -569,9 +575,9 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                 allowFullScreen
               ></iframe>
             ) : (
-              <video 
-                src={getFileUrl(showreel.url)} 
-                controls 
+              <video
+                src={getFileUrl(showreel.url)}
+                controls
                 className="w-full h-full object-contain"
                 poster={'/assets/showreel_thumbnail_1777487470036.png'}
               />
@@ -600,14 +606,14 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           <div className="space-y-4">
             {workLedger.length > 0 ? workLedger.map((project: any, idx: number) => (
               <div key={idx} className="border border-[#F1F5F9] rounded-[20px] overflow-hidden">
-                <div 
+                <div
                   className="p-5 flex items-center gap-6 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
                   onClick={() => setIsWorkLedgerOpen(idx === 0 ? !isWorkLedgerOpen : true)}
                 >
                   <div className="w-[180px] h-[180px] md:h-auto md:aspect-square bg-gray-900 rounded-xl overflow-hidden shrink-0">
-                    <img 
-                      src={publicProfile?.workLedgerImage ? getFileUrl(publicProfile.workLedgerImage) : (project.shotSamples?.length > 0 ? getFileUrl(project.shotSamples[0]) : '/assets/superhero_team_thumbnail_1777487519840.png')} 
-                      alt={project.projectName} 
+                    <img
+                      src={publicProfile?.workLedgerImage ? getFileUrl(publicProfile.workLedgerImage) : (project.shotSamples?.length > 0 ? getFileUrl(project.shotSamples[0]) : '/assets/superhero_team_thumbnail_1777487519840.png')}
+                      alt={project.projectName}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -629,7 +635,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                           <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Contribution</div>
                           <ul className="space-y-2 text-[11px] text-[#374151] font-medium leading-relaxed">
                             {(project.contribution || '').split('\n').map((line: string, i: number) => (
-                               <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
+                              <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
                             ))}
                           </ul>
                         </div>
@@ -637,7 +643,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                           <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Scope</div>
                           <ul className="space-y-2 text-[11px] text-[#374151] font-medium leading-relaxed">
                             {(project.scope || '').split('\n').map((line: string, i: number) => (
-                               <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
+                              <li key={i} className="flex items-start gap-1.5"><span className="mt-1.5 w-1 h-1 bg-[#374151] rounded-full shrink-0"></span> {line}</li>
                             ))}
                           </ul>
                         </div>
@@ -646,9 +652,9 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                           <div className="flex flex-wrap gap-2">
                             {(publicProfile?.workLedgerImage ? project.shotSamples : project.shotSamples?.slice(1))?.slice(0, 3).map((sample: string, i: number) => (
                               <div key={i} className="w-[70px] h-[50px] bg-gray-200 rounded-lg overflow-hidden border border-[#F1F5F9] shadow-sm">
-                                 <img 
-                                  src={getFileUrl(sample)} 
-                                  className="w-full h-full object-cover" 
+                                <img
+                                  src={getFileUrl(sample)}
+                                  className="w-full h-full object-cover"
                                 />
                               </div>
                             ))}
@@ -722,7 +728,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
       </main>
 
       {/* Share Modal */}
-      <Modal 
+      <Modal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         title="Share"
@@ -745,7 +751,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                   }}
                   className="flex flex-col items-center gap-3 min-w-[70px] group transition-transform hover:-translate-y-1"
                 >
-                  <div 
+                  <div
                     className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all group-hover:shadow-xl"
                     style={{ backgroundColor: option.color }}
                   >
@@ -764,9 +770,8 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
               <button
                 onClick={copyToClipboard}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
-                  copied ? 'bg-emerald-500 text-white' : 'bg-[#111827] text-white hover:bg-gray-900'
-                }`}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-[#111827] text-white hover:bg-gray-900'
+                  }`}
               >
                 {copied ? 'Copied!' : 'Copy'}
               </button>
@@ -776,156 +781,156 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
       />
 
       {/* Hidden Parent Wrapper positioned off-screen */}
-      <div 
-        style={{ 
-          position: 'fixed', 
-          top: '100%', 
-          left: 0, 
-          width: '640px', 
+      <div
+        style={{
+          position: 'fixed',
+          top: '100%',
+          left: 0,
+          width: '640px',
           zIndex: -9999,
           pointerEvents: 'none',
           overflow: 'hidden'
         }}
       >
         {/* The actual card that we capture - it has NO offscreen inline styles! */}
-        <div 
+        <div
           ref={downloadCardRef}
           className="bg-[#f7f7f8] p-0 text-left font-sans w-[640px]"
         >
           <div className="overflow-hidden rounded-[16px] border border-[#e1e1e6] bg-[#f7f7f8] p-0 shadow-[0_1px_0_rgba(17,24,39,0.02),0_8px_20px_rgba(15,23,42,0.05)]">
-          <div className="grid grid-cols-[162px_1fr] gap-0">
-            {/* Left Column: Image */}
-            <div className="relative min-h-[262px] bg-[#d8dbe2]">
-              <img
-                src={downloadAvatarUrl || avatarUrl}
-                alt={displayName}
-                className="h-full w-full object-cover object-center"
-              />
-              <div className="absolute left-3 top-3 rounded-full bg-[#ececec]/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#3a4048] shadow-sm backdrop-blur-sm">
-                {isAvailableNow(professional?.availability) ? 'AVAILABLE NOW' : 'REVIEWING'}
-              </div>
-              <div
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#7e8692] shadow-sm backdrop-blur-sm"
-              >
-                <Star
-                  size={15}
-                  className="fill-[#4f46e5] text-[#4f46e5]"
+            <div className="grid grid-cols-[162px_1fr] gap-0">
+              {/* Left Column: Image */}
+              <div className="relative min-h-[262px] bg-[#d8dbe2]">
+                <img
+                  src={downloadAvatarUrl || avatarUrl}
+                  alt={displayName}
+                  className="h-full w-full object-cover object-center"
                 />
-              </div>
-            </div>
-
-            {/* Right Column: Info */}
-            <div className="flex flex-col justify-between px-5 py-4 bg-[#f7f7f8]">
-              <div className="space-y-3.5">
-                <div className="space-y-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#55617a]">
-                        <ShieldCheck size={13} className="text-[#5f6d88]" />
-                        AUI Verified Talent
-                      </div>
-                      <div className="mt-2 flex items-center gap-2 min-w-0">
-                        <h3 className="truncate text-[21px] font-semibold leading-[0.95] tracking-[-0.03em] text-[#1a1f28]">
-                          {displayName}
-                        </h3>
-                        <BadgeCheck size={16} className="shrink-0 text-[#7d848e]" />
-                      </div>
-                    </div>
-
-                    <div className={`min-w-[62px] rounded-[10px] px-2.5 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.08em] shadow-sm ${(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).className}`}>
-                      <div>{(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).label}</div>
-                      <div className="mt-0.5 text-[10px] font-medium tracking-[0.12em] opacity-90">Level</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-[#4f46e5] bg-[#eeebff] px-3 py-1.5 rounded-full w-fit border border-[#4f46e5]/10">
-                    <Users size={12} />
-                    Benched by {professional?.savedByStudios?.length || 0} Studios
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#8b9099]">Talent ID</div>
-                  <div className="mt-1.5 flex items-center justify-between rounded-[10px] border border-[#d9dce2] bg-[#fbfbfc] px-3.5 py-2.5">
-                    <div className="font-mono text-[24px] font-bold leading-[0.95] tracking-[0.18em] bg-gradient-to-r from-[#18224e] to-[#4f46e5] bg-clip-text text-transparent">
-                      {displayTalentId}
-                    </div>
-                    <BadgeCheck className="text-[#4f46e5] shrink-0" size={20} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="grid grid-cols-2 gap-0 border-b border-[#e5e7eb] pb-2.5">
-                    <div className="pr-4">
-                      <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
-                        <ShieldCheck size={11} /> Experience Level
-                      </div>
-                      <div className="mt-1 text-[13px] font-medium text-[#1d2532] capitalize">
-                        {professional?.level || 'Junior'}
-                      </div>
-                    </div>
-                    <div className="border-l border-[#e5e7eb] pl-4">
-                      <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
-                        <Briefcase size={11} /> Production Types
-                      </div>
-                      <div className="mt-1 text-[13px] font-medium text-[#1d2532]">
-                        {productionTypeLabels[(professional?.productionType || 'film').toLowerCase()] || 'Feature Film'} • {positionLabels[(professional?.position || 'artist').toLowerCase()] || 'Artist'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`mt-2.5 rounded-[10px] px-4 py-3 ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).className}`}>
-                    <div className="flex items-start gap-3">
-                      <span className={`mt-1 h-3 w-3 rounded-full ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).dotClassName}`} />
-                      <div className="min-w-0">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
-                          {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).title}
-                        </div>
-                        <div className="mt-1 text-[11px] leading-snug opacity-80">
-                          {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).subtitle}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 pt-3 text-[#6f7580]">
-                <div className="flex flex-col gap-2.5">
-                  <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
-                    <ShieldCheck size={13} className="text-[#6d7480]" />
-                    Identity Verified
-                  </div>
-                  <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
-                    <Briefcase size={13} className="text-[#6d7480]" />
-                    Work Verified
-                  </div>
-                </div>
-                <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#E5E7EB] flex shrink-0 items-center justify-center shadow-sm animate-none">
-                  <QRCode value={`${window.location.origin}/talent/${displayTalentId}`} size={56} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
-                <div
-                  className="h-10 rounded-[10px] bg-black px-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-white flex items-center justify-center"
-                >
-                  View Profile
+                <div className="absolute left-3 top-3 rounded-full bg-[#ececec]/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#3a4048] shadow-sm backdrop-blur-sm">
+                  {isAvailableNow(professional?.availability) ? 'AVAILABLE NOW' : 'REVIEWING'}
                 </div>
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#5641ea] text-white shadow-[0_10px_20px_rgba(86,65,234,0.22)]"
+                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#7e8692] shadow-sm backdrop-blur-sm"
                 >
-                  <Bookmark
-                    size={14}
-                    className="fill-white text-white"
+                  <Star
+                    size={15}
+                    className="fill-[#4f46e5] text-[#4f46e5]"
                   />
+                </div>
+              </div>
+
+              {/* Right Column: Info */}
+              <div className="flex flex-col justify-between px-5 py-4 bg-[#f7f7f8]">
+                <div className="space-y-3.5">
+                  <div className="space-y-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#55617a]">
+                          <ShieldCheck size={13} className="text-[#5f6d88]" />
+                          AUI Verified Talent
+                        </div>
+                        <div className="mt-2 flex items-center gap-2 min-w-0">
+                          <h3 className="truncate text-[21px] font-semibold leading-[0.95] tracking-[-0.03em] text-[#1a1f28]">
+                            {displayName}
+                          </h3>
+                          <BadgeCheck size={16} className="shrink-0 text-[#7d848e]" />
+                        </div>
+                      </div>
+
+                      <div className={`min-w-[62px] rounded-[10px] px-2.5 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.08em] shadow-sm ${(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).className}`}>
+                        <div>{(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).label}</div>
+                        <div className="mt-0.5 text-[10px] font-medium tracking-[0.12em] opacity-90">Level</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-[#4f46e5] bg-[#eeebff] px-3 py-1.5 rounded-full w-fit border border-[#4f46e5]/10">
+                      <Users size={12} />
+                      Benched by {professional?.savedByStudios?.length || 0} Studios
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#8b9099]">Talent ID</div>
+                    <div className="mt-1.5 flex items-center justify-between rounded-[10px] border border-[#d9dce2] bg-[#fbfbfc] px-3.5 py-2.5">
+                      <div className="font-mono text-[24px] font-bold leading-[0.95] tracking-[0.18em] bg-gradient-to-r from-[#18224e] to-[#4f46e5] bg-clip-text text-transparent">
+                        {displayTalentId}
+                      </div>
+                      <BadgeCheck className="text-[#4f46e5] shrink-0" size={20} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="grid grid-cols-2 gap-0 border-b border-[#e5e7eb] pb-2.5">
+                      <div className="pr-4">
+                        <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
+                          <ShieldCheck size={11} /> Experience Level
+                        </div>
+                        <div className="mt-1 text-[13px] font-medium text-[#1d2532] capitalize">
+                          {professional?.level || 'Junior'}
+                        </div>
+                      </div>
+                      <div className="border-l border-[#e5e7eb] pl-4">
+                        <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
+                          <Briefcase size={11} /> Production Types
+                        </div>
+                        <div className="mt-1 text-[13px] font-medium text-[#1d2532]">
+                          {productionTypeLabels[(professional?.productionType || 'film').toLowerCase()] || 'Feature Film'} • {positionLabels[(professional?.position || 'artist').toLowerCase()] || 'Artist'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`mt-2.5 rounded-[10px] px-4 py-3 ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).className}`}>
+                      <div className="flex items-start gap-3">
+                        <span className={`mt-1 h-3 w-3 rounded-full ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).dotClassName}`} />
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
+                            {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).title}
+                          </div>
+                          <div className="mt-1 text-[11px] leading-snug opacity-80">
+                            {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).subtitle}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 pt-3 text-[#6f7580]">
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
+                      <ShieldCheck size={13} className="text-[#6d7480]" />
+                      Identity Verified
+                    </div>
+                    <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
+                      <Briefcase size={13} className="text-[#6d7480]" />
+                      Work Verified
+                    </div>
+                  </div>
+                  <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#E5E7EB] flex shrink-0 items-center justify-center shadow-sm animate-none">
+                    <QRCode value={`${window.location.origin}/talent/${displayTalentId}`} size={56} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
+                  <div
+                    className="h-10 rounded-[10px] bg-black px-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-white flex items-center justify-center"
+                  >
+                    View Profile
+                  </div>
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#5641ea] text-white shadow-[0_10px_20px_rgba(86,65,234,0.22)]"
+                  >
+                    <Bookmark
+                      size={14}
+                      className="fill-white text-white"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };
