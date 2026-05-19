@@ -28,7 +28,9 @@ import {
   CheckCircle2,
   Briefcase,
   BadgeCheck,
-  Users
+  Users,
+  User,
+  Film
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import Modal from '../components/Modal';
@@ -148,7 +150,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
       };
       const { professional, publicProfile } = profileData;
       const base64FromServer = publicProfile?.profileImageBase64 || professional?.avatarBase64;
-      
+
       if (base64FromServer) {
         setDownloadAvatarUrl(base64FromServer);
       } else {
@@ -795,57 +797,42 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         {/* The actual card that we capture - it has NO offscreen inline styles! */}
         <div
           ref={downloadCardRef}
-          className="bg-[#f7f7f8] p-0 text-left font-sans w-[640px]"
+          className="bg-[#f7f7f8] p-5 text-left font-sans w-[640px]"
         >
-          <div className="overflow-hidden rounded-[16px] border border-[#e1e1e6] bg-[#f7f7f8] p-0 shadow-[0_1px_0_rgba(17,24,39,0.02),0_8px_20px_rgba(15,23,42,0.05)]">
-            <div className="grid grid-cols-[162px_1fr] gap-0">
-              {/* Left Column: Image */}
-              <div className="relative min-h-[262px] bg-[#d8dbe2]">
+          <div className="overflow-hidden rounded-[20px] border border-[#e1e1e6] bg-[#f7f7f8] p-5 shadow-[0_1px_0_rgba(17,24,39,0.02),0_8px_20px_rgba(15,23,42,0.05)]">
+            {/* Top Grid: Image & Info */}
+            <div className="grid grid-cols-[190px_1fr] gap-5 items-stretch">
+              {/* Left Column: Shorter Image */}
+              <div className="relative h-[210px] w-[190px] rounded-[16px] overflow-hidden bg-[#d8dbe2]">
                 <img
                   src={downloadAvatarUrl || avatarUrl}
                   alt={displayName}
                   className="h-full w-full object-cover object-center"
                 />
-                <div className="absolute left-3 top-3 rounded-full bg-[#ececec]/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#3a4048] shadow-sm backdrop-blur-sm">
-                  {isAvailableNow(professional?.availability) ? 'AVAILABLE NOW' : 'REVIEWING'}
-                </div>
-                <div
-                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#7e8692] shadow-sm backdrop-blur-sm"
-                >
-                  <Star
-                    size={15}
-                    className="fill-[#4f46e5] text-[#4f46e5]"
-                  />
-                </div>
               </div>
 
               {/* Right Column: Info */}
-              <div className="flex flex-col justify-between px-5 py-4 bg-[#f7f7f8]">
+              <div className="flex flex-col justify-between min-h-[210px]">
                 <div className="space-y-3.5">
-                  <div className="space-y-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#55617a]">
-                          <ShieldCheck size={13} className="text-[#5f6d88]" />
-                          AUI Verified Talent
-                        </div>
-                        <div className="mt-2 flex items-center gap-2 min-w-0">
-                          <h3 className="truncate text-[21px] font-semibold leading-[0.95] tracking-[-0.03em] text-[#1a1f28]">
-                            {displayName}
-                          </h3>
-                          <BadgeCheck size={16} className="shrink-0 text-[#7d848e]" />
-                        </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#55617a]">
+                        <ShieldCheck size={13} className="text-[#5f6d88]" />
+                        AUI Verified Talent
                       </div>
-
-                      <div className={`min-w-[62px] rounded-[10px] px-2.5 py-2.5 text-center text-[11px] font-medium uppercase tracking-[0.08em] shadow-sm ${(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).className}`}>
-                        <div>{(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).label}</div>
-                        <div className="mt-0.5 text-[10px] font-medium tracking-[0.12em] opacity-90">Level</div>
+                      <div className="mt-2 flex items-center gap-2 min-w-0">
+                        <h3 className="truncate text-[21px] font-semibold leading-[0.95] tracking-[-0.03em] text-[#1a1f28]">
+                          {displayName}
+                        </h3>
+                        <BadgeCheck size={16} className="shrink-0 text-[#7d848e]" />
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-[#4f46e5] bg-[#eeebff] px-3 py-1.5 rounded-full w-fit border border-[#4f46e5]/10">
-                      <Users size={12} />
-                      Benched by {professional?.savedByStudios?.length || 0} Studios
+                    <div className="rounded-[10px] bg-[#d9dbdf]/60 border border-[#c1c4c9] px-3 py-2 text-center min-w-[70px] uppercase shadow-sm">
+                      <div className="text-[10px] font-bold tracking-[0.08em] text-[#3a404c]">
+                        {(levelStyles[(professional?.level || 'junior').toLowerCase()] || levelStyles.junior).label}
+                      </div>
+                      <div className="text-[8px] font-semibold tracking-[0.12em] text-[#555b68] mt-0.5">Level</div>
                     </div>
                   </div>
 
@@ -859,73 +846,51 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                     </div>
                   </div>
 
-                  <div>
-                    <div className="grid grid-cols-2 gap-0 border-b border-[#e5e7eb] pb-2.5">
-                      <div className="pr-4">
-                        <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
-                          <ShieldCheck size={11} /> Experience Level
-                        </div>
-                        <div className="mt-1 text-[13px] font-medium text-[#1d2532] capitalize">
-                          {professional?.level || 'Junior'}
-                        </div>
+                  {/* Experience Level, Production Types & QR Code in one row */}
+                  <div className="grid grid-cols-[1fr_1.1fr_auto] gap-4 items-center border-t border-[#e5e7eb] pt-3 min-h-[56px]">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#9aa0a8]">
+                        <User size={11} /> Exp Level
                       </div>
-                      <div className="border-l border-[#e5e7eb] pl-4">
-                        <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa0a8]">
-                          <Briefcase size={11} /> Production Types
-                        </div>
-                        <div className="mt-1 text-[13px] font-medium text-[#1d2532]">
-                          {productionTypeLabels[(professional?.productionType || 'film').toLowerCase()] || 'Feature Film'} • {positionLabels[(professional?.position || 'artist').toLowerCase()] || 'Artist'}
-                        </div>
+                      <div className="mt-1 text-[12px] font-bold text-[#1d2532] capitalize truncate">
+                        {professional?.level || 'Junior'}
                       </div>
                     </div>
 
-                    <div className={`mt-2.5 rounded-[10px] px-4 py-3 ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).className}`}>
-                      <div className="flex items-start gap-3">
-                        <span className={`mt-1 h-3 w-3 rounded-full ${(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).dotClassName}`} />
-                        <div className="min-w-0">
-                          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] leading-none">
-                            {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).title}
-                          </div>
-                          <div className="mt-1 text-[11px] leading-snug opacity-80">
-                            {(levelHighlightStyles[(professional?.level || 'junior').toLowerCase()] || levelHighlightStyles.junior).subtitle}
-                          </div>
-                        </div>
+                    <div className="border-l border-[#e5e7eb] pl-4 min-w-0">
+                      <div className="flex items-center gap-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#9aa0a8]">
+                        <Film size={11} /> Production Types
+                      </div>
+                      <div className="mt-1 text-[11px] font-bold text-[#1d2532] truncate">
+                        {productionTypeLabels[(professional?.productionType || 'film').toLowerCase()] || 'Feature Film'}
+                      </div>
+                    </div>
+
+                    <div className="border-l border-[#e5e7eb] pl-4 flex justify-end">
+                      <div className="w-12 h-12 bg-white p-1 rounded-lg border border-[#E5E7EB] flex shrink-0 items-center justify-center shadow-sm">
+                        <QRCode value={`${window.location.origin}/talent/${displayTalentId}`} size={40} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="flex items-center justify-between gap-3 pt-3 text-[#6f7580]">
-                  <div className="flex flex-col gap-2.5">
-                    <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
-                      <ShieldCheck size={13} className="text-[#6d7480]" />
-                      Identity Verified
-                    </div>
-                    <div className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.14em]">
-                      <Briefcase size={13} className="text-[#6d7480]" />
-                      Work Verified
-                    </div>
-                  </div>
-                  <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#E5E7EB] flex shrink-0 items-center justify-center shadow-sm animate-none">
-                    <QRCode value={`${window.location.origin}/talent/${displayTalentId}`} size={56} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-[1fr_auto] gap-2">
-                  <div
-                    className="h-10 rounded-[10px] bg-black px-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-white flex items-center justify-center"
-                  >
-                    View Profile
-                  </div>
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#5641ea] text-white shadow-[0_10px_20px_rgba(86,65,234,0.22)]"
-                  >
-                    <Bookmark
-                      size={14}
-                      className="fill-white text-white"
-                    />
-                  </div>
-                </div>
+            {/* Bottom Bar: Horizontal items separated by vertical lines */}
+            <div className="mt-5 pt-4 border-t border-[#e2e8f0] flex items-center justify-around text-[#55617a]">
+              <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.12em]">
+                <ShieldCheck size={14} className="text-[#4f46e5]" />
+                Identity Verified
+              </div>
+              <div className="h-4 w-[1px] bg-[#e2e8f0]" />
+              <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.12em]">
+                <Briefcase size={14} className="text-[#4f46e5]" />
+                Work Verified
+              </div>
+              <div className="h-4 w-[1px] bg-[#e2e8f0]" />
+              <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.12em]">
+                <CheckCircle2 size={14} className="text-[#4f46e5]" />
+                Trusted by AUI
               </div>
             </div>
           </div>
