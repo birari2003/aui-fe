@@ -1,6 +1,6 @@
 const ENV: string = 'production';
 
-export const BASE_URL = ENV === 'production' 
+export const BASE_URL = ENV === 'production'
   ? 'https://api.auitalent.com'
   : 'http://localhost:5000';
 
