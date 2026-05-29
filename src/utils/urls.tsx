@@ -27,6 +27,8 @@ export const API_ENDPOINTS = {
     STUDIO_JOB_POSTINGS: `${BASE_URL}/api/professionals/studio-job-postings`,
     NOTIFICATIONS: `${BASE_URL}/api/professionals/notifications`,
     MARK_READ: (id: number) => `${BASE_URL}/api/professionals/notifications/${id}/read`,
+    APPLICATIONS: `${BASE_URL}/api/professionals/applications`,
+    RESPOND_AGREEMENT: (id: number) => `${BASE_URL}/api/professionals/applications/${id}/respond-agreement`,
   },
   INSTITUTE: {
     GET_PROFILE: `${BASE_URL}/api/institutes/profile`,
@@ -44,7 +46,14 @@ export const API_ENDPOINTS = {
     TALENT_BENCH: `${BASE_URL}/api/studios/talent-bench`,
     REMOVE_TALENT_BENCH: (professionalId: number) => `${BASE_URL}/api/studios/talent-bench/${professionalId}`,
     REQUEST_PROFESSIONALS: `${BASE_URL}/api/studios/request-professionals`,
+    UPDATE_REQUEST_PROFESSIONAL: (id: number) => `${BASE_URL}/api/studios/request-professionals/${id}`,
     JOB_POSTINGS: `${BASE_URL}/api/studios/job-postings`,
+    UPDATE_JOB_POSTING: (id: number) => `${BASE_URL}/api/studios/job-postings/${id}`,
+    DELETE_JOB_POSTING: (id: number) => `${BASE_URL}/api/studios/job-postings/${id}`,
+    APPLICATIONS: `${BASE_URL}/api/studios/applications`,
+    UPDATE_APPLICATION_STATUS: (id: number) => `${BASE_URL}/api/studios/applications/${id}/status`,
+    FINALIZE_AGREEMENT: (id: number) => `${BASE_URL}/api/studios/applications/${id}/finalize-agreement`,
+    UPLOAD_JOB_ATTACHMENTS: (id: number) => `${BASE_URL}/api/studios/job-postings/${id}/upload-attachments`,
   },
   COLLABORATION: {
     SEND_REQUEST: `${BASE_URL}/api/collaboration`,

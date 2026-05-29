@@ -1,23 +1,23 @@
 import React from 'react';
-import { motion } from 'motion/react';
-import { BadgeCheck, Bookmark, Briefcase, Calendar, Clock, RotateCcw, ShieldCheck, Star, Users, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ArrowRight, BadgeCheck, Bookmark, Briefcase, Calendar, Check, Clock, FileText, RotateCcw, ShieldCheck, Star, Users, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import Badge from '../components/Badge';
 import QRCode from 'react-qr-code';
 import { searchProfessionals } from '../services/searchServices';
 import {
   addTalentToBench,
-  createStudioJobPosting,
   createStudioRequestProfessional,
-  getStudioJobPostings,
   getStudioRequestProfessionals,
   getTalentBench,
   removeTalentFromBench,
+  updateStudioRequestProfessional,
 } from '../services/studioServices';
 import { View } from '../types';
+import HiringByStudio from '../components/hiringByStudio';
+import OpportunityModal from '../components/OpportunityModal';
 
 type ProfessionalRow = {
   id: number;
@@ -55,17 +55,6 @@ type StudioRequestRow = {
   startDate?: string;
   status: 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed';
   professional: ProfessionalRow;
-};
-
-type JobPostingRow = {
-  id: number;
-  title: string;
-  projectType?: string;
-  experienceRequired?: string;
-  artistCount: number;
-  startDate?: string;
-  description?: string;
-  status: 'open' | 'paused' | 'closed';
 };
 
 const FALLBACK_IMAGES = [
@@ -175,31 +164,26 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
   const [benchRows, setBenchRows] = React.useState<BenchRow[]>([]);
   const [requestRows, setRequestRows] = React.useState<StudioRequestRow[]>([]);
-  const [jobRows, setJobRows] = React.useState<JobPostingRow[]>([]);
 
-  const [engagementModalOpen, setEngagementModalOpen] = React.useState(false);
+  const [opportunityModalOpen, setOpportunityModalOpen] = React.useState(false);
   const [selectedProfessional, setSelectedProfessional] = React.useState<ProfessionalRow | null>(null);
-  const [submittingEngagement, setSubmittingEngagement] = React.useState(false);
-  const [postingRole, setPostingRole] = React.useState(false);
-
-  const [engagementForm, setEngagementForm] = React.useState({
-    projectTimeline: '',
-    productionType: 'film' as 'film' | 'tv' | 'web' | 'ads' | 'other',
-    engagementBrief: '',
-    proposedBudget: '',
-    startDate: '',
-  });
-
-  const [jobForm, setJobForm] = React.useState({
-    title: '',
-    projectType: 'Feature Film Production',
-    experienceRequired: '5+ Years',
-    artistCount: 1,
-    startDate: '',
-    description: '',
-  });
+  const [submittingOpportunity, setSubmittingOpportunity] = React.useState(false);
 
   const [activeTab, setActiveTab] = React.useState<'discover' | 'bench' | 'engagements' | 'open_roles'>('discover');
+  const [inviteMode, setInviteMode] = React.useState(false);
+  const [selectedJob, setSelectedJob] = React.useState<any>(null);
+  const [selectedTalentIds, setSelectedTalentIds] = React.useState<Set<number>>(new Set());
+  const [confirmModalOpen, setConfirmModalOpen] = React.useState(false);
+  const [inviting, setInviting] = React.useState(false);
+  const [updateAgreementModalOpen, setUpdateAgreementModalOpen] = React.useState(false);
+  const [selectedRequest, setSelectedRequest] = React.useState<StudioRequestRow | null>(null);
+  const [agreementForm, setAgreementForm] = React.useState({
+    projectTimeline: '',
+    proposedBudget: '',
+    startDate: '',
+    engagementBrief: '',
+  });
+  const [updatingAgreement, setUpdatingAgreement] = React.useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -207,10 +191,9 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     if (!token) return;
 
     try {
-      const [benchRes, requestRes, jobRes] = await Promise.all([
+      const [benchRes, requestRes] = await Promise.all([
         getTalentBench(token),
         getStudioRequestProfessionals(token),
-        getStudioJobPostings(token),
       ]);
 
       if (benchRes.ok) {
@@ -221,11 +204,6 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
       if (requestRes.ok) {
         const requestPayload = await requestRes.json();
         setRequestRows(Array.isArray(requestPayload?.data) ? requestPayload.data : []);
-      }
-
-      if (jobRes.ok) {
-        const jobPayload = await jobRes.json();
-        setJobRows(Array.isArray(jobPayload?.data) ? jobPayload.data : []);
       }
     } catch (err) {
       console.error('Failed to fetch studio data:', err);
@@ -532,85 +510,133 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     setVerifiedOnly(false);
   };
 
-  const openEngagementModal = (professional: ProfessionalRow) => {
+  const openOpportunityModal = (professional: ProfessionalRow) => {
     setSelectedProfessional(professional);
-    setEngagementForm({
-      projectTimeline: '',
-      productionType: 'film',
-      engagementBrief: '',
-      proposedBudget: '',
-      startDate: '',
-    });
-    setEngagementModalOpen(true);
+    setOpportunityModalOpen(true);
   };
 
-  const submitEngagementRequest = async () => {
-    if (!token || !selectedProfessional) return;
+  const handleInviteFromBench = (job: any) => {
+    setSelectedJob(job);
+    setInviteMode(true);
+    setActiveTab('bench');
+    setSelectedTalentIds(new Set());
+  };
 
+  const toggleTalentSelection = (id: number) => {
+    setSelectedTalentIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allIds = benchRows.map(r => r.professionalId);
+    setSelectedTalentIds(new Set(allIds));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedTalentIds(new Set());
+  };
+
+  const handleSendInvitations = async () => {
+    if (!token || !selectedJob || selectedTalentIds.size === 0) return;
+    
     try {
-      setSubmittingEngagement(true);
+      setInviting(true);
       const response = await createStudioRequestProfessional(token, {
-        professionalId: selectedProfessional.id,
-        projectTimeline: engagementForm.projectTimeline,
-        productionType: engagementForm.productionType,
-        engagementBrief: engagementForm.engagementBrief,
-        proposedBudget: engagementForm.proposedBudget || undefined,
-        startDate: engagementForm.startDate || undefined,
+        professionalIds: Array.from(selectedTalentIds),
+        roleTitle: selectedJob.title,
+        productionType: selectedJob.productionType,
+        projectFormat: selectedJob.projectFormat,
+        opportunityOverview: selectedJob.opportunityOverview,
+        roleRequirements: selectedJob.description,
+        startAvailability: selectedJob.requiredAvailability,
+        workMode: selectedJob.workMode,
+        location: selectedJob.locationPreference,
+        verificationFields: selectedJob.verificationFields,
       });
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError(body?.message || 'Failed to send engagement request.');
+        toast.error(body?.message || 'Failed to send invitations');
         return;
       }
-
-      setEngagementModalOpen(false);
-      setSelectedProfessional(null);
+      
+      toast.success(`Successfully sent invitations to ${selectedTalentIds.size} artists`);
+      setConfirmModalOpen(false);
+      setInviteMode(false);
+      setSelectedJob(null);
+      setSelectedTalentIds(new Set());
       await fetchStudioData();
       setActiveTab('engagements');
     } catch (err) {
-      console.error('Failed to submit engagement request:', err);
-      setError('Failed to send engagement request.');
+      console.error('Failed to send invitations:', err);
+      toast.error('Failed to send invitations');
     } finally {
-      setSubmittingEngagement(false);
+      setInviting(false);
     }
   };
 
-  const submitJobPosting = async () => {
-    if (!token || !jobForm.title.trim()) return;
+  const handleSendOpportunity = async (data: any) => {
+    if (!token || !selectedProfessional) return;
 
     try {
-      setPostingRole(true);
-      const response = await createStudioJobPosting(token, {
-        title: jobForm.title.trim(),
-        projectType: jobForm.projectType,
-        experienceRequired: jobForm.experienceRequired,
-        artistCount: Number(jobForm.artistCount || 1),
-        startDate: jobForm.startDate || undefined,
-        description: jobForm.description || undefined,
-        status: 'open',
+      setSubmittingOpportunity(true);
+      const response = await createStudioRequestProfessional(token, {
+        professionalId: selectedProfessional.id,
+        ...data
       });
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError(body?.message || 'Failed to post role.');
+        setError(body?.message || 'Failed to send opportunity.');
         return;
       }
 
-      setJobForm({
-        title: '',
-        projectType: 'Feature Film Production',
-        experienceRequired: '5+ Years',
-        artistCount: 1,
-        startDate: '',
-        description: '',
-      });
+      setOpportunityModalOpen(false);
+      setSelectedProfessional(null);
       await fetchStudioData();
+      setActiveTab('engagements');
+      toast.success('Opportunity sent successfully');
     } catch (err) {
-      console.error('Failed to post role:', err);
-      setError('Failed to post role.');
+      console.error('Failed to submit opportunity:', err);
+      setError('Failed to send opportunity.');
     } finally {
-      setPostingRole(false);
+      setSubmittingOpportunity(false);
+    }
+  };
+
+  const openUpdateAgreement = (row: StudioRequestRow) => {
+    setSelectedRequest(row);
+    setAgreementForm({
+      projectTimeline: row.projectTimeline || '',
+      proposedBudget: row.proposedBudget || '',
+      startDate: row.startDate || '',
+      engagementBrief: row.engagementBrief || '',
+    });
+    setUpdateAgreementModalOpen(true);
+  };
+
+  const handleUpdateAgreement = async () => {
+    if (!token || !selectedRequest) return;
+    try {
+      setUpdatingAgreement(true);
+      const res = await updateStudioRequestProfessional(token, selectedRequest.id, agreementForm);
+      if (res.ok) {
+        toast.success('Agreement updated successfully');
+        setUpdateAgreementModalOpen(false);
+        setSelectedRequest(null);
+        await fetchStudioData();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body?.message || 'Failed to update agreement');
+      }
+    } catch (err) {
+      toast.error('Failed to update agreement');
+    } finally {
+      setUpdatingAgreement(false);
     }
   };
 
@@ -786,9 +812,36 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
         {activeTab === 'bench' && (
           <section className="space-y-8">
-            <div className="space-y-2">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#05060b]">Your Bench</h2>
-              <p className="text-base md:text-lg text-[#6f7782]">Shortlisted talent ready for quick engagement.</p>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div className="space-y-2">
+                <h2 className="text-3xl md:text-5xl font-black tracking-tight text-[#05060b]">Your Bench</h2>
+                <p className="text-base md:text-lg text-[#6f7782]">Shortlisted talent ready for quick engagement.</p>
+              </div>
+              
+              {inviteMode && (
+                <div className="flex items-center gap-6">
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#b2b6bc]">FILTER BY DEPARTMENT</div>
+                    <select className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold min-w-[200px] outline-none">
+                      <option>All Departments</option>
+                    </select>
+                  </div>
+                  <button 
+                    onClick={selectedTalentIds.size === benchRows.length ? handleDeselectAll : handleSelectAll}
+                    className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-black transition-colors"
+                  >
+                    {selectedTalentIds.size === benchRows.length ? 'DESELECT ALL' : 'SELECT ALL'}
+                  </button>
+                  <button 
+                    disabled={selectedTalentIds.size === 0}
+                    onClick={() => setConfirmModalOpen(true)}
+                    className="h-14 px-8 bg-[#ff0055] hover:bg-[#e6004d] text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-xl shadow-[#ff0055]/20 disabled:opacity-50 disabled:shadow-none"
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">SEND OPPORTUNITY ({selectedTalentIds.size})</span>
+                    <ArrowRight size={18} />
+                  </button>
+                </div>
+              )}
             </div>
 
             {benchDisplayRows.length === 0 ? (
@@ -799,39 +852,63 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
             ) : (
               <div className="space-y-6">
                 {benchDisplayRows.map((row) => (
-                  <Card key={row.id} className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8">
+                  <Card 
+                    key={row.id} 
+                    onClick={() => inviteMode && toggleTalentSelection(row.professionalId)}
+                    className={`rounded-3xl border transition-all duration-300 p-8 cursor-pointer ${
+                      inviteMode && selectedTalentIds.has(row.professionalId)
+                      ? 'border-black bg-white shadow-xl ring-1 ring-black'
+                      : 'border-gray-200 bg-white shadow-sm'
+                    }`}
+                  >
                     <div className="grid grid-cols-1 xl:grid-cols-[1.8fr_0.7fr_auto_auto] gap-6 items-center">
-                      <div className="flex items-center gap-5 min-w-0">
-                        <img src={row.image} alt={row.displayName} className="h-24 w-24 rounded-2xl object-cover" />
+                      <div className="flex items-center gap-6 min-w-0">
+                        <div className="relative shrink-0">
+                          <img src={row.image} alt={row.displayName} className="h-28 w-28 rounded-3xl object-cover" />
+                          {inviteMode && (
+                            <button 
+                              onClick={() => toggleTalentSelection(row.professionalId)}
+                              className={`absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                                selectedTalentIds.has(row.professionalId)
+                                ? 'bg-black border-black text-white scale-110'
+                                : 'bg-white border-gray-200 text-transparent hover:border-black'
+                              }`}
+                            >
+                              <Check size={16} strokeWidth={4} className={selectedTalentIds.has(row.professionalId) ? 'opacity-100' : 'opacity-0'} />
+                            </button>
+                          )}
+                        </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-3">
-                            <h4 className="text-xl md:text-2xl font-bold text-brand-primary truncate">{row.displayName}</h4>
+                            <h4 className="text-2xl md:text-3xl font-black text-brand-primary truncate tracking-tight">{row.displayName}</h4>
                             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#b2b6bc]">{row.talentCode}</span>
                           </div>
-                          <p className="mt-1 text-[#5c6777] capitalize text-sm md:text-base">
-                            {row.role.replace('_', ' ')} <span className="mx-2 text-gray-300">•</span> {row.level}
+                          <p className="mt-1.5 text-[#5c6777] font-medium capitalize text-base md:text-lg">
+                            {row.role.replace('_', ' ')} <span className="mx-2 text-gray-200">•</span> {row.level}
                           </p>
                         </div>
                       </div>
 
                       <div>
-                        <div className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#b2b6bc]">Availability</div>
-                        <div className="mt-2 flex items-center gap-2 text-sm md:text-base font-semibold text-[#101722]">
-                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        <div className="text-[9px] font-black uppercase tracking-[0.25em] text-[#b2b6bc]">Availability</div>
+                        <div className="mt-2 flex items-center gap-2 text-base md:text-lg font-black text-[#101722]">
+                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
                           {row.availability || 'Immediate'}
                         </div>
                       </div>
 
-                      <Button
-                        className="h-14 px-10 bg-black hover:bg-black text-white uppercase tracking-[0.18em] text-xs"
-                        onClick={() => openEngagementModal(row.talent)}
-                      >
-                        Request Engagement
-                      </Button>
+                      {!inviteMode && (
+                        <Button
+                          className="h-14 px-10 bg-black hover:bg-black text-white uppercase tracking-[0.2em] text-[10px] font-black rounded-2xl"
+                          onClick={() => openOpportunityModal(row.talent)}
+                        >
+                          SEND OPPORTUNITY
+                        </Button>
+                      )}
 
                       <button
                         type="button"
-                        className="text-rose-500 text-xs font-bold uppercase tracking-[0.22em]"
+                        className="text-rose-500 text-[10px] font-black uppercase tracking-[0.25em] hover:text-rose-600 transition-colors"
                         onClick={() => toggleBench(row.talent)}
                         disabled={actionLoadingId === row.talent.id}
                       >
@@ -883,10 +960,36 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                         </div>
 
                         <div className="justify-self-start xl:justify-self-end">
-                          <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc] mb-2">Status</p>
-                          <span className={`inline-block px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${statusClass[row.status] || statusClass.pending}`}>
-                            {row.status.replace('_', ' ')}
-                          </span>
+                          {row.status === 'accepted' ? (
+                            <div className="flex flex-col items-end gap-2">
+                              <span className={`inline-block px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${statusClass.accepted}`}>
+                                Agreement Shared
+                              </span>
+                              <button
+                                onClick={() => openUpdateAgreement(row)}
+                                className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary hover:text-brand-primary/80 transition-colors"
+                              >
+                                Update Agreement
+                              </button>
+                            </div>
+                          ) : row.status === 'in_progress' || row.status === 'completed' ? (
+                            <div className="flex flex-col items-end gap-2">
+                              <span className={`inline-block px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${statusClass[row.status]}`}>
+                                {row.status === 'in_progress' ? 'Hired' : 'Completed'}
+                              </span>
+                              <div className="text-right">
+                                <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc]">Hired Amount</p>
+                                <p className="text-xl font-black text-emerald-600">{row.proposedBudget || 'N/A'}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc] mb-2">Status</p>
+                              <span className={`inline-block px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${statusClass[row.status] || statusClass.pending}`}>
+                                {row.status.replace('_', ' ')}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </Card>
@@ -899,205 +1002,212 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
         {activeTab === 'open_roles' && (
           <section className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-              <div className="space-y-2">
-                <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#05060b]">Open Roles</h2>
-                <p className="text-base md:text-lg text-[#6f7782]">Connect with the right talent for your upcoming requirements.</p>
-              </div>
-              <Button className="h-12 px-10 bg-black hover:bg-black text-white uppercase tracking-[0.2em] text-[10px]" onClick={submitJobPosting} loading={postingRole}>
-                Post Role
-              </Button>
-            </div>
-
-            <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                <input
-                  value={jobForm.title}
-                  onChange={(e) => setJobForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Role title"
-                  className="lg:col-span-2 rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none"
-                />
-                <input
-                  value={jobForm.projectType}
-                  onChange={(e) => setJobForm((prev) => ({ ...prev, projectType: e.target.value }))}
-                  placeholder="Project type"
-                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none"
-                />
-                <input
-                  value={jobForm.experienceRequired}
-                  onChange={(e) => setJobForm((prev) => ({ ...prev, experienceRequired: e.target.value }))}
-                  placeholder="Experience"
-                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  value={jobForm.artistCount}
-                  onChange={(e) => setJobForm((prev) => ({ ...prev, artistCount: Number(e.target.value || 1) }))}
-                  placeholder="Artists"
-                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none"
-                />
-                <input
-                  type="date"
-                  value={jobForm.startDate}
-                  onChange={(e) => setJobForm((prev) => ({ ...prev, startDate: e.target.value }))}
-                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none"
-                />
-                <textarea
-                  value={jobForm.description}
-                  onChange={(e) => setJobForm((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Description"
-                  className="md:col-span-2 lg:col-span-6 min-h-[90px] rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none"
-                />
-              </div>
-            </Card>
-
-            {jobRows.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center">
-                <p className="text-xl md:text-2xl font-bold text-[#0a0f1a]">No open roles yet</p>
-                <p className="mt-2 text-sm md:text-base text-[#6f7782]">Post your first role requirement using the form above.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {jobRows.map((job) => (
-                  <Card key={job.id} className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8 space-y-8">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-bold text-brand-primary">{job.title}</h3>
-                        <Badge variant="outline" className="mt-3 text-[10px] uppercase tracking-[0.18em]">{job.projectType || 'Production'}</Badge>
-                      </div>
-                      <div className="rounded-2xl border border-gray-200 px-5 py-4 text-center min-w-[80px]">
-                        <div className="text-lg font-bold text-brand-primary">{job.artistCount}</div>
-                        <div className="text-[9px] uppercase tracking-[0.2em] text-[#b2b6bc] font-bold mt-1">Artists</div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6 border-y border-gray-100 py-5">
-                      <div>
-                        <div className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc]">Experience</div>
-                        <div className="text-lg md:text-xl font-bold mt-1">{job.experienceRequired || '-'}</div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc]">Start Date</div>
-                        <div className="text-lg md:text-xl font-bold mt-1">{job.startDate || '-'}</div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <Button variant="secondary" className="h-11 uppercase tracking-[0.15em] text-[10px]">Applicants</Button>
-                      <Button variant="secondary" className="h-11 uppercase tracking-[0.15em] text-[10px]">Manage Role</Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <HiringByStudio 
+              onInviteFromBench={handleInviteFromBench} 
+              onSearchTalent={() => setActiveTab('discover')}
+            />
           </section>
         )}
       </main>
 
-      {engagementModalOpen && selectedProfessional && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm px-4 py-8 overflow-y-auto">
-          <div className="max-w-2xl mx-auto bg-white rounded-[2rem] overflow-hidden border border-white/40">
-            <div className="bg-black text-white p-10 relative">
-              <button
-                type="button"
-                onClick={() => setEngagementModalOpen(false)}
-                className="absolute right-8 top-8 h-12 w-12 rounded-full bg-white/10 flex items-center justify-center"
-              >
-                <X size={22} />
-              </button>
-              <h3 className="text-5xl font-bold">Request Engagement</h3>
-              <div className="mt-4 text-sm uppercase tracking-[0.2em] text-white/70">Collaborate with</div>
-              <div className="text-2xl font-semibold mt-1">{selectedProfessional.fullName || selectedProfessional.user?.email?.split('@')[0]}</div>
-            </div>
+      <OpportunityModal 
+        isOpen={opportunityModalOpen}
+        onClose={() => setOpportunityModalOpen(false)}
+        artist={selectedProfessional ? {
+          name: selectedProfessional.fullName || selectedProfessional.user?.email?.split('@')[0] || 'Unknown',
+          role: selectedProfessional.position || 'Artist',
+          avatar: selectedProfessional.avatarUrl || FALLBACK_IMAGES[0]
+        } : null}
+        onSend={handleSendOpportunity}
+      />
 
-            <div className="p-10 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#b2b6bc] block mb-2">Project Timeline</label>
-                  <div className="relative">
-                    <input
-                      value={engagementForm.projectTimeline}
-                      onChange={(e) => setEngagementForm((prev) => ({ ...prev, projectTimeline: e.target.value }))}
-                      placeholder="e.g. 6 Months"
-                      className="w-full rounded-xl border border-gray-200 bg-[#f7f7f8] px-5 py-4 pr-11 outline-none"
-                    />
-                    <Clock size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
+      {/* Confirm Invitation Modal */}
+      <AnimatePresence>
+        {confirmModalOpen && selectedJob && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[3rem] w-full max-w-2xl overflow-hidden shadow-2xl p-10 space-y-10"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h3 className="text-3xl font-black tracking-tight text-[#1a1f28]">Confirm Invitation</h3>
+                  <p className="text-sm font-medium text-gray-400">Are you sure you want to send this invitation?</p>
+                </div>
+                <button 
+                  onClick={() => setConfirmModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-gray-300" />
+                </button>
+              </div>
+
+              {/* Job Details Preview */}
+              <div className="p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100 flex items-center gap-6">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm">
+                  <Briefcase size={24} className="text-gray-900" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="px-2 py-0.5 bg-black rounded text-[8px] font-black text-white tracking-widest uppercase">ID: ROLE-1</div>
+                    <div className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-300">{selectedJob.projectType || 'FEATURE FILM PRODUCTION'}</div>
+                  </div>
+                  <h4 className="text-2xl font-black tracking-tight text-gray-900">{selectedJob.title}</h4>
+                  <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-300">
+                    <div className="flex items-center gap-1.5">
+                      <Clock size={12} />
+                      Hybrid
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheck size={12} />
+                      3D Format
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#b2b6bc] block mb-2">Production Type</label>
-                  <select
-                    value={engagementForm.productionType}
-                    onChange={(e) => setEngagementForm((prev) => ({ ...prev, productionType: e.target.value as any }))}
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f7f8] px-5 py-4 outline-none"
-                  >
-                    <option value="film">Film</option>
-                    <option value="tv">TV</option>
-                    <option value="web">Web</option>
-                    <option value="ads">Ads</option>
-                    <option value="other">Other</option>
-                  </select>
+              {/* Selected Artists */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                    <Users size={14} />
+                    Inviting {selectedTalentIds.size} Artists
+                  </div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">BENCH SELECTION</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {benchDisplayRows
+                    .filter(r => selectedTalentIds.has(r.professionalId))
+                    .map(artist => (
+                      <div key={artist.id} className="flex items-center gap-2 pl-1 pr-4 py-1 bg-white border border-gray-100 rounded-full shadow-sm">
+                        <img src={artist.image} alt={artist.displayName} className="w-6 h-6 rounded-full object-cover" />
+                        <span className="text-[10px] font-bold text-gray-900">{artist.displayName}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
 
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#b2b6bc] block mb-2">Engagement Brief</label>
-                <textarea
-                  value={engagementForm.engagementBrief}
-                  onChange={(e) => setEngagementForm((prev) => ({ ...prev, engagementBrief: e.target.value }))}
-                  placeholder="Briefly describe the scope of work and specific requirements for this artist..."
-                  className="w-full min-h-[130px] rounded-2xl border border-gray-200 bg-[#f7f7f8] px-5 py-4 outline-none"
-                />
+              {/* Actions */}
+              <div className="flex items-center gap-4 pt-4">
+                <button
+                  onClick={() => setConfirmModalOpen(false)}
+                  className="flex-1 h-16 rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:bg-gray-50 transition-all"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={handleSendInvitations}
+                  disabled={inviting}
+                  className="flex-[2] h-16 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-black/10 hover:bg-black/90 transition-all disabled:opacity-50"
+                >
+                  {inviting ? 'SENDING...' : (
+                    <>
+                      <FileText size={16} />
+                      SEND INVITATION
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Update Agreement Modal */}
+      <AnimatePresence>
+        {updateAgreementModalOpen && selectedRequest && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[3rem] w-full max-w-2xl overflow-hidden shadow-2xl p-10 space-y-10"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h3 className="text-3xl font-black tracking-tight text-[#1a1f28]">Update Agreement</h3>
+                  <p className="text-sm font-medium text-gray-400">
+                    Modify terms for {selectedRequest.professional?.fullName || 'the artist'}.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setUpdateAgreementModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-gray-300" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#b2b6bc] block mb-2">Proposed Budget</label>
-                  <input
-                    value={engagementForm.proposedBudget}
-                    onChange={(e) => setEngagementForm((prev) => ({ ...prev, proposedBudget: e.target.value }))}
-                    placeholder="e.g. $15k - $30k"
-                    className="w-full rounded-xl border border-gray-200 bg-[#f7f7f8] px-5 py-4 outline-none"
+              <div className="grid grid-cols-2 gap-6 text-left">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">PROJECT TIMELINE</label>
+                  <input 
+                    type="text"
+                    value={agreementForm.projectTimeline}
+                    onChange={(e) => setAgreementForm({...agreementForm, projectTimeline: e.target.value})}
+                    placeholder="e.g. 6 Months"
+                    className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-bold text-sm" 
                   />
                 </div>
-
-                <div>
-                  <label className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#b2b6bc] block mb-2">Start Date</label>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">PROPOSED BUDGET</label>
+                  <input 
+                    type="text"
+                    value={agreementForm.proposedBudget}
+                    onChange={(e) => setAgreementForm({...agreementForm, proposedBudget: e.target.value})}
+                    placeholder="e.g. $7,500"
+                    className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-bold text-sm" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">START DATE</label>
                   <div className="relative">
-                    <input
+                    <input 
                       type="date"
-                      value={engagementForm.startDate}
-                      onChange={(e) => setEngagementForm((prev) => ({ ...prev, startDate: e.target.value }))}
-                      className="w-full rounded-xl border border-gray-200 bg-[#f7f7f8] px-5 py-4 pr-11 outline-none"
+                      value={agreementForm.startDate}
+                      onChange={(e) => setAgreementForm({...agreementForm, startDate: e.target.value})}
+                      className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-bold text-sm" 
                     />
-                    <Calendar size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" size={18} />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">ENGAGEMENT BRIEF</label>
+                  <textarea
+                    value={agreementForm.engagementBrief}
+                    onChange={(e) => setAgreementForm({...agreementForm, engagementBrief: e.target.value})}
+                    placeholder="Brief description of the engagement"
+                    className="w-full h-14 px-6 py-3 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-bold text-sm resize-none" 
+                  />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-4 pt-4">
                 <button
-                  type="button"
-                  onClick={() => setEngagementModalOpen(false)}
-                  className="text-xs font-bold uppercase tracking-[0.22em] text-[#5d6470]"
+                  onClick={() => setUpdateAgreementModalOpen(false)}
+                  className="flex-1 h-16 rounded-2xl border border-gray-100 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:bg-gray-50 transition-all"
                 >
-                  Discard
+                  CANCEL
                 </button>
-                <Button
-                  className="h-14 px-12 bg-black hover:bg-black text-white uppercase tracking-[0.17em] text-xs"
-                  onClick={submitEngagementRequest}
-                  loading={submittingEngagement}
-                  disabled={!engagementForm.projectTimeline || !engagementForm.engagementBrief}
+                <button
+                  onClick={handleUpdateAgreement}
+                  disabled={updatingAgreement}
+                  className="flex-[2] h-16 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-black/10 hover:bg-black/90 transition-all disabled:opacity-50"
                 >
-                  Send Formal Proposal
-                </Button>
+                  {updatingAgreement ? 'UPDATING...' : (
+                    <>
+                      <FileText size={16} />
+                      UPDATE AGREEMENT
+                    </>
+                  )}
+                </button>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

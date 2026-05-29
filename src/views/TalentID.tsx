@@ -154,7 +154,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
       if (base64FromServer) {
         setDownloadAvatarUrl(base64FromServer);
       } else {
-        const avatarUrlLocal = publicProfile?.profileImage ? getFileUrlLocal(publicProfile.profileImage) : (professional?.avatarUrl || '/assets/sarah_chen_profile_1777487447512.png');
+        const avatarUrlLocal = publicProfile?.profileImage ? getFileUrlLocal(publicProfile.profileImage) : (professional?.avatarUrl || '');
         if (avatarUrlLocal) {
           convertUrlToBase64(avatarUrlLocal).then(base64 => {
             setDownloadAvatarUrl(base64);
@@ -285,7 +285,8 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
   const { professional, publicProfile, talentId } = profileData;
   const displayName = professional?.fullName || 'Professional';
-  const avatarUrl = publicProfile?.profileImage ? getFileUrl(publicProfile.profileImage) : (professional?.avatarUrl || '/assets/sarah_chen_profile_1777487447512.png');
+  const hasAvatar = !!(publicProfile?.profileImage || professional?.avatarUrl);
+  const avatarUrl = publicProfile?.profileImage ? getFileUrl(publicProfile.profileImage) : (professional?.avatarUrl || '');
   const displayTalentId = talentId?.talentCode || 'AUI-000000';
 
   const insight = publicProfile?.auiInsight || 'Senior creative professional with a proven track record in high-impact projects. Consistently delivers exceptional results and excels in collaborative environments.';
@@ -369,10 +370,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               <ArrowLeft size={20} />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#111827] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">⚡</span>
-              </div>
-              <span className="font-bold text-lg tracking-tight">AUI <span className="text-[#6B7280] font-normal text-base uppercase tracking-widest ml-1">Studio</span></span>
+              <span className="font-black text-xl tracking-tight text-[#111827]">AUI</span>
             </div>
           </div>
 
@@ -416,11 +414,17 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         <div ref={cardRef} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col md:flex-row min-h-[400px]">
           {/* Left Column: Vertical Image */}
           <div className="w-full md:w-[320px] relative shrink-0">
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              className="w-full h-full object-cover"
-            />
+            {hasAvatar ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-[#f0f0f5]">
+                <User size={80} className="text-[#c0c4cc]" />
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20"></div>
 
             {/* Reviewing Badge */}
@@ -804,11 +808,17 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <div className="grid grid-cols-[190px_1fr] gap-5 items-stretch">
               {/* Left Column: Shorter Image */}
               <div className="relative h-[210px] w-[190px] rounded-[16px] overflow-hidden bg-[#d8dbe2]">
-                <img
-                  src={downloadAvatarUrl || avatarUrl}
-                  alt={displayName}
-                  className="h-full w-full object-cover object-center"
-                />
+                {(downloadAvatarUrl || hasAvatar) ? (
+                  <img
+                    src={downloadAvatarUrl || avatarUrl}
+                    alt={displayName}
+                    className="h-full w-full object-cover object-center"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-[#f0f0f5]">
+                    <User size={60} className="text-[#c0c4cc]" />
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Info */}

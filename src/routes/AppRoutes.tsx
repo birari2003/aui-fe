@@ -20,6 +20,7 @@ import InstitutePublicProfile from '../views/InstitutePublicProfile';
 import AdminPanel from '../views/AdminPanel';
 import PendingApprovalPage from '../views/PendingApproval';
 import StudioTalentID from '../views/StudioTalentID';
+import ViewApplication from '../components/viewApplication';
 import { useParams } from 'react-router-dom';
 
 interface AppRoutesProps {
@@ -115,6 +116,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/talent/:talentCode" element={<TalentRouter setView={handleSetView} />} />
       <Route path="/studio/:id" element={<StudioShowcase setView={handleSetView} />} />
       <Route path="/admin" element={<AdminPanel setView={handleSetView} />} />
+      <Route path="/job/:jobId/applications" element={<ViewApplication />} />
       <Route path="/pending-approval" element={<PendingApprovalPage onBack={() => handleSetView('landing')} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

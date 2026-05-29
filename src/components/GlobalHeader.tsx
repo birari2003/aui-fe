@@ -50,7 +50,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
     { id: 'institute_list', label: 'Institutes', path: '/institutes' },
     { id: 'pro_studio_requests', label: 'Studio Request', path: '/dashboard/pro/studio-requests' },
     { id: 'pro_job_postings', label: 'Jobs by Studios', path: '/dashboard/pro/jobs-by-studios' },
-    { id: 'dashboard_pro', label: 'My Dashboard', path: '/dashboard/pro' }
+    { id: 'dashboard_pro', label: 'WorkHub', path: '/dashboard/pro' }
   ].filter(item => {
     if (userRole === 'institute') {
       return !['hire', 'institute_list', 'pro_studio_requests', 'pro_job_postings', 'dashboard_pro'].includes(item.id);
@@ -59,7 +59,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
       return !['experts', 'studio_list', 'pro_studio_requests', 'pro_job_postings', 'dashboard_pro'].includes(item.id);
     }
     if (userRole === 'professional') {
-      return !['hire', 'experts'].includes(item.id);
+      return !['hire', 'experts', 'studio_list', 'institute_list', 'pro_studio_requests', 'pro_job_postings'].includes(item.id);
     }
     return true;
   });

@@ -1,51 +1,728 @@
 import React from 'react';
-import { Users, MessageSquare, ShieldCheck, Briefcase, CheckCircle2, TrendingUp, Shield, GraduationCap, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, ShieldCheck, Globe, MapPin, ChevronRight, Zap, Layers, Briefcase, Activity, Filter, Search, Clock, ArrowRight, X, Shield, Sparkles, Lock, Pencil, Trash2, Plus, Calendar, Edit2, BarChart, CheckCircle2 } from 'lucide-react';
+
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import { View } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { getMyProfile, getStudioJobPostings, getStudioRequests, respondToStudioRequest } from '../services/professionalServices';
-import { getMyCollaborationRequests, respondToCollaborationRequest } from '../services/collaborationServices';
+import { getMyProfile, getStudioJobPostings, getStudioRequests, respondToStudioRequest, applyForJob, getMyApplications, respondToAgreement, getNotifications } from '../services/professionalServices';
+import { getAllStudioProfiles } from '../services/studioProfileService';
+import { searchInstitutes } from '../services/searchServices';
 import EditProfileModal from '../components/EditProfileModal';
 import ManagePublicProfileModal from '../components/ManagePublicProfileModal';
-import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { BASE_URL } from '../utils/urls';
 
-const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
+const EditableField = ({ label, value, field, type = 'text', locked = false, isEditing, onEdit, onChange }: any) => {
+  return (
+    <div className="space-y-2 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm relative group">
+      <div className="flex justify-between items-center">
+        <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">{label}</label>
+        {!locked && (
+          <button 
+            onClick={() => onEdit(isEditing ? null : field)}
+            className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest hover:underline ${isEditing ? 'text-emerald-500' : 'text-brand-primary'}`}
+          >
+            {isEditing ? <><CheckCircle2 size={10} /> Done</> : <><Pencil size={10} /> Edit</>}
+          </button>
+        )}
+        {locked && (
+          <span className="flex items-center gap-1 text-[10px] font-bold text-text-muted uppercase tracking-widest bg-gray-50 px-2 py-1 rounded-md">
+            <Lock size={10} /> Locked
+          </span>
+        )}
+      </div>
+      <div className="relative">
+        <input
+          type={type}
+          value={value}
+          disabled={!isEditing && !locked}
+          readOnly={!isEditing && !locked}
+          className={`w-full font-bold text-brand-primary bg-transparent focus:outline-none transition-all ${!isEditing ? 'opacity-70' : 'opacity-100 ring-1 ring-brand-primary/10 rounded px-2 py-1'}`}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {!locked && !isEditing && (
+          <button 
+            onClick={() => onEdit(field)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+          >
+            <Pencil size={14} className="text-brand-primary" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const VerificationSheetModal = ({
+  isOpen,
+  onClose,
+  profile,
+  opportunity,
+  onSubmit,
+  loading
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: any;
+  opportunity: any;
+  onSubmit: (data: any) => void;
+  loading: boolean;
+}) => {
+  const [formData, setFormData] = React.useState<any>(null);
+  const [editingField, setEditingPhase] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (profile && isOpen) {
+      setFormData({
+        talentId: profile.user?.talentId?.talentCode || 'AUI-8RP-S',
+        name: profile.fullName || '',
+        primarySkill: profile.skills?.[0] || 'Animation',
+        position: profile.currentRole || 'Lead Character Designer',
+        experience: profile.experienceYears ? `${profile.experienceYears}y` : '8y',
+        experienceTimeline: [
+          { role: 'Lead Character Des', company: 'DNEG', period: '2024 - Present' },
+          { role: 'Lighting Artist', company: 'Framestore', period: '2021 - 2024' },
+          { role: 'Associate Artist', company: 'Technicolor', period: '2018 - 2021' },
+        ],
+        currentCompany: 'DNEG',
+        currentCTC: '',
+        expectedCTC: '',
+        noticePeriod: 'Immediate',
+        location: profile.location || 'Mumbai, India',
+        relocationPreference: 'Yes',
+        aboutMe: profile.bio || '',
+        showreelLinks: [profile.showreelUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ'],
+        workLedger: [
+          { project: 'Metaverse Cha', studio: 'Meta', role: 'Lead Designer', year: '6m' },
+          { project: 'Feature Film: ', studio: 'Roll A Rock', role: 'Lighting Lead', year: '3m' },
+          { project: 'Nexus Chronic', studio: 'Nexus Interact', role: 'Senior Animat', year: 'Ongoing' },
+        ]
+      });
+    }
+  }, [profile, isOpen]);
+
+  if (!isOpen || !formData) return null;
+
+  return (
+    <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-md z-[110] flex items-center justify-center p-6 text-left">
+      <div className="bg-[#12121A] w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="p-8 text-white flex justify-between items-start">
+          <div className="space-y-1">
+            <p className="text-[10px] font-black text-brand-accent uppercase tracking-[0.2em]">Verification Sheet</p>
+            <h2 className="text-2xl font-display font-bold">Direct Engagement Information sheet</h2>
+            <p className="text-white/40 text-sm">Verify your information before sending to {opportunity?.studio?.studioName || 'Movement Studio'}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/40">
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 no-scrollbar bg-white rounded-t-[32px]">
+          {/* Info Exchange Alert */}
+          <div className="p-6 bg-brand-primary/5 rounded-2xl border border-brand-primary/10 flex items-start gap-4">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-primary shadow-sm border border-brand-primary/10 flex-shrink-0">
+              <ShieldCheck size={20} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-bold text-brand-primary text-sm">Secure AUI Information Exchange</h4>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                The studio has requested clean, verified profile fields to approve this engagement immediately. You can modify any automatically pre-filled details to fit your current situation.
+              </p>
+            </div>
+          </div>
+
+          <EditableField 
+            label="Talent ID" 
+            value={formData.talentId} 
+            field="talentId" 
+            locked 
+          />
+          <EditableField 
+            label="Name" 
+            value={formData.name} 
+            field="name" 
+            isEditing={editingField === 'name'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, name: val })}
+          />
+          <EditableField 
+            label="Primary Skill" 
+            value={formData.primarySkill} 
+            field="primarySkill" 
+            isEditing={editingField === 'primarySkill'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, primarySkill: val })}
+          />
+          <EditableField 
+            label="Position" 
+            value={formData.position} 
+            field="position" 
+            isEditing={editingField === 'position'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, position: val })}
+          />
+          <EditableField 
+            label="Experience" 
+            value={formData.experience} 
+            field="experience" 
+            isEditing={editingField === 'experience'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, experience: val })}
+          />
+
+          {/* Experience Timeline */}
+          <div className="space-y-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm relative group">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
+                <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">Experience Timeline (Interactive Timeline)</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setEditingPhase(editingField === 'timeline' ? null : 'timeline')}
+                  className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest hover:underline px-3 py-1.5 rounded-lg ${editingField === 'timeline' ? 'text-emerald-500 bg-emerald-50' : 'text-brand-primary bg-brand-primary/5'}`}
+                >
+                  {editingField === 'timeline' ? <><CheckCircle2 size={10} /> Save Changes</> : <><Pencil size={10} /> Edit Timeline</>}
+                </button>
+                {editingField === 'timeline' && (
+                  <button 
+                    onClick={() => {
+                      const newTimeline = [...formData.experienceTimeline, { role: '', company: '', period: '' }];
+                      setFormData({ ...formData, experienceTimeline: newTimeline });
+                    }}
+                    className="flex items-center gap-1 text-[10px] font-bold text-brand-primary uppercase tracking-widest hover:underline bg-brand-primary/5 px-3 py-1.5 rounded-lg"
+                  >
+                    <Plus size={10} /> Add Milestone
+                  </button>
+                )}
+              </div>
+            </div>
+            {editingField !== 'timeline' && (
+              <button 
+                onClick={() => setEditingPhase('timeline')}
+                className="absolute right-4 top-4 p-2 hover:bg-gray-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+              >
+                <Pencil size={14} className="text-brand-primary" />
+              </button>
+            )}
+            <div className="space-y-6 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[1px] before:bg-gray-100 pl-8">
+              {formData.experienceTimeline.map((item: any, i: number) => {
+                const isEditing = editingField === 'timeline';
+                return (
+                  <div key={i} className={`relative grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border group text-left transition-all ${isEditing ? 'bg-white border-brand-primary/20 shadow-md' : 'bg-gray-50/50 border-gray-100'}`}>
+                    <div className={`absolute -left-[25px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-white shadow-sm transition-colors ${isEditing ? 'bg-emerald-500' : 'bg-brand-primary'}`} />
+                    <div>
+                      <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1">Role</p>
+                      <div className="flex items-center gap-1">
+                        <input 
+                          className={`bg-transparent text-xs font-bold text-brand-primary w-full outline-none transition-all ${isEditing ? 'ring-1 ring-brand-primary/10 rounded px-1' : 'pointer-events-none'}`} 
+                          value={item.role} 
+                          readOnly={!isEditing}
+                          onChange={(e) => {
+                            const newTimeline = [...formData.experienceTimeline];
+                            newTimeline[i].role = e.target.value;
+                            setFormData({ ...formData, experienceTimeline: newTimeline });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1">Company/Studio</p>
+                      <div className="flex items-center gap-1">
+                        <input 
+                          className={`bg-transparent text-xs font-bold text-brand-primary w-full outline-none transition-all ${isEditing ? 'ring-1 ring-brand-primary/10 rounded px-1' : 'pointer-events-none'}`} 
+                          value={item.company} 
+                          readOnly={!isEditing}
+                          onChange={(e) => {
+                            const newTimeline = [...formData.experienceTimeline];
+                            newTimeline[i].company = e.target.value;
+                            setFormData({ ...formData, experienceTimeline: newTimeline });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mb-1">Period</p>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            className={`bg-transparent text-xs font-bold text-brand-primary w-full outline-none transition-all ${isEditing ? 'ring-1 ring-brand-primary/10 rounded px-1' : 'pointer-events-none'}`} 
+                            value={item.period} 
+                            readOnly={!isEditing}
+                            onChange={(e) => {
+                              const newTimeline = [...formData.experienceTimeline];
+                              newTimeline[i].period = e.target.value;
+                              setFormData({ ...formData, experienceTimeline: newTimeline });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      {isEditing && (
+                        <button 
+                          onClick={() => {
+                            const newTimeline = formData.experienceTimeline.filter((_: any, idx: number) => idx !== i);
+                            setFormData({ ...formData, experienceTimeline: newTimeline });
+                          }}
+                          className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <EditableField 
+            label="Current Company" 
+            value={formData.currentCompany} 
+            field="currentCompany" 
+            isEditing={editingField === 'currentCompany'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, currentCompany: val })}
+          />
+          <EditableField 
+            label="Current CTC (Manually Fill)" 
+            value={formData.currentCTC} 
+            field="currentCTC" 
+            isEditing={editingField === 'currentCTC'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, currentCTC: val })}
+          />
+          <EditableField 
+            label="Expected CTC (Manually Fill)" 
+            value={formData.expectedCTC} 
+            field="expectedCTC" 
+            isEditing={editingField === 'expectedCTC'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, expectedCTC: val })}
+          />
+          <EditableField 
+            label="Notice Period" 
+            value={formData.noticePeriod} 
+            field="noticePeriod" 
+            isEditing={editingField === 'noticePeriod'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, noticePeriod: val })}
+          />
+          <EditableField 
+            label="Location" 
+            value={formData.location} 
+            field="location" 
+            isEditing={editingField === 'location'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, location: val })}
+          />
+          <EditableField 
+            label="Relocation Preference" 
+            value={formData.relocationPreference} 
+            field="relocationPreference" 
+            isEditing={editingField === 'relocationPreference'}
+            onEdit={setEditingPhase}
+            onChange={(val: string) => setFormData({ ...formData, relocationPreference: val })}
+          />
+          
+          <div className="space-y-2 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm relative group">
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">About Me</label>
+              <button 
+                onClick={() => setEditingPhase(editingField === 'aboutMe' ? null : 'aboutMe')}
+                className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest hover:underline ${editingField === 'aboutMe' ? 'text-emerald-500' : 'text-brand-primary'}`}
+              >
+                {editingField === 'aboutMe' ? <><CheckCircle2 size={10} /> Done</> : <><Pencil size={10} /> Edit</>}
+              </button>
+            </div>
+            {editingField !== 'aboutMe' && (
+              <button 
+                onClick={() => setEditingPhase('aboutMe')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+              >
+                <Pencil size={14} className="text-brand-primary" />
+              </button>
+            )}
+            <textarea
+              className={`w-full font-medium text-text-secondary bg-transparent focus:outline-none resize-none text-sm leading-relaxed transition-all ${editingField === 'aboutMe' ? 'ring-1 ring-brand-primary/10 rounded p-2' : 'pointer-events-none'}`}
+              rows={3}
+              value={formData.aboutMe}
+              readOnly={editingField !== 'aboutMe'}
+              placeholder="Tell the studio about your professional journey manually..."
+              onChange={(e) => setFormData({ ...formData, aboutMe: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-4 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm relative group">
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">Showreel Link(S)</label>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setEditingPhase(editingField === 'links' ? null : 'links')}
+                  className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest hover:underline px-3 py-1.5 rounded-lg ${editingField === 'links' ? 'text-emerald-500 bg-emerald-50' : 'text-brand-primary bg-brand-primary/5'}`}
+                >
+                  {editingField === 'links' ? <><CheckCircle2 size={10} /> Save</> : <><Pencil size={10} /> Edit</>}
+                </button>
+                {editingField === 'links' && (
+                  <button 
+                    onClick={() => {
+                      const newLinks = [...formData.showreelLinks, ''];
+                      setFormData({ ...formData, showreelLinks: newLinks });
+                    }}
+                    className="flex items-center gap-1 text-[10px] font-bold text-brand-primary uppercase tracking-widest hover:underline bg-brand-primary/5 px-3 py-1.5 rounded-lg"
+                  >
+                    <Plus size={10} /> Add More
+                  </button>
+                )}
+              </div>
+            </div>
+            {editingField !== 'links' && (
+              <button 
+                onClick={() => setEditingPhase('links')}
+                className="absolute right-4 top-4 p-2 hover:bg-gray-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+              >
+                <Pencil size={14} className="text-brand-primary" />
+              </button>
+            )}
+            {formData.showreelLinks.map((link: string, i: number) => {
+              const isEditing = editingField === 'links';
+              return (
+                <div key={i} className="relative flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      className={`w-full font-bold text-brand-primary bg-gray-50/50 p-4 rounded-xl border transition-all focus:outline-none pr-10 ${isEditing ? 'border-brand-primary/20 bg-white ring-1 ring-brand-primary/10' : 'border-gray-100 pointer-events-none opacity-70'}`}
+                      value={link}
+                      readOnly={!isEditing}
+                      onChange={(e) => {
+                        const newLinks = [...formData.showreelLinks];
+                        newLinks[i] = e.target.value;
+                        setFormData({ ...formData, showreelLinks: newLinks });
+                      }}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  {isEditing && formData.showreelLinks.length > 1 && (
+                    <button 
+                      onClick={() => {
+                        const newLinks = formData.showreelLinks.filter((_: any, idx: number) => idx !== i);
+                        setFormData({ ...formData, showreelLinks: newLinks });
+                      }}
+                      className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Work Ledger */}
+          <div className="space-y-4 p-6 bg-yellow-50/30 rounded-2xl border border-yellow-100 shadow-sm relative group">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">Work Ledger (Verified Film Credits)</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setEditingPhase(editingField === 'ledger' ? null : 'ledger')}
+                  className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest hover:underline px-3 py-1.5 rounded-lg ${editingField === 'ledger' ? 'text-emerald-500 bg-emerald-50' : 'text-orange-500 bg-orange-50'}`}
+                >
+                  {editingField === 'ledger' ? <><CheckCircle2 size={10} /> Save</> : <><Pencil size={10} /> Edit</>}
+                </button>
+                {editingField === 'ledger' && (
+                  <button 
+                    onClick={() => {
+                      const newLedger = [...formData.workLedger, { project: '', studio: '', role: '', year: '' }];
+                      setFormData({ ...formData, workLedger: newLedger });
+                    }}
+                    className="flex items-center gap-1 text-[10px] font-bold text-orange-500 uppercase tracking-widest hover:underline bg-orange-50 px-3 py-1.5 rounded-lg"
+                  >
+                    <Plus size={10} /> Add Credit
+                  </button>
+                )}
+              </div>
+            </div>
+            {editingField !== 'ledger' && (
+              <button 
+                onClick={() => setEditingPhase('ledger')}
+                className="absolute right-4 top-4 p-2 hover:bg-gray-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+              >
+                <Pencil size={14} className="text-orange-500" />
+              </button>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {formData.workLedger.map((item: any, i: number) => {
+                const isEditing = editingField === 'ledger';
+                return (
+                  <div key={i} className={`p-4 rounded-xl border group relative text-left transition-all ${isEditing ? 'bg-white border-orange-200 shadow-md' : 'bg-gray-50/50 border-gray-100'}`}>
+                    <div className="grid grid-cols-2 gap-y-3">
+                      <div>
+                        <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mb-0.5">Project / Film</p>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            className={`bg-transparent text-[10px] font-bold text-brand-primary w-full outline-none ${isEditing ? 'ring-1 ring-brand-primary/10 rounded px-0.5' : 'pointer-events-none'}`} 
+                            value={item.project} 
+                            readOnly={!isEditing}
+                            onChange={(e) => {
+                              const newLedger = [...formData.workLedger];
+                              newLedger[i].project = e.target.value;
+                              setFormData({ ...formData, workLedger: newLedger });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mb-0.5">Studio / Org</p>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            className={`bg-transparent text-[10px] font-bold text-brand-primary w-full outline-none ${isEditing ? 'ring-1 ring-brand-primary/10 rounded px-0.5' : 'pointer-events-none'}`} 
+                            value={item.studio} 
+                            readOnly={!isEditing}
+                            onChange={(e) => {
+                              const newLedger = [...formData.workLedger];
+                              newLedger[i].studio = e.target.value;
+                              setFormData({ ...formData, workLedger: newLedger });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mb-0.5">Your Role</p>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            className={`bg-transparent text-[10px] font-bold text-brand-primary w-full outline-none ${isEditing ? 'ring-1 ring-brand-primary/10 rounded px-0.5' : 'pointer-events-none'}`} 
+                            value={item.role} 
+                            readOnly={!isEditing}
+                            onChange={(e) => {
+                              const newLedger = [...formData.workLedger];
+                              newLedger[i].role = e.target.value;
+                              setFormData({ ...formData, workLedger: newLedger });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black text-text-muted uppercase tracking-widest mb-0.5">Year</p>
+                        <div className="flex items-center gap-1">
+                          <input 
+                            className={`bg-transparent text-[10px] font-bold text-brand-primary w-full outline-none ${isEditing ? 'ring-1 ring-brand-primary/10 rounded px-0.5' : 'pointer-events-none'}`} 
+                            value={item.year} 
+                            readOnly={!isEditing}
+                            onChange={(e) => {
+                              const newLedger = [...formData.workLedger];
+                              newLedger[i].year = e.target.value;
+                              setFormData({ ...formData, workLedger: newLedger });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    {isEditing && (
+                      <button 
+                        onClick={() => {
+                          const newLedger = formData.workLedger.filter((_: any, idx: number) => idx !== i);
+                          setFormData({ ...formData, workLedger: newLedger });
+                        }}
+                        className="absolute -top-2 -right-2 p-1 bg-red-50 text-red-400 rounded-full border border-red-100 shadow-sm"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-8 bg-white border-t border-gray-100 flex items-center justify-between">
+          <button onClick={onClose} className="px-8 py-3 text-sm font-bold text-text-muted hover:bg-gray-50 rounded-2xl transition-all">Cancel</button>
+          <Button
+            className="bg-brand-primary hover:bg-brand-primary/90 text-white px-10 py-3.5 rounded-2xl shadow-xl shadow-brand-primary/20 flex items-center gap-3 font-bold group"
+            onClick={() => onSubmit(formData)}
+            loading={loading}
+          >
+            SEND VERIFIED RESPONSE <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const getFileUrl = (path: string) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${BASE_URL}/${path.replace(/\\/g, '/')}`;
+};
+
+const OpportunityDetailsModal = ({ 
+  isOpen, 
+  onClose, 
+  opportunity, 
+  onAccept, 
+  loading 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  opportunity: any; 
+  onAccept: (id: number) => void;
+  loading: boolean;
+}) => {
+  if (!isOpen || !opportunity) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+      <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="p-8 space-y-8 max-h-[90vh] overflow-y-auto no-scrollbar">
+          <div className="flex justify-between items-start">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Badge variant="info" className="bg-brand-primary/5 text-brand-primary border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+                  Incoming Request
+                </Badge>
+                <span className="text-xs text-text-muted flex items-center gap-1.5 font-medium">
+                  <Clock size={14} /> Just now
+                </span>
+              </div>
+              <div>
+                <h2 className="text-4xl font-display font-black text-brand-primary tracking-tight">
+                  {opportunity.engagementBrief}
+                </h2>
+                <p className="text-lg text-text-secondary font-medium mt-1">
+                  {opportunity.studio?.studioName} <span className="mx-2 text-gray-300">•</span> {opportunity.productionType}
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-text-muted"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-6 border-y border-gray-100">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Timeline</p>
+              <p className="font-bold text-brand-primary">{opportunity.startDate || 'Starts 2026-04-01'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Experience</p>
+              <p className="font-bold text-brand-primary">Mid-Level, Senior</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Engagement</p>
+              <p className="font-bold text-brand-primary">N/A</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Work Mode</p>
+              <p className="font-bold text-emerald-500 flex items-center gap-1.5">
+                <ShieldCheck size={14} /> Hybrid
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center gap-4">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-primary shadow-sm border border-gray-100">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Project Format</p>
+              <p className="font-bold text-brand-primary">3D</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-brand-primary">
+              <Zap size={18} className="fill-brand-primary/10" />
+              <h4 className="text-xs font-black uppercase tracking-widest">Opportunity Overview</h4>
+            </div>
+            <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 text-text-secondary font-medium leading-relaxed">
+              "Join a world-class team working on a major animated feature."
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-brand-primary">
+              <Shield size={18} className="fill-brand-primary/10" />
+              <h4 className="text-xs font-black uppercase tracking-widest">Role Requirements</h4>
+            </div>
+            <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 text-text-secondary font-medium leading-relaxed">
+              High-end character animation for feature films.
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+          <button 
+            onClick={onClose}
+            className="text-sm font-bold text-text-muted hover:text-brand-primary transition-colors"
+          >
+            Maybe Later
+          </button>
+          <Button 
+            className="bg-brand-primary hover:bg-brand-primary/90 text-white px-8 py-3 rounded-2xl shadow-xl shadow-brand-primary/20 flex items-center gap-2 font-bold"
+            onClick={() => onAccept(opportunity.id)}
+            loading={loading}
+          >
+            Accept & Apply <ArrowRight size={20} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProfessionalDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [profile, setProfile] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isPublicModalOpen, setIsPublicModalOpen] = React.useState(false);
-  const [requests, setRequests] = React.useState<any[]>([]);
+  const [isOppModalOpen, setIsOppModalOpen] = React.useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = React.useState(false);
+  const [selectedOpp, setSelectedOpp] = React.useState<any>(null);
   const [studioRequests, setStudioRequests] = React.useState<any[]>([]);
   const [studioJobPostings, setStudioJobPostings] = React.useState<any[]>([]);
+  const [jobApplications, setJobApplications] = React.useState<any[]>([]);
+  const [notifications, setNotifications] = React.useState<any[]>([]);
   const [requestLoadingId, setRequestLoadingId] = React.useState<number | null>(null);
+  const [isSubmittingResponse, setIsSubmittingResponse] = React.useState(false);
+  const [studios, setStudios] = React.useState<any[]>([]);
+  const [institutes, setInstitutes] = React.useState<any[]>([]);
+  const [networkTab, setNetworkTab] = React.useState<'studios' | 'institutes'>('studios');
+  const [hiringOSTab, setHiringOSTab] = React.useState<'opportunities' | 'applications' | 'engagements' | 'activity'>('opportunities');
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const fetchDashboardData = React.useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
-      const [profRes, reqRes] = await Promise.all([
+      const [profRes, studioReqRes, studioJobRes, appRes, notifRes, studiosRes, instRes] = await Promise.all([
         getMyProfile(token),
-        getMyCollaborationRequests(token)
-      ]);
-
-      const [studioReqRes, studioJobRes] = await Promise.all([
         getStudioRequests(token),
         getStudioJobPostings(token),
+        getMyApplications(token),
+        getNotifications(token),
+        getAllStudioProfiles(),
+        searchInstitutes(token)
       ]);
 
       if (profRes.ok) {
         const data = await profRes.json();
         setProfile(data.data);
-      }
-      if (reqRes.ok) {
-        const reqData = await reqRes.json();
-        setRequests(Array.isArray(reqData.data) ? reqData.data : []);
       }
 
       if (studioReqRes.ok) {
@@ -57,6 +734,26 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
         const studioJobData = await studioJobRes.json();
         setStudioJobPostings(Array.isArray(studioJobData.data) ? studioJobData.data : []);
       }
+
+      if (appRes.ok) {
+        const appData = await appRes.json();
+        setJobApplications(Array.isArray(appData.data) ? appData.data : []);
+      }
+
+      if (notifRes.ok) {
+        const notifData = await notifRes.json();
+        setNotifications(Array.isArray(notifData.data) ? notifData.data : []);
+      }
+
+      if (studiosRes.ok) {
+        const studiosData = await studiosRes.json();
+        setStudios(Array.isArray(studiosData.data) ? studiosData.data : []);
+      }
+
+      if (instRes.ok) {
+        const instData = await instRes.json();
+        setInstitutes(Array.isArray(instData.data) ? instData.data : []);
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
     } finally {
@@ -64,14 +761,30 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
     }
   }, []);
 
-  const handleRespond = async (id: number, status: 'accepted' | 'rejected') => {
+  const handleApply = async (verifiedResponse: any) => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token || !selectedOpp) return;
+
     try {
-      const res = await respondToCollaborationRequest(token, id, { status });
-      if (res.ok) fetchDashboardData();
+      setIsSubmittingResponse(true);
+      const res = await applyForJob(token, {
+        jobPostingId: selectedOpp.isGlobal ? selectedOpp.id : undefined,
+        studioRequestId: !selectedOpp.isGlobal ? selectedOpp.id : undefined,
+        verifiedResponse
+      });
+
+      if (res.ok) {
+        setIsVerificationModalOpen(false);
+        setHiringOSTab('applications');
+        await fetchDashboardData();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body?.message || 'Failed to apply');
+      }
     } catch (err) {
-      console.error('Failed to respond:', err);
+      console.error('Failed to apply:', err);
+    } finally {
+      setIsSubmittingResponse(false);
     }
   };
 
@@ -89,6 +802,22 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
       console.error('Failed to respond to studio request:', err);
     } finally {
       setRequestLoadingId(null);
+    }
+  };
+
+  const handleAgreementResponse = async (applicationId: number, decision: 'accepted' | 'rejected') => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await respondToAgreement(token, applicationId, decision);
+      if (res.ok) {
+        toast.success(decision === 'accepted' ? 'Engagement accepted! Welcome aboard.' : 'Agreement declined.');
+        await fetchDashboardData();
+      }
+    } catch (err) {
+      toast.error('Failed to respond to agreement');
+      console.error('Failed to respond to agreement:', err);
     }
   };
 
@@ -124,6 +853,24 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
         isOpen={isPublicModalOpen}
         onClose={() => setIsPublicModalOpen(false)}
         onUpdate={fetchDashboardData}
+      />
+      <OpportunityDetailsModal
+        isOpen={isOppModalOpen}
+        onClose={() => setIsOppModalOpen(false)}
+        opportunity={selectedOpp}
+        loading={false}
+        onAccept={() => {
+          setIsOppModalOpen(false);
+          setIsVerificationModalOpen(true);
+        }}
+      />
+      <VerificationSheetModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => setIsVerificationModalOpen(false)}
+        profile={profile}
+        opportunity={selectedOpp}
+        loading={isSubmittingResponse}
+        onSubmit={handleApply}
       />
       
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-12 text-left">
@@ -187,7 +934,7 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
         {activeSection === 'overview' && (
           <>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
           {[
             { label: 'Experience Score', val: `${profile?.experienceScore || 0}%`, icon: TrendingUp, trend: isProfileComplete ? '+12%' : '0%', color: 'text-brand-accent' },
             { label: 'Reliability Score', val: `${profile?.reliabilityScore || 0}%`, icon: Shield, trend: isProfileComplete ? 'Top 1%' : 'N/A', color: 'text-emerald-500' },
@@ -209,10 +956,10 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             </Card>
           ))}
-        </div>
+        </div> */}
 
         {/* Collaboration Invitations Section */}
-        {requests.filter(r => r.senderRole === 'institute').length > 0 && (
+        {/* {requests.filter(r => r.senderRole === 'institute').length > 0 && (
           <section className="space-y-6 text-left animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div className="text-left">
@@ -269,82 +1016,538 @@ const ProfessionalDashboard = ({ setView }: { setView: (v: View) => void }) => {
               ))}
             </div>
           </section>
-        )}
+        )} */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 text-left">
-          <section className="space-y-6 text-left">
-            <h2 className="text-2xl font-display font-bold text-brand-primary text-left border-b border-gray-50 pb-4">Active Opportunities</h2>
-            <div className="space-y-4 text-left">
-              {[
-                { studio: 'Mumbai Animation Studio', role: 'Character Animator', type: 'Feature Film', pay: 'Premium' },
-                { studio: 'VFX Global', role: 'Lighting Lead', type: 'Commercial', pay: 'Industry Std' },
-              ].map((opp, i) => (
-                <Card key={i} className="p-6 flex items-center justify-between hover:border-brand-accent/30 text-left group">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="w-12 h-12 bg-brand-surface rounded-xl flex items-center justify-center text-text-muted text-left group-hover:bg-brand-accent/5 group-hover:text-brand-accent transition-colors">
-                      <Briefcase size={20} />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-brand-primary text-left">{opp.role}</p>
-                      <p className="text-xs text-text-secondary text-left">{opp.studio} • {opp.type}</p>
-                    </div>
-                  </div>
-                  <Button variant="secondary" className="text-xs border border-gray-100 hover:bg-white px-4">View</Button>
-                </Card>
-              ))}
-              <div className="p-8 bg-brand-surface/30 rounded-brand border border-dashed border-gray-200 text-center space-y-2">
-                <p className="text-sm font-medium text-text-muted">More opportunities based on your skills</p>
-                <Button variant="secondary" className="text-xs">Browse All</Button>
-              </div>
+        <section className="space-y-8 text-left animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex items-center gap-4 text-left">
+            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Globe size={24} />
             </div>
-          </section>
+            <div className="text-left">
+              <h2 className="text-2xl font-display font-bold text-brand-primary">WorkHub</h2>
+              <p className="text-sm text-text-secondary">Explore top studios and institutes in the creative industry</p>
+            </div>
+          </div>
 
-          <section className="space-y-6 text-left">
-            <h2 className="text-2xl font-display font-bold text-brand-primary text-left border-b border-gray-50 pb-4">Recent Ledger Activity</h2>
-            <div className="space-y-4 text-left">
-              {isProfileComplete ? (
-                profile.workLedgers && profile.workLedgers.length > 0 ? (
-                  profile.workLedgers.map((entry: any) => (
-                    <div key={entry.id} className="p-6 bg-brand-surface rounded-brand border border-gray-50 flex items-center justify-between text-left hover:border-emerald-100 transition-colors">
-                      <div className="flex items-center gap-4 text-left">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-sm text-left">
-                          <CheckCircle2 size={20} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-sm font-bold text-brand-primary text-left">{entry.projectName}</p>
-                          <p className="text-[10px] text-text-secondary uppercase tracking-widest text-left">{entry.role}</p>
+          <div className="flex w-full border-b border-gray-100">
+            <button
+              onClick={() => setNetworkTab('studios')}
+              className={`flex-1 px-8 py-4 text-sm font-bold transition-all relative text-center ${
+                networkTab === 'studios' ? 'text-brand-primary' : 'text-text-muted hover:text-brand-primary'
+              }`}
+            >
+              Studios
+              {networkTab === 'studios' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary animate-in fade-in slide-in-from-left-2" />
+              )}
+            </button>
+            <button
+              onClick={() => setNetworkTab('institutes')}
+              className={`flex-1 px-8 py-4 text-sm font-bold transition-all relative text-center ${
+                networkTab === 'institutes' ? 'text-brand-primary' : 'text-text-muted hover:text-brand-primary'
+              }`}
+            >
+              Institutes
+              {networkTab === 'institutes' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary animate-in fade-in slide-in-from-left-2" />
+              )}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {networkTab === 'studios' ? (
+              studios.length > 0 ? (
+                studios.slice(0, 6).map((studio) => (
+                  <Card key={studio.id} className="p-6 group hover:shadow-premium transition-premium border-gray-100">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-white font-bold text-xl overflow-hidden flex-shrink-0">
+                        {studio.logo ? (
+                          <img src={getFileUrl(studio.logo)} alt={studio.name} className="w-full h-full object-contain" />
+                        ) : (
+                          studio.name?.substring(0, 2).toUpperCase() || 'ST'
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-brand-primary truncate">{studio.name}</h3>
+                        <div className="flex items-center gap-1 text-xs text-text-muted mt-1">
+                          <MapPin size={12} />
+                          <span className="truncate">{studio.location}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-text-muted text-left">{entry.completionDate}</span>
                     </div>
-                  ))
-                ) : (
-                  <div className="p-12 bg-brand-surface/30 rounded-brand border border-dashed border-gray-200 text-center space-y-3">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-brand-primary/20 mx-auto shadow-sm">
-                      <CheckCircle2 size={24} />
+                    <div className="mt-6 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+                        {studio.specialty || 'VFX & ANIMATION'}
+                      </span>
+                      <button 
+                        onClick={() => navigate(`/talent/${studio.talentCode}`)}
+                        className="text-brand-primary text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all"
+                      >
+                        Explore <ChevronRight size={16} />
+                      </button>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-brand-primary">No Activity Yet</p>
-                      <p className="text-xs text-text-secondary">Your work history will appear here once verified.</p>
-                    </div>
-                  </div>
-                )
+                  </Card>
+                ))
               ) : (
-                <div className="p-12 bg-gray-50/50 rounded-brand border border-dashed border-gray-200 text-center space-y-3 grayscale opacity-60">
-                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-gray-300 mx-auto shadow-sm">
-                    <CheckCircle2 size={24} />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-gray-400">Activity Locked</p>
-                    <p className="text-xs text-gray-400">Complete your profile to see your ledger activity.</p>
-                  </div>
+                <div className="col-span-full py-12 bg-brand-surface/30 rounded-3xl border border-dashed border-gray-200 text-center">
+                  <p className="text-sm text-text-muted">No studios available at the moment.</p>
                 </div>
-              )}
+              )
+            ) : (
+              institutes.length > 0 ? (
+                institutes.slice(0, 6).map((inst) => (
+                  <Card key={inst.id} className="p-6 group hover:shadow-premium transition-premium border-gray-100">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 bg-brand-surface rounded-2xl flex items-center justify-center text-brand-primary font-bold text-xl overflow-hidden flex-shrink-0">
+                        {inst.logo ? (
+                          <img src={getFileUrl(inst.logo)} alt={inst.instituteName} className="w-full h-full object-contain" />
+                        ) : (
+                          <img src={`https://ui-avatars.com/api/?name=${inst.instituteName}&background=F5F7FF&color=4F46E5`} alt={inst.instituteName} className="w-full h-full object-contain" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-brand-primary truncate">{inst.instituteName}</h3>
+                        <div className="flex items-center gap-1 text-xs text-text-muted mt-1">
+                          <MapPin size={12} />
+                          <span className="truncate">{inst.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-6 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-1">
+                        <Users size={12} /> {inst.studentCount || '5,000+'} students
+                      </span>
+                      <button 
+                        onClick={() => inst.user?.talentId?.talentCode && navigate(`/talent/${inst.user.talentId.talentCode}`)}
+                        className="text-brand-primary text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all"
+                      >
+                        View Portal <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full py-12 bg-brand-surface/30 rounded-3xl border border-dashed border-gray-200 text-center">
+                  <p className="text-sm text-text-muted">No institutes available at the moment.</p>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-8 text-left pt-12 border-t border-gray-100">
+          <div className="flex items-center gap-4 text-left">
+            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Briefcase size={24} />
             </div>
-          </section>
-        </div>
+            <div className="text-left">
+              <h2 className="text-2xl font-display font-bold text-brand-primary">Hiring OS</h2>
+              <p className="text-sm text-text-secondary">Tracking your complete professional hiring lifecycle</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex bg-gray-50/50 p-1 rounded-2xl border border-gray-100 overflow-x-auto no-scrollbar">
+              {[
+                { id: 'opportunities', label: 'Opportunities', icon: Zap, count: studioRequests.length + studioJobPostings.length },
+                { id: 'applications', label: 'Applications', icon: Layers, count: jobApplications.length },
+                { id: 'engagements', label: 'Engagements', icon: Briefcase, count: jobApplications.filter(a => a.status === 'hired' || a.status === 'agreement').length },
+                { id: 'activity', label: 'Activity Hub', icon: Activity, count: notifications.length },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setHiringOSTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                    hiringOSTab === tab.id
+                      ? 'bg-white text-brand-primary shadow-sm border border-gray-100'
+                      : 'text-text-muted hover:text-brand-primary'
+                  }`}
+                >
+                  <tab.icon size={16} className={hiringOSTab === tab.id ? 'text-brand-primary' : 'text-text-muted'} />
+                  {tab.label}
+                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${
+                    hiringOSTab === tab.id ? 'bg-brand-primary/10 text-brand-primary' : 'bg-gray-200 text-text-muted'
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 w-48"
+                />
+              </div>
+              <button className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                <Filter size={18} className="text-text-muted" />
+              </button>
+            </div>
+          </div>
+
+          <div className="min-h-[400px]">
+            {hiringOSTab === 'opportunities' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Direct Studio Requests */}
+                {studioRequests.map((request) => (
+                  <Card key={`request-${request.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium border-[#7c00ff]/10 bg-gradient-to-br from-white to-[#7c00ff]/[0.02]">
+                    <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.05, 1],
+                          opacity: [0.9, 1, 0.9]
+                        }}
+                        transition={{ 
+                          duration: 2, 
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="flex flex-col items-end gap-1"
+                      >
+                        <Badge variant="info" className="bg-[#7c00ff] text-purple border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
+                          Studio Request
+                        </Badge>
+                        <div className="flex items-center gap-1.5 mr-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#7c00ff] animate-pulse" />
+                          <span className="text-[9px] font-black text-[#7c00ff] uppercase tracking-widest"># Direct Opportunity</span>
+                        </div>
+                      </motion.div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-brand-accent">
+                        <Zap size={14} className="fill-current" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-2xl font-bold text-brand-primary">{request.studio?.studioName || 'Movement Studio'}</h3>
+                        <p className="text-text-secondary font-medium">
+                          {request.roleTitle || 'Creative Role'} <span className="mx-2 text-gray-300">•</span> {request.productionType || 'Animation'}
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-2xl italic text-sm text-text-secondary border border-gray-100/50">
+                        "{request.opportunityOverview || request.engagementBrief || 'You have received a direct interest request for this role.'}"
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50">
+                        <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-2">
+                            <Clock size={16} className="text-text-muted" />
+                            <div className="text-left">
+                              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Starts</p>
+                              <p className="text-xs font-bold text-brand-primary">{request.startDate || request.startAvailability || 'Immediate'}</p>
+                            </div>
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Posted</p>
+                            <p className="text-xs font-bold text-brand-primary">Just now</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <button 
+                            className="text-sm font-bold text-brand-primary hover:underline"
+                            onClick={() => {
+                              setSelectedOpp(request);
+                              setIsOppModalOpen(true);
+                            }}
+                          >
+                            View Details
+                          </button>
+                          <Button 
+                            className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-brand-primary/20 flex items-center gap-2 group"
+                            onClick={() => {
+                              setSelectedOpp(request);
+                              setIsVerificationModalOpen(true);
+                            }}
+                            loading={requestLoadingId === request.id}
+                          >
+                            Accept & Apply <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+
+                {/* Global Studio Job Postings */}
+                {studioJobPostings.map((job) => (
+                  <Card key={`job-${job.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium">
+                    <div className="absolute top-4 right-4">
+                      <Badge variant="outline" className="bg-white border-gray-100 text-[8px] uppercase tracking-widest font-black px-2 py-1 rounded-md text-gray-900">Studio Post</Badge>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-brand-accent">
+                        <Zap size={14} className="fill-current" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-2xl font-bold text-brand-primary">{job.studio?.studioName || 'Movement Studio'}</h3>
+                        <p className="text-text-secondary font-medium">
+                          {job.title} <span className="mx-2 text-gray-300">•</span> {job.productionType || job.projectType || 'Feature Film'}
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-2xl italic text-sm text-text-secondary border border-gray-100/50">
+                        "{job.opportunityOverview || job.description || 'Join a world-class team working on a major project.'}"
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50">
+                        <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-2">
+                            <Clock size={16} className="text-text-muted" />
+                            <div className="text-left">
+                              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Starts</p>
+                              <p className="text-xs font-bold text-brand-primary">{job.startDate || job.requiredAvailability || 'Immediate'}</p>
+                            </div>
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Posted</p>
+                            <p className="text-xs font-bold text-brand-primary">Just now</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <button 
+                            className="text-sm font-bold text-brand-primary hover:underline"
+                            onClick={() => {
+                              setSelectedOpp({ ...job, isGlobal: true });
+                              setIsOppModalOpen(true);
+                            }}
+                          >
+                            View Details
+                          </button>
+                          <Button 
+                            className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-brand-primary/20 flex items-center gap-2 group"
+                            onClick={() => {
+                              setSelectedOpp({ ...job, isGlobal: true });
+                              setIsVerificationModalOpen(true);
+                            }}
+                          >
+                            Accept & Apply <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+
+                {studioRequests.length === 0 && studioJobPostings.length === 0 && (
+                  <div className="col-span-full py-20 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 text-center">
+                    <p className="text-text-muted font-medium">No incoming interests at the moment.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {hiringOSTab === 'applications' && (
+              <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50/50 border-b border-gray-100">
+                    <tr>
+                      <th className="px-8 py-4 text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">Studio & Role</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">Applied</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">Hiring Lifecycle</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-text-muted uppercase tracking-[0.2em] text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {jobApplications
+                      .map((app, i) => {
+                      const statusMap: Record<string, { label: string; progress: number; color: string }> = {
+                        applied: { label: 'APPLIED', progress: 1, color: 'bg-gray-500' },
+                        shortlisted: { label: 'SHORTLISTED', progress: 2, color: 'bg-emerald-500' },
+                        discussion: { label: 'DISCUSSION', progress: 3, color: 'bg-blue-500' },
+                        agreement: { label: 'AGREEMENT', progress: 4, color: 'bg-purple-500' },
+                        hired: { label: 'HIRED', progress: 5, color: 'bg-brand-primary' },
+                        rejected: { label: 'REJECTED', progress: 0, color: 'bg-red-500' },
+                      };
+                      const currentStatus = statusMap[app.status] || { label: app.status.toUpperCase(), progress: 1, color: 'bg-gray-500' };
+
+                      return (
+                        <tr key={app.id} className="hover:bg-gray-50/30 transition-colors">
+                          <td className="px-8 py-6">
+                            <p className="font-bold text-brand-primary">{app.studio?.studioName || 'Studio'}</p>
+                            <p className="text-xs text-text-secondary">{app.jobPosting?.title || app.studioRequest?.roleTitle || 'Creative Role'}</p>
+                          </td>
+                          <td className="px-8 py-6 text-sm text-text-secondary font-medium">
+                            {new Date(app.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="space-y-2">
+                              <span className={`text-[10px] font-black text-white ${currentStatus.color} px-2 py-1 rounded-md`}>
+                                {currentStatus.label}
+                              </span>
+                              <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map(step => (
+                                  <div key={step} className={`h-1 w-6 rounded-full ${step <= currentStatus.progress ? currentStatus.color : 'bg-gray-100'}`} />
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            {app.status === 'agreement' && app.artistDecision === 'pending' ? (
+                              <div className="flex justify-end gap-2">
+                                <button 
+                                  onClick={() => handleAgreementResponse(app.id, 'rejected')}
+                                  className="text-[10px] font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-100"
+                                >
+                                  Decline
+                                </button>
+                                <button 
+                                  onClick={() => handleAgreementResponse(app.id, 'accepted')}
+                                  className="text-[10px] font-bold text-white bg-brand-primary hover:bg-brand-primary/90 px-3 py-1.5 rounded-lg shadow-sm"
+                                >
+                                  Accept & Sign
+                                </button>
+                              </div>
+                            ) : (
+                              <button className="text-xs font-bold text-brand-primary hover:underline">View Status</button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {jobApplications.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-12 text-center text-text-muted font-medium">
+                          No active applications at the moment.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {hiringOSTab === 'engagements' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {jobApplications
+                  .filter(a => a.status === 'hired' || a.status === 'agreement')
+                  .map((app) => {
+                    const eng = app.agreementDetails || {};
+                    const isNewOffer = app.status === 'agreement' && app.artistDecision === 'pending';
+                    
+                    return (
+                      <Card key={app.id} className={`p-8 space-y-6 border-2 transition-all ${!isNewOffer ? 'border-gray-100' : 'border-[#7c00ff]/20 bg-[#7c00ff]/[0.02] shadow-xl shadow-[#7c00ff]/5'}`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              variant={!isNewOffer ? 'success' : 'info'} 
+                              className={`text-[10px] font-black tracking-widest ${isNewOffer ? 'bg-[#7c00ff] text-white' : 'bg-emerald-500 text-white'}`}
+                            >
+                              {!isNewOffer ? 'ACTIVE' : 'OFFER RECEIVED'}
+                            </Badge>
+                            <span className="text-xs text-text-muted font-medium">Est. Start: {eng.startDate || 'TBD'}</span>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Comp Details</p>
+                            <p className="text-2xl font-black text-brand-primary">
+                              {eng.currency?.includes('(') ? eng.currency.split('(')[1].replace(')', '') : '$'}{eng.amount || '0'}
+                              <span className="text-xs text-gray-400 font-bold ml-1">/{eng.compensationType === 'Monthly' ? 'mo' : 'yr'}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <h3 className="text-2xl font-black text-brand-primary">
+                            {app.studio?.studioName || 'Studio'}
+                          </h3>
+                          <p className="text-text-secondary font-medium">
+                            {app.jobPosting?.title || app.studioRequest?.roleTitle || 'Creative Role'}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-text-muted font-bold pt-1">
+                            <span className="flex items-center gap-1.5"><Clock size={14} /> {eng.duration || 'N/A'}</span>
+                            <span className="flex items-center gap-1.5"><Layers size={14} /> {eng.type || 'Contract'}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
+                          {!isNewOffer ? (
+                            <>
+                              <div className="flex items-center gap-2 text-emerald-600">
+                                <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                                  <ShieldCheck size={14} />
+                                </div>
+                                <span className="text-xs font-bold">Engagement Active & Verified</span>
+                              </div>
+                              <Button variant="secondary" className="bg-white border border-gray-200 text-brand-primary font-bold px-4 py-2 rounded-xl flex items-center gap-2">
+                                Open Workspace <ChevronRight size={16} />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2 text-[#7c00ff]">
+                                <Sparkles size={16} />
+                                <span className="text-xs font-bold">Action Required: Review Terms</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button 
+                                  onClick={() => handleAgreementResponse(app.id, 'rejected')}
+                                  className="text-sm font-bold text-gray-400 px-4 py-2 hover:text-rose-500 transition-colors"
+                                >
+                                  Decline
+                                </button>
+                                <Button 
+                                  onClick={() => handleAgreementResponse(app.id, 'accepted')}
+                                  className="bg-black text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-black/20"
+                                >
+                                  Accept & Sign
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
+                
+                {jobApplications.filter(a => a.status === 'hired' || a.status === 'agreement').length === 0 && (
+                  <div className="col-span-full py-20 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 text-center">
+                    <p className="text-text-muted font-medium">No active engagements or pending agreements.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {hiringOSTab === 'activity' && (
+              <div className="bg-white rounded-3xl border border-gray-100 p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-10 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gray-100">
+                  {[
+                    { title: 'Industrial Light & Magic sent you a new opportunity', time: '2 hours ago', color: 'bg-purple-500' },
+                    { title: 'You were shortlisted by Digital Domain', time: '5 hours ago', color: 'bg-emerald-500' },
+                    { title: 'Marvel Studios sent an official engagement offer', time: 'Yesterday', color: 'bg-orange-500' },
+                    { title: 'Applied to Weta FX', time: '3 days ago', color: 'bg-gray-400' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-6 relative pl-8 group">
+                      <div className={`absolute left-0 top-2 w-4 h-4 rounded-full border-4 border-white shadow-sm ring-2 ring-transparent group-hover:ring-gray-100 transition-all ${item.color}`} />
+                      <div className="space-y-1">
+                        <p className="font-bold text-brand-primary">{item.title}</p>
+                        <p className="text-xs text-text-muted font-medium flex items-center gap-1.5">
+                          <Clock size={12} /> {item.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
           </>
         )}
+
+        
 
         {activeSection === 'studio_requests' && (
           <section className="space-y-6 text-left">
