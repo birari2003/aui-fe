@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMyInstituteProfile } from '../services/instituteServices';
 import EditInstituteModal from '../components/EditInstituteModal';
 import ManageInstituteProfileModal from '../components/ManageInstituteProfileModal';
+import SEO from '../components/SEO';
 
 const InstituteProfile = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
@@ -62,6 +63,11 @@ const InstituteProfile = ({ setView }: { setView: (v: View) => void }) => {
 
   return (
     <div className="min-h-screen bg-white no-scrollbar text-left">
+      <SEO 
+        title="Institute Dashboard" 
+        description="Manage your institute profile, students, workshops, and bookings on AUI." 
+        keywords="institute dashboard, workshops, student portfolio, animation education" 
+      />
       <EditInstituteModal 
         isOpen={isEditModalOpen} 
         onClose={() => setIsEditModalOpen(false)} 

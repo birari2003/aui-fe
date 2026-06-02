@@ -7,6 +7,7 @@ import ShareModal from '../components/ShareModal';
 import { MOCK_STUDIOS } from '../data/mockData';
 import { View } from '../types';
 import { useParams } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 const StudioShowcase = ({ setView }: { setView: (v: View) => void }) => {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +31,11 @@ const StudioShowcase = ({ setView }: { setView: (v: View) => void }) => {
 
   return (
     <div className="min-h-screen bg-brand-primary text-white no-scrollbar text-left">
+      <SEO 
+        title={`${studio.name} - Studio Showcase`} 
+        description={`Explore ${studio.name}'s creative showcase, recent animation and VFX projects, culture, and open opportunities on AUI.`} 
+        keywords={`${studio.name}, studio showcase, vfx showcase, animation projects, careers`} 
+      />
       <ShareModal 
         isOpen={isShareModalOpen} 
         onClose={() => setIsShareModalOpen(false)} 

@@ -539,8 +539,9 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
                   {activePhase === 'discussion' && (
                     <>
                       <Button 
+                        variant={app.contactInfoShared ? 'secondary' : 'primary'}
                         onClick={(e) => { e.stopPropagation(); handleToggleContact(app.id, app.contactInfoShared); }}
-                        className={`px-10 py-5 ${app.contactInfoShared ? 'bg-gray-100 text-gray-600' : 'bg-[#7c00ff] text-white'} rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em]`}
+                        className="px-10 py-5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em]"
                       >
                         {app.contactInfoShared ? 'Hide Contact' : 'Get Contact Info'}
                       </Button>

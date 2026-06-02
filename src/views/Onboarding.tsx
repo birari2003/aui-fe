@@ -8,6 +8,7 @@ import Select from '../components/Select';
 import { View, UserRole } from '../types';
 import { registerUser, checkUserStatus } from '../services/userServices';
 import Modal from '../components/Modal';
+import SEO from '../components/SEO';
 
 const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, role: UserRole }) => {
   const [step, setStep] = React.useState(1);
@@ -274,6 +275,11 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-6 space-y-10 min-h-[80vh] flex flex-col justify-center">
+      <SEO 
+        title="Onboarding" 
+        description="Complete your AUI registration and set up your professional, studio, or institute profile details." 
+        keywords="onboarding, setup profile, registration details, professional details" 
+      />
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">

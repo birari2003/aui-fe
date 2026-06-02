@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import SEO from '../components/SEO';
 import {
+  Sparkles,
   ShieldCheck,
   Copy,
   Send,
@@ -30,7 +32,8 @@ import {
   BadgeCheck,
   Users,
   User,
-  Film
+  Film,
+  Zap
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import Modal from '../components/Modal';
@@ -356,8 +359,21 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
     }
   };
 
+  const seoTitle = profileData ? `${displayName} - Professional Talent Profile` : "Loading Talent Profile";
+  const seoDescription = profileData 
+    ? `${displayName} is a ${professional?.position || ''} level ${professional?.primarySkill || 'creative professional'} with ${professional?.experienceYears || '0'}+ years of experience. View portfolio, showreel, and verified work ledger on AUI.`
+    : "View verified creative professional talent profiles on AUI.";
+  const seoKeywords = profileData 
+    ? `${displayName}, ${professional?.primarySkill || ''}, creative professional, talent profile, showreel, portfolio, AUI`
+    : "creative professional, talent profile, showreel, portfolio, AUI";
+
   return (
     <div className="min-h-screen bg-[#F8F9FB] text-[#111827] font-sans pb-8">
+      <SEO 
+        title={seoTitle} 
+        description={seoDescription} 
+        keywords={seoKeywords} 
+      />
       {/* Top Header */}
       <header className="bg-white border-b border-[#E5E7EB] sticky top-0 z-50">
         <div className="max-w-[1100px] mx-auto px-6 h-14 flex items-center justify-between">
@@ -426,31 +442,19 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20"></div>
-
-            {/* Reviewing Badge */}
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#374151]">
-              Verified
-            </div>
-
-            {/* Star Icon */}
-            <div className="absolute top-4 right-4 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md">
-              <div className="w-7 h-7 bg-[#2563EB] rounded-full flex items-center justify-center text-white">
-                <Star size={14} fill="white" />
-              </div>
-            </div>
           </div>
 
           {/* Right Column: Info */}
           <div className="flex-1 p-6 flex flex-col space-y-4">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-[#6B7280] font-bold text-[10px] uppercase tracking-widest">
-                  <ShieldCheck size={14} className="text-[#94A3B8]" />
+                <div className="flex items-center gap-1.5 text-[#2563EB] font-bold text-[10px] uppercase tracking-widest">
+                  <ShieldCheck size={14} className="text-[#2563EB]" />
                   AUI Verified Talent
                 </div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-3xl font-bold tracking-tight">{displayName}</h1>
-                  <CheckCircle2 size={20} className="text-[#94A3B8]" />
+                  <CheckCircle2 size={20} className="text-[#2563EB]" />
                 </div>
               </div>
               <div className="bg-[#1E1B4B] text-white px-4 py-2.5 rounded-xl flex flex-col items-center justify-center leading-tight">
@@ -466,7 +470,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 py-2 border-b border-[#F1F5F9]">
+            <div className="grid grid-cols-3 gap-8 py-2 border-b border-[#F1F5F9]">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
                   <Star size={12} />
@@ -479,7 +483,14 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                   <Briefcase size={12} />
                   Production Types
                 </div>
-                <div className="text-sm font-bold">{professional?.productionType || 'Feature Film'} • {professional?.primarySkill || 'Artist'}</div>
+                <div className="text-sm font-bold">{professional?.productionType || 'Feature Film'}</div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
+                  <Zap size={12} />
+                  Primary Skill
+                </div>
+                <div className="text-sm font-bold">{professional?.primarySkill || 'Artist'}</div>
               </div>
             </div>
 
@@ -496,6 +507,20 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               <div className="flex items-center gap-1.5"><Briefcase size={14} /> Work Verified</div>
               <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Trusted by AUI</div>
             </div>
+
+            {isOwnProfile && (
+              <div className="flex gap-3 mt-auto pt-4">
+                <button
+                  onClick={() => {
+                    setView('dashboard_pro');
+                    navigate('/dashboard/pro');
+                  }}
+                  className="flex-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10"
+                >
+                  <Layout size={14} /> Work Hub
+                </button>
+              </div>
+            )}
 
             {!isOwnProfile && isStudio && (
               <div className="flex gap-3 mt-auto pt-4">
@@ -523,7 +548,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center text-white">
-                  <span className="font-bold text-sm">✨</span>
+                  <Sparkles size={16} className="text-white" />
                 </div>
                 <h3 className="font-bold text-lg">AUI Insight</h3>
               </div>
@@ -857,7 +882,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                   </div>
 
                   {/* Experience Level, Production Types & QR Code in one row */}
-                  <div className="grid grid-cols-[1fr_1.1fr_auto] gap-4 items-center border-t border-[#e5e7eb] pt-3 min-h-[56px]">
+                  <div className="grid grid-cols-[1fr_1.1fr_1.1fr_auto] gap-4 items-center border-t border-[#e5e7eb] pt-3 min-h-[56px]">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#9aa0a8]">
                         <User size={11} /> Exp Level
@@ -873,6 +898,15 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                       </div>
                       <div className="mt-1 text-[11px] font-bold text-[#1d2532] truncate">
                         {productionTypeLabels[(professional?.productionType || 'film').toLowerCase()] || 'Feature Film'}
+                      </div>
+                    </div>
+
+                    <div className="border-l border-[#e5e7eb] pl-4 min-w-0">
+                      <div className="flex items-center gap-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#9aa0a8]">
+                        <Zap size={11} /> Primary Skill
+                      </div>
+                      <div className="mt-1 text-[11px] font-bold text-[#1d2532] truncate">
+                        {professional?.primarySkill || 'Artist'}
                       </div>
                     </div>
 

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getMyStudioPublicProfile, upsertStudioPublicProfile } from '../services/studioProfileService';
 import { BASE_URL } from '../utils/urls';
+import { toast } from 'react-toastify';
 
 interface Project {
   name: string;
@@ -76,7 +77,6 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState('identity');
   const [formData, setFormData] = useState<StudioProfileData>(INITIAL_DATA);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   // Files state
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -116,8 +116,11 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
   }, []);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    if (type === 'success') {
+      toast.success(msg);
+    } else {
+      toast.error(msg);
+    }
   };
 
   const handleNext = () => {
@@ -201,6 +204,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
         setBannerFile(null);
         setProjectThumbnailFiles({});
         setClientLogoFiles({});
+        onClose();
       } else {
         const errBody = await res.json();
         showToast(errBody.message || 'Update failed', 'error');
@@ -224,12 +228,6 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-primary/20 backdrop-blur-sm">
-      {toast && (
-        <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[110] text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${toast.type === 'success' ? 'bg-brand-primary' : 'bg-red-600'}`}>
-          {toast.type === 'success' ? <CheckCircle2 size={18} className="text-emerald-400" /> : <AlertCircle size={18} className="text-white" />}
-          <span className="text-sm font-bold">{toast.msg}</span>
-        </div>
-      )}
 
       <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-brand-accent/10">
         {/* Header */}

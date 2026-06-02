@@ -143,16 +143,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, pr
                 <option value="ads">Ads</option>
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Avatar URL</label>
-              <input
-                type="text"
-                name="avatarUrl"
-                value={formData.avatarUrl}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
@@ -164,95 +154,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, pr
               rows={4}
               className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium resize-none"
             />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Showreel URL</label>
-              <input
-                type="text"
-                name="showreelUrl"
-                value={formData.showreelUrl}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Portfolio URL</label>
-              <input
-                type="text"
-                name="portfolioUrl"
-                value={formData.portfolioUrl}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-brand-surface/50 rounded-3xl border border-brand-accent/5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Experience Score (%)</label>
-              <input
-                type="number"
-                name="experienceScore"
-                value={formData.experienceScore}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Reliability Score (%)</label>
-              <input
-                type="number"
-                name="reliabilityScore"
-                value={formData.reliabilityScore}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Project Count</label>
-              <input
-                type="number"
-                name="projectCount"
-                value={formData.projectCount}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-brand-surface/50 rounded-3xl border border-brand-accent/5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Workshops Conducted</label>
-              <input
-                type="number"
-                name="workshopsConducted"
-                value={formData.workshopsConducted}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Mentorship Sessions</label>
-              <input
-                type="number"
-                name="mentorshipSessions"
-                value={formData.mentorshipSessions}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Portfolio Reviews</label>
-              <input
-                type="number"
-                name="portfolioReviews"
-                value={formData.portfolioReviews}
-                onChange={handleChange}
-                className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
-              />
-            </div>
           </div>
         </form>
 

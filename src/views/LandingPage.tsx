@@ -8,6 +8,7 @@ import ReelsSection from '../components/ReelsSection';
 import { View, UserRole } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
+import SEO from '../components/SEO';
 
 const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRole: UserRole | null }) => {
   const navigate = useNavigate();
@@ -39,6 +40,11 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
 
   return (
     <div className="bg-white min-h-screen no-scrollbar text-left">
+      <SEO 
+        title="Verified Talent. Ready to Work." 
+        description="A private network connecting studios, institutes, and professionals in the animation industry." 
+        keywords="animation talent, hire animators, animation network, showreels, portfolios, studios, institutes" 
+      />
       <div className="no-scrollbar">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-b from-white to-brand-surface pt-20 pb-32">

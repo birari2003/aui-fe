@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { 
   MapPin, Mail, Phone, Globe, Play, 
   ChevronLeft, ChevronRight, ArrowRight,
@@ -107,8 +108,21 @@ const InstitutePublicProfile = () => {
     );
   }
 
+  const seoTitle = profile ? `${profile.name} - Institute Profile` : "Loading Institute Profile";
+  const seoDescription = profile 
+    ? `${profile.name} located in ${profile.location} is a verified institute on AUI. Tagline: ${profile.tagline || ''}. Explore their academic excellence, programs, testimonials, and contact details.`
+    : "View creative training institutes and design school profiles on AUI.";
+  const seoKeywords = profile 
+    ? `${profile.name}, institute profile, creative training, design school, animation course, VFX academy, AUI`
+    : "creative training, design school, animation course, VFX academy, AUI";
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] font-sans pb-12 text-left selection:bg-brand-primary/10">
+      <SEO 
+        title={seoTitle} 
+        description={seoDescription} 
+        keywords={seoKeywords} 
+      />
       {/* 0. TOP NAV */}
       <div className="w-full px-4 sm:px-6 lg:px-12 pt-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-brand-primary font-black uppercase tracking-[0.2em] text-[10px] transition-colors group">

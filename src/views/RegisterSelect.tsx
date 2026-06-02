@@ -2,6 +2,7 @@ import React from 'react';
 import { Users, Briefcase, GraduationCap, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UserRole } from '../types';
+import SEO from '../components/SEO';
 
 const RegisterSelect = ({ onSelect }: { onSelect: (role: UserRole) => void }) => {
   const roles = [
@@ -12,6 +13,11 @@ const RegisterSelect = ({ onSelect }: { onSelect: (role: UserRole) => void }) =>
 
   return (
     <div className="max-w-5xl mx-auto py-20 px-6 space-y-16">
+      <SEO 
+        title="Join AUI" 
+        description="Register and create an account as a Studio, Institute, or Professional on AUI." 
+        keywords="register, join, sign up, animation network, create profile" 
+      />
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

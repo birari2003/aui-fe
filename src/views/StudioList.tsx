@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Search, MapPin, Users, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
@@ -46,6 +47,11 @@ const StudioList = ({ setView }: { setView: (v: View) => void }) => {
 
   return (
     <div className="min-h-screen bg-white no-scrollbar text-left">
+      <SEO 
+        title="Explore Studios" 
+        description="Connect with leading production houses, animation studios, and VFX companies worldwide on AUI." 
+        keywords="animation studios, VFX studios, video production, hire studios, aui studios" 
+      />
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-12 text-left">
         <div className="space-y-4 text-left">
           <h1 className="text-4xl font-display font-bold text-brand-primary tracking-tight text-left">Explore Studios</h1>

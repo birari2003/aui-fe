@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, BadgeCheck, Bookmark, Briefcase, Calendar, Check, Clock, FileText, RotateCcw, ShieldCheck, Star, Users, X } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Bookmark, Briefcase, Calendar, Check, Clock, FileText, RotateCcw, ShieldCheck, Star, Users, X, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { toast } from 'react-toastify';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -15,6 +16,8 @@ import {
   removeTalentFromBench,
   updateStudioRequestProfessional,
 } from '../services/studioServices';
+import { getMyStudioPublicProfile } from '../services/studioProfileService';
+import { API_ENDPOINTS } from '../utils/urls';
 import { View } from '../types';
 import HiringByStudio from '../components/hiringByStudio';
 import OpportunityModal from '../components/OpportunityModal';
@@ -184,8 +187,40 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     engagementBrief: '',
   });
   const [updatingAgreement, setUpdatingAgreement] = React.useState(false);
+  const [studioProfile, setStudioProfile] = React.useState<any>(null);
+  const [userData, setUserData] = React.useState<any>(null);
 
   const token = localStorage.getItem('token');
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      if (!token) return;
+      try {
+        const res = await getMyStudioPublicProfile(token);
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload.data) {
+            setStudioProfile(payload.data);
+          }
+        }
+        const meRes = await fetch(API_ENDPOINTS.AUTH.ME, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (meRes.ok) {
+          const u = await meRes.json();
+          if (u.data) {
+            setUserData(u.data);
+            if (u.data.talentId) {
+              setStudioProfile(prev => prev || { talentCode: u.data.talentId.talentCode });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Fetch profile error in StudioDashboard:', err);
+      }
+    };
+    fetchProfile();
+  }, [token]);
 
   const fetchStudioData = React.useCallback(async () => {
     if (!token) return;
@@ -669,15 +704,44 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     </div>
   );
 
+  const studioName = studioProfile?.name || userData?.studio?.companyName || userData?.companyName || 'Rolla Rock Studio';
+
   return (
     <div className="min-h-screen bg-[#f9f9fa] no-scrollbar text-left">
+      <SEO 
+        title="Hire Talent" 
+        description="Browse, filter, and hire verified animation professionals on AUI." 
+        keywords="hire animators, talent pool, animation recruitment, AUI, discover talent" 
+      />
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-12">
         <section className="space-y-6">
-          <p className="text-xs font-bold uppercase tracking-[0.55em] text-gray-400">Rolla Rock Studio</p>
+          <p className="text-xs font-bold uppercase tracking-[0.55em] text-gray-400">{studioName}</p>
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-[#05060b] leading-[0.95]">Talent Pool</h1>
           <p className="max-w-2xl text-2xl leading-relaxed text-[#6f7782]">
             Build and manage your trusted network of production-ready talent.
           </p>
+
+          <div className="flex flex-wrap gap-4 mt-6">
+            <button
+              onClick={() => {
+                const code = studioProfile?.talentCode || userData?.talentId?.talentCode;
+                if (code) {
+                  navigate(`/talent/${code}`);
+                } else {
+                  alert('Please manage your public profile first to generate your ID.');
+                }
+              }}
+              className="flex items-center gap-2 px-6 py-4.5 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black/90 transition-all shadow-lg"
+            >
+              View Public Profile <ExternalLink size={12} />
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/studio')}
+              className="px-6 py-4.5 bg-white border border-gray-200 text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-50 transition-all shadow-sm"
+            >
+              Studio Hub
+            </button>
+          </div>
         </section>
 
         <div className="flex items-center gap-8 border-b border-gray-200 pb-4 overflow-x-auto">

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, MapPin, GraduationCap, ArrowRight, BookOpen, X, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
@@ -187,6 +188,11 @@ const InstituteList = ({ setView, userRole }: { setView: (v: View) => void, user
 
   return (
     <div className="min-h-screen bg-white no-scrollbar text-left">
+      <SEO 
+        title="Explore Institutes" 
+        description="Find top animation schools, VFX academies, and creative training centers leading the industry." 
+        keywords="animation schools, design institutes, vfx academies, art education, AUI" 
+      />
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-12 text-left">
         <div className="space-y-4 text-left">
           <h1 className="text-4xl font-display font-bold text-brand-primary tracking-tight text-left">Explore Institutes</h1>

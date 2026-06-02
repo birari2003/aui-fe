@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen, MessageSquare, Zap, Search, CheckCircle2, Globe, Shield, Clock, ExternalLink, Users, XCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Select from '../components/Select';
@@ -362,8 +363,25 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
     }
   };
 
+  const seoTitle = activeSubTab === 'ledger'
+    ? 'Academic Ledger'
+    : activeSubTab === 'nexus'
+      ? 'AUI Nexus'
+      : 'InHub';
+
+  const seoDescription = activeSubTab === 'ledger'
+    ? 'View a synchronized record of every industry workshop, facilitation hours, and student impact metrics.'
+    : activeSubTab === 'nexus'
+      ? 'Exclusive access to Disney, Pixar, and major studio pipelines and guest speaker programs.'
+      : 'Access elite industry experts for intensive workshops, direct mentorships, and portfolio reviews.';
+
   return (
     <div className="bg-white text-left">
+      <SEO 
+        title={seoTitle} 
+        description={seoDescription} 
+        keywords="institute dashboard, inhub, academic ledger, aui nexus, workshop bookings, mentorship" 
+      />
       {/* Sub Header Section */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">

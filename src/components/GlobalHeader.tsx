@@ -228,17 +228,18 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
                   )}
                 </div>
                 <div className="flex items-center gap-4">
-                  <div 
-                    className="w-10 h-10 rounded-full bg-brand-surface border border-gray-100 flex items-center justify-center overflow-hidden cursor-pointer hover:border-brand-accent/30 transition-premium shadow-sm" 
-                    onClick={() => {
-                      if (userRole === 'admin') handleNav('admin', '/admin');
-                      else if (userRole === 'institute') handleNav('dashboard_institute', '/dashboard/institute');
-                      else if (userRole === 'studio') handleNav('dashboard_studio', '/dashboard/studio');
-                      else if (userRole === 'professional') handleNav('dashboard_pro', '/dashboard/pro');
-                    }}
-                  >
-                    <Users size={20} className="text-text-muted" />
-                  </div>
+                  {userRole !== 'studio' && (
+                    <div 
+                      className="w-10 h-10 rounded-full bg-brand-surface border border-gray-100 flex items-center justify-center overflow-hidden cursor-pointer hover:border-brand-accent/30 transition-premium shadow-sm" 
+                      onClick={() => {
+                        if (userRole === 'admin') handleNav('admin', '/admin');
+                        else if (userRole === 'institute') handleNav('dashboard_institute', '/dashboard/institute');
+                        else if (userRole === 'professional') handleNav('dashboard_pro', '/dashboard/pro');
+                      }}
+                    >
+                      <Users size={20} className="text-text-muted" />
+                    </div>
+                  )}
                   <button 
                     onClick={() => setShowLogoutConfirm(true)} 
                     className="p-2 text-text-muted hover:text-red-500 transition-premium"

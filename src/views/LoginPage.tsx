@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import Input from '../components/Input';
 import { requestOtp, loginUser } from '../services/userServices';
 import Modal from '../components/Modal';
+import SEO from '../components/SEO';
 
 const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
   const [email, setEmail] = React.useState('');
@@ -61,6 +62,11 @@ const LoginPage = ({ onLogin }: { onLogin: (user: any) => void }) => {
 
   return (
     <div className="max-w-md mx-auto py-32 space-y-12 text-left">
+      <SEO 
+        title="Login" 
+        description="Log in to your AUI profile to access your dashboard, job postings, portfolio, or requests." 
+        keywords="login, sign in, animation portal, animation platform, AUI login" 
+      />
       <div className="text-center space-y-4">
         <h2 className="text-5xl font-display font-bold text-brand-primary tracking-tight">Login</h2>
         <p className="text-text-secondary text-lg">Enter your email to receive a verification code.</p>

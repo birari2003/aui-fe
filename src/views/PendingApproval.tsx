@@ -1,11 +1,17 @@
 import React from 'react';
 import { ShieldCheck, Clock, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import SEO from '../components/SEO';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 
 const PendingApprovalPage = ({ onBack }: { onBack: () => void }) => (
   <div className="max-w-3xl mx-auto py-20 px-6 text-center space-y-12 flex flex-col items-center justify-center min-h-[80vh]">
+    <SEO 
+      title="Pending Approval" 
+      description="Your account profile is currently under review by our verification specialists." 
+      keywords="pending verification, aui approval, review status" 
+    />
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}

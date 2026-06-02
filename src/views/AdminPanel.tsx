@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, Zap, ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
+import SEO from '../components/SEO';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
@@ -722,8 +723,23 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     );
   };
 
+  const seoTitle = activeTab === 'overview'
+    ? 'Admin Dashboard'
+    : activeTab === 'applications'
+      ? 'Pending Approvals'
+      : activeTab === 'special_requests'
+        ? 'Special Requests Pipeline'
+        : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Management`;
+
+  const seoDescription = `AUI Admin Panel - ${seoTitle}. Control center for managing professionals, institutes, studios, and requests.`;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 space-y-8 sm:space-y-12 text-left">
+      <SEO 
+        title={seoTitle} 
+        description={seoDescription} 
+        keywords="admin panel, control center, aui admin, manage users, approvals" 
+      />
       <div className="space-y-4">
         <h2 className="text-3xl sm:text-4xl font-display font-bold text-brand-primary tracking-tight leading-tight">Admin Control Center</h2>
         <div className="flex flex-wrap gap-3 sm:gap-4">

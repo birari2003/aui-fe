@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { 
   MapPin, Mail, Phone, Globe, Play, 
   ChevronLeft, ChevronRight, ArrowRight,
@@ -20,6 +21,7 @@ const StudioTalentID = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const goToTalentPool = () => {
     navigate('/hire');
   };
@@ -53,7 +55,23 @@ const StudioTalentID = () => {
         setLoading(false);
       }
     };
+    const fetchUserRole = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const payload = await res.json();
+          setCurrentUserRole(payload.data?.role || null);
+        }
+      } catch (err) {
+        console.error('Fetch user role error:', err);
+      }
+    };
     fetchProfile();
+    fetchUserRole();
   }, [talentCode]);
 
   const getFileUrl = (path: string) => {
@@ -117,8 +135,21 @@ const StudioTalentID = () => {
     { title: 'VFX Artist', projectType: 'Short Film', experienceRequired: '2-4 Years' },
   ];
 
+  const seoTitle = profile ? `${profile.name} - Studio Portfolio` : "Loading Studio Profile";
+  const seoDescription = profile 
+    ? `${profile.name} is a verified studio specializing in ${profile.specialty || 'creative production'}. Completed ${profile.projectsCompleted || '0'}+ projects. View their projects, open roles, and showreel.`
+    : "View studio profiles and creative showcases on AUI.";
+  const seoKeywords = profile 
+    ? `${profile.name}, ${profile.specialty || ''}, studio profile, animation studio, VFX studio, AUI`
+    : "animation studio, VFX studio, creative portfolio, AUI";
+
   return (
     <div className="min-h-screen bg-[#F3F4F6] text-[#111827] font-sans pb-8 text-left selection:bg-[#4F46E5]/10">
+      <SEO 
+        title={seoTitle} 
+        description={seoDescription} 
+        keywords={seoKeywords} 
+      />
       {/* 0. TOP NAVIGATION: BACK BUTTON */}
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-4">
         <button 
@@ -222,7 +253,16 @@ const StudioTalentID = () => {
             </div>
 
             {/* Bottom Row: Button */}
-            <div>
+            <div className="flex flex-wrap items-center gap-3">
+              {currentUserRole === 'studio' && (
+                <button 
+                  onClick={() => navigate('/dashboard/studio')}
+                  className="bg-white hover:bg-gray-100 text-[#111827] px-6 py-3 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-2 border border-white/20 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                >
+                  <Building2 size={16} />
+                  Studio Hub
+                </button>
+              )}
               <button 
                 onClick={goToTalentPool}
                 className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-6 py-3 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-3 shadow-[0_20px_50px_rgba(79,70,229,0.3)] transition-all hover:scale-105 active:scale-95 group"

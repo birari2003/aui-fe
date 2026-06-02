@@ -50,6 +50,7 @@ interface JobPosting {
   opportunityOverview?: string;
   softwareTools?: any;
   experienceLevel?: string;
+  requiredExperience?: string;
   hiringDeadline?: string;
   internalNotes?: string;
   contractDuration?: string;
@@ -216,7 +217,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
         description: formData.roleRequirements,
         opportunityOverview: formData.opportunityOverview,
         softwareTools: formData.softwareTools.split(',').map(s => s.trim()),
-        experienceLevel: formData.experienceLevel,
+        experienceRequired: formData.experienceLevel,
         requiredExperience: formData.requiredExperience,
         artistCount: formData.positionsCount,
         startDate: formData.hiringDeadline,
@@ -317,6 +318,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
       opportunityOverview: job.opportunityOverview || job.opportunity_overview,
       softwareTools: job.softwareTools || job.software_tools,
       experienceLevel: job.experienceLevel || job.experience_level || job.experienceRequired || job.experience_required,
+      requiredExperience: job.requiredExperience || job.required_experience || '',
       hiringDeadline: job.hiringDeadline || job.hiring_deadline || job.startDate || job.start_date,
       internalNotes: job.internalNotes || job.internal_notes,
       contractDuration: job.contractDuration || job.contract_duration,
@@ -374,6 +376,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
           ? editingJob.softwareTools.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '')
           : editingJob.softwareTools,
         experienceRequired: editingJob.experienceLevel,
+        requiredExperience: editingJob.requiredExperience,
       };
 
       const response = await updateStudioJobPosting(token, editingJob.id, dataToUpdate);
@@ -1156,19 +1159,46 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                     <div className="space-y-3">
                       <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">EXPERIENCE LEVEL *</label>
                       <div className="flex flex-wrap gap-2">
-                        {['Fresher (0 Years)', 'Junior (1–2 Years)', 'Mid (3–6 Years)', 'Senior (7+ Years)', 'Any Level'].map(level => (
-                          <button
-                            key={level}
-                            onClick={() => setEditingJob({ ...editingJob, experienceLevel: level })}
-                            className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${editingJob.experienceLevel === level
-                              ? 'bg-white border-gray-100 shadow-sm text-gray-900'
-                              : 'bg-white text-gray-300 border-gray-100'
-                              }`}
-                          >
-                            {level}
-                          </button>
-                        ))}
+                        {['Fresher (0 Years)', 'Junior (1–2 Years)', 'Mid (3–6 Years)', 'Senior (7+ Years)', 'Any Level'].map(level => {
+                          const selected = (editingJob.experienceLevel || '').split(',').map(s => s.trim()).filter(Boolean);
+                          const isSelected = selected.includes(level);
+                          return (
+                            <button
+                              key={level}
+                              type="button"
+                              onClick={() => {
+                                const current = (editingJob.experienceLevel || '').split(',').map(s => s.trim()).filter(Boolean);
+                                let next: string[];
+                                if (level === 'Any Level') {
+                                  next = isSelected ? [] : ['Any Level'];
+                                } else {
+                                  next = isSelected
+                                    ? current.filter(l => l !== level)
+                                    : [...current.filter(l => l !== 'Any Level'), level];
+                                }
+                                setEditingJob({ ...editingJob, experienceLevel: next.join(', ') });
+                              }}
+                              className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${isSelected
+                                ? 'bg-white border-gray-100 shadow-sm text-gray-900 font-bold'
+                                : 'bg-white text-gray-300 border-gray-100'
+                                }`}
+                            >
+                              {level}
+                            </button>
+                          );
+                        })}
                       </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">REQUIRED EXPERIENCE (OPTIONAL)</label>
+                      <input
+                        type="text"
+                        value={editingJob.requiredExperience || ''}
+                        onChange={(e) => setEditingJob({ ...editingJob, requiredExperience: e.target.value })}
+                        placeholder="Select minimum years"
+                        className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-medium text-sm"
+                      />
                     </div>
                   </div>
                 </div>

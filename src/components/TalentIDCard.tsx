@@ -15,7 +15,7 @@ const TalentIDCard = ({ talent }: { talent: Talent }) => (
       <h2 className="text-2xl font-bold text-brand-primary tracking-tight">{talent.name}</h2>
       <p className="text-xs font-bold text-brand-accent uppercase tracking-widest">{talent.id}</p>
     </div>
-    <div className="grid grid-cols-2 gap-4 py-4 border-y border-gray-50">
+    <div className="grid grid-cols-2 gap-4 py-4 b order-y border-gray-50">
       <div className="text-left">
         <p className="text-[8px] font-bold uppercase tracking-widest text-text-muted mb-1">Role</p>
         <p className="text-xs font-bold text-brand-primary truncate">{talent.role}</p>
