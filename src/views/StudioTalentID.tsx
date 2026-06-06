@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, ArrowRight,
   Linkedin, Instagram, Youtube, Twitter,
   CheckCircle2, Star, Briefcase, Users,
-  Zap, Target, Layout, ShieldCheck,
+  Target, Layout, ShieldCheck,
   Building2, Plus, Clock, ExternalLink
 } from 'lucide-react';
 import { getStudioPublicProfileByCode } from '../services/studioProfileService';
@@ -298,7 +298,7 @@ const StudioTalentID = () => {
             {(Array.isArray(profile.whatWeDo) && profile.whatWeDo.length > 0 ? profile.whatWeDo : ['Concept Development', 'Lighting & Rendering', 'Animation Production', 'Post Production', 'Visual Effects', 'Real-time Engines']).slice(0, 6).map((service: string, i: number) => (
               <div key={i} className="flex items-center gap-2 group">
                 <div className="w-8 h-8 bg-[#EEF2FF] rounded-lg flex items-center justify-center text-[#4F46E5] shrink-0 group-hover:bg-[#4F46E5] group-hover:text-white transition-all shadow-sm">
-                  {i === 0 ? <Zap size={14} /> : i === 1 ? <Target size={14} /> : i === 2 ? <Layout size={14} /> : i === 3 ? <Clock size={14} /> : i === 4 ? <ShieldCheck size={14} /> : <Zap size={14} />}
+                  {i === 0 ? <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain group-hover:invert transition-all" alt="" /> : i === 1 ? <Target size={14} /> : i === 2 ? <Layout size={14} /> : i === 3 ? <Clock size={14} /> : i === 4 ? <ShieldCheck size={14} /> : <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain group-hover:invert transition-all" alt="" />}
                 </div>
                 <span className="text-[11px] font-black text-gray-700 leading-tight group-hover:text-[#4F46E5] transition-colors">{service}</span>
               </div>

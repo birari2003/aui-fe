@@ -35,7 +35,7 @@ function App() {
           if (window.location.pathname === '/') {
             if (data.data.role === 'professional') setView('dashboard_pro');
             else if (data.data.role === 'studio') setView('dashboard_studio');
-            else if (data.data.role === 'institute') setView('dashboard_institute');
+            else if (data.data.role === 'institute') setView('experts');
             else if (data.data.role === 'admin') setView('admin');
           }
         } else {

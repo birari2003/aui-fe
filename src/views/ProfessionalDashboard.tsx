@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, ShieldCheck, Globe, MapPin, ChevronRight, Zap, Layers, Briefcase, Activity, Filter, Search, Clock, ArrowRight, X, Shield, Sparkles, Lock, Pencil, Trash2, Plus, Calendar, Edit2, BarChart, CheckCircle2, ExternalLink, Settings } from 'lucide-react';
+import { Users, ShieldCheck, Globe, MapPin, ChevronRight, Layers, Briefcase, Activity, Filter, Search, Clock, ArrowRight, X, Shield, Sparkles, Lock, Pencil, Trash2, Plus, Calendar, Edit2, BarChart, CheckCircle2, ExternalLink, Settings } from 'lucide-react';
 
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -668,7 +668,7 @@ const OpportunityDetailsModal = ({
 
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-brand-primary">
-              <Zap size={18} className="fill-brand-primary/10" />
+              <img src="/assets/logo_blck.png" className="w-[18px] h-[18px] rounded-[4px] object-contain" alt="" />
               <h4 className="text-xs font-black uppercase tracking-widest">Opportunity Overview</h4>
             </div>
             <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 text-text-secondary font-medium leading-relaxed">
@@ -704,6 +704,18 @@ const OpportunityDetailsModal = ({
         </div>
       </div>
     </div>
+  );
+};
+
+const LogoIconHiringOS = ({ size = 16, className = "" }: { size?: number; className?: string }) => {
+  const isMuted = className.includes('text-text-muted');
+  return (
+    <img 
+      src="/assets/logo_blck.png" 
+      className={`rounded-[3px] object-contain transition-all ${isMuted ? 'opacity-40 grayscale' : 'opacity-100'}`} 
+      style={{ width: size, height: size }} 
+      alt="" 
+    />
   );
 };
 
@@ -1289,7 +1301,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex bg-gray-50/50 p-1 rounded-2xl border border-gray-100 overflow-x-auto no-scrollbar">
                   {[
-                    { id: 'opportunities', label: 'Opportunities', icon: Zap, count: studioRequests.length + studioJobPostings.length },
+                    { id: 'opportunities', label: 'Opportunities', icon: LogoIconHiringOS, count: studioRequests.length + studioJobPostings.length },
                     { id: 'applications', label: 'Applications', icon: Layers, count: jobApplications.length },
                     { id: 'engagements', label: 'Engagements', icon: Briefcase, count: jobApplications.filter(a => a.status === 'hired' || a.status === 'agreement').length },
                     { id: 'activity', label: 'Activity Hub', icon: Activity, count: activityItems.length },
@@ -1361,7 +1373,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         <div className="space-y-4 flex-1 flex flex-col justify-between">
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 text-brand-accent">
-                              <Zap size={14} className="fill-current" />
+                              <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain" alt="" />
                               <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
                             </div>
 
@@ -1424,7 +1436,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         <div className="space-y-4 flex-1 flex flex-col justify-between">
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 text-brand-accent">
-                              <Zap size={14} className="fill-current" />
+                              <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain" alt="" />
                               <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
                             </div>
 

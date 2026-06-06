@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Zap, Bell, Users, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
+import { Bell, Users, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Button from './Button';
 import { View, UserRole } from '../types';
@@ -8,11 +8,11 @@ import ConfirmModal from './ConfirmModal';
 import { getMyNotifications, markAsRead } from '../services/notificationServices';
 
 
-const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: { 
-  setView: (v: View) => void, 
-  isLoggedIn: boolean, 
+const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
+  setView: (v: View) => void,
+  isLoggedIn: boolean,
   userRole: UserRole | null,
-  onLogout: () => void 
+  onLogout: () => void
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,12 +81,14 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-12">
             <Link to="/" className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
-              <div className="w-8 h-8 bg-brand-primary rounded-[6px] flex items-center justify-center">
-                <Zap size={18} className="text-white" />
-              </div>
+              <img
+                src="/assets/logo_blck.png"
+                className="w-8 h-8 rounded-[10px] object-cover"
+                alt="AUI Logo"
+              />
               <span className="text-xl font-display font-bold tracking-tight text-brand-primary">AUI</span>
             </Link>
-            
+
             {/* Contextual Navigation */}
             {!isAuthPage && !isShowcase && isLoggedIn && userRole !== 'admin' && (
               <nav className="hidden md:flex items-center gap-10">
@@ -104,15 +106,14 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
                       }
                       handleNav(item.id as View, item.path);
                     }}
-                    className={`text-[11px] font-bold uppercase tracking-[0.25em] transition-premium relative py-2 ${
-                      path === item.path 
-                        ? 'text-brand-primary' 
+                    className={`text-[11px] font-bold uppercase tracking-[0.25em] transition-premium relative py-2 ${path === item.path
+                        ? 'text-brand-primary'
                         : 'text-text-muted hover:text-brand-primary'
-                    }`}
+                      }`}
                   >
                     {item.label}
                     {path === item.path && (
-                      <motion.div 
+                      <motion.div
                         layoutId="nav-underline"
                         className="absolute -bottom-1 left-0 right-0 h-0.5 bg-brand-primary rounded-full"
                       />
@@ -123,7 +124,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
             )}
 
             {isShowcase && (
-              <button 
+              <button
                 onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-text-muted hover:text-brand-primary transition-premium text-[11px] font-bold uppercase tracking-widest"
               >
@@ -144,7 +145,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
             ) : (
               <>
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => {
                       if (!showNotifications) fetchNotifications();
                       setShowNotifications(!showNotifications);
@@ -173,8 +174,8 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
                           </div>
                         ) : (
                           notifications.map((n) => (
-                            <div 
-                              key={n.id} 
+                            <div
+                              key={n.id}
                               onClick={async (e) => {
                                 if (!n.studio) return;
                                 e.preventDefault();
@@ -182,14 +183,14 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
                                 try {
                                   const token = localStorage.getItem('token');
                                   // Permissive check for talentCode
-                                  const talentCode = n.studio?.user?.talentId?.talentCode || 
-                                                     n.studio?.User?.talentId?.talentCode ||
-                                                     (n.studio?.userId ? `AUI-STU-${String(n.studio.userId).padStart(6, '0')}` : null);
-                                  
+                                  const talentCode = n.studio?.user?.talentId?.talentCode ||
+                                    n.studio?.User?.talentId?.talentCode ||
+                                    (n.studio?.userId ? `AUI-STU-${String(n.studio.userId).padStart(6, '0')}` : null);
+
                                   if (token && !n.isRead) {
                                     markAsRead(token, n.id).catch(console.error);
                                   }
-                                  
+
                                   setShowNotifications(false);
                                   if (talentCode) {
                                     navigate(`/talent/${talentCode}`);
@@ -206,7 +207,11 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
                             >
                               <div className="flex items-start gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-brand-primary shadow-sm flex-shrink-0">
-                                  <Zap size={14} />
+                                <img 
+                                  src="/assets/logo_blck.png" 
+                                  className="w-[14px] h-[14px] rounded-[3px] object-contain" 
+                                  alt="" 
+                                />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-bold text-brand-primary leading-tight">{n.message}</p>
@@ -229,19 +234,19 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
                 </div>
                 <div className="flex items-center gap-4">
                   {userRole !== 'studio' && (
-                    <div 
-                      className="w-10 h-10 rounded-full bg-brand-surface border border-gray-100 flex items-center justify-center overflow-hidden cursor-pointer hover:border-brand-accent/30 transition-premium shadow-sm" 
+                    <div
+                      className="w-10 h-10 rounded-full bg-brand-surface border border-gray-100 flex items-center justify-center overflow-hidden cursor-pointer hover:border-brand-accent/30 transition-premium shadow-sm"
                       onClick={() => {
                         if (userRole === 'admin') handleNav('admin', '/admin');
-                        else if (userRole === 'institute') handleNav('dashboard_institute', '/dashboard/institute');
+                        else if (userRole === 'institute') handleNav('experts', '/experts');
                         else if (userRole === 'professional') handleNav('dashboard_pro', '/dashboard/pro');
                       }}
                     >
                       <Users size={20} className="text-text-muted" />
                     </div>
                   )}
-                  <button 
-                    onClick={() => setShowLogoutConfirm(true)} 
+                  <button
+                    onClick={() => setShowLogoutConfirm(true)}
                     className="p-2 text-text-muted hover:text-red-500 transition-premium"
                   >
                     <LogOut size={20} />
@@ -252,7 +257,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
 
             {/* Mobile Menu Toggle */}
             {!isAuthPage && isLoggedIn && userRole !== 'admin' && (
-              <button 
+              <button
                 className="md:hidden p-2 text-text-muted hover:text-brand-primary transition-premium"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
@@ -264,7 +269,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 shadow-xl z-40 p-6 space-y-4"
@@ -282,11 +287,10 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
                   }
                   setIsMobileMenuOpen(false);
                 }}
-                className={`w-full text-left py-4 px-6 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-premium ${
-                  path === item.path 
-                    ? 'bg-brand-surface text-brand-primary' 
+                className={`w-full text-left py-4 px-6 rounded-xl text-[11px] font-bold uppercase tracking-[0.2em] transition-premium ${path === item.path
+                    ? 'bg-brand-surface text-brand-primary'
                     : 'text-text-muted hover:bg-brand-surface'
-                }`}
+                  }`}
               >
                 {item.label}
               </button>

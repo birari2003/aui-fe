@@ -11,7 +11,6 @@ import StudioDashboard from '../views/StudioDashboard';
 import InstituteDashboard from '../views/InstituteDashboard';
 import ProfessionalDashboard from '../views/ProfessionalDashboard';
 import StudioProfile from '../views/StudioProfile';
-import InstituteProfile from '../views/InstituteProfile';
 import StudioList from '../views/StudioList';
 import InstituteList from '../views/InstituteList';
 import TalentIDPage from '../views/TalentID';
@@ -54,7 +53,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
     else if (path === '/studios') setView('studio_list');
     else if (path === '/institutes') setView('institute_list');
     else if (path === '/dashboard/studio') setView('dashboard_studio');
-    else if (path === '/dashboard/institute') setView('dashboard_institute');
+    else if (path === '/dashboard/institute') setView('experts');
     else if (path === '/dashboard/pro') setView('dashboard_pro');
     else if (path === '/admin') setView('admin');
   }, [location.pathname, setView]);
@@ -68,7 +67,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       case 'register_select': navigate('/register'); break;
       case 'onboarding': navigate('/onboarding'); break;
       case 'dashboard_studio': navigate('/dashboard/studio'); break;
-      case 'dashboard_institute': navigate('/dashboard/institute'); break;
+      case 'dashboard_institute': navigate('/experts'); break;
       case 'dashboard_pro': navigate('/dashboard/pro'); break;
       case 'talent_id': break; 
       case 'showcase_studio': break; 
@@ -92,7 +91,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
           
           let dashboardView: View = 'landing';
           if (user.role === 'studio') dashboardView = 'dashboard_studio';
-          else if (user.role === 'institute') dashboardView = 'dashboard_institute';
+          else if (user.role === 'institute') dashboardView = 'experts';
           else if (user.role === 'professional') dashboardView = 'dashboard_pro';
           else if (user.role === 'admin') dashboardView = 'admin';
           
@@ -102,7 +101,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/register" element={<RegisterSelect onSelect={(role) => { setUserRole(role); handleSetView('onboarding'); }} />} />
       <Route path="/onboarding" element={<OnboardingFlow role={userRole || 'professional'} onComplete={handleSetView} />} />
       <Route path="/dashboard/studio" element={<StudioProfile setView={handleSetView} />} />
-      <Route path="/dashboard/institute" element={<InstituteProfile setView={handleSetView} />} />
+      <Route path="/dashboard/institute" element={<Navigate to="/experts" replace />} />
       <Route path="/dashboard/pro" element={<ProfessionalDashboard setView={handleSetView} />} />
       <Route path="/dashboard/pro/studio-requests" element={<ProfessionalDashboard setView={handleSetView} />} />
       <Route path="/dashboard/pro/jobs-by-studios" element={<ProfessionalDashboard setView={handleSetView} />} />

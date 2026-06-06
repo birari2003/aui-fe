@@ -32,8 +32,7 @@ import {
   BadgeCheck,
   Users,
   User,
-  Film,
-  Zap
+  Film
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import Modal from '../components/Modal';
@@ -487,7 +486,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
-                  <Zap size={12} />
+                  <img src="/assets/logo_blck.png" className="w-[12px] h-[12px] rounded-[3px] object-contain" alt="" />
                   Primary Skill
                 </div>
                 <div className="text-sm font-bold">{professional?.primarySkill || 'Artist'}</div>
@@ -903,7 +902,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
                     <div className="border-l border-[#e5e7eb] pl-4 min-w-0">
                       <div className="flex items-center gap-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#9aa0a8]">
-                        <Zap size={11} /> Primary Skill
+                        <img src="/assets/logo_blck.png" className="w-[11px] h-[11px] rounded-[2px] object-contain" alt="" /> Primary Skill
                       </div>
                       <div className="mt-1 text-[11px] font-bold text-[#1d2532] truncate">
                         {professional?.primarySkill || 'Artist'}

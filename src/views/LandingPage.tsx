@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Briefcase, GraduationCap, Users, Zap } from 'lucide-react';
+import { Briefcase, GraduationCap, Users } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import LiveActivity from '../components/LiveActivity';
@@ -28,7 +28,7 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
         setIsRestrictedModalOpen(true);
         return;
       }
-      if ((v === 'experts' || v === 'dashboard_institute') && userRole === 'studio') {
+      if (v === 'experts' && userRole === 'studio') {
         setRestrictedMessage('This feature is for institutes. Studios can hire verified talent directly.');
         setIsRestrictedModalOpen(true);
         return;
@@ -187,9 +187,11 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
         <footer className="bg-brand-surface py-20">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-brand-primary rounded-[6px] flex items-center justify-center">
-                <Zap size={18} className="text-white" />
-              </div>
+              <img 
+                src="/assets/logo_blck.png" 
+                className="w-8 h-8 rounded-[10px] object-cover" 
+                alt="AUI Logo" 
+              />
               <span className="text-xl font-bold tracking-tight text-brand-primary">AUI</span>
             </div>
             <div className="flex gap-8 text-sm font-medium text-text-secondary">

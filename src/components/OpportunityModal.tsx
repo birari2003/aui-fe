@@ -8,7 +8,6 @@ import {
   Lock, 
   Check, 
   Calendar,
-  Zap,
   User,
   ArrowUpRight,
   FileText
@@ -197,8 +196,8 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
               <div className="grid grid-cols-2 gap-10">
                 <section className="space-y-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                      <Zap size={16} />
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
+                      <img src="/assets/logo_blck.png" className="w-[16px] h-[16px] rounded-[3px] object-contain" alt="" />
                     </div>
                     <h3 className="text-xs font-black uppercase tracking-[0.25em] text-gray-900">OPPORTUNITY OVERVIEW</h3>
                   </div>

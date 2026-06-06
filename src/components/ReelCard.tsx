@@ -81,7 +81,7 @@ const ReelCard = ({ reel, onClick, onAction }: { reel: any, onClick: () => void,
                 className="text-[10px] py-4 px-0 border-none font-bold"
                 onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
-                  onAction('dashboard_institute');
+                  onAction('experts');
                 }}
               >
                 Book Session

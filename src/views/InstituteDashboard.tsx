@@ -1,7 +1,18 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen, MessageSquare, Zap, Search, CheckCircle2, Globe, Shield, Clock, ExternalLink, Users, XCircle } from 'lucide-react';
+import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen, MessageSquare, Search, CheckCircle2, Globe, Shield, Clock, ExternalLink, Users, XCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+
+const LogoIcon = ({ size = 18, isSelected, className = "" }: { size?: number; isSelected?: boolean; className?: string }) => {
+  return (
+    <img 
+      src="/assets/logo_blck.png" 
+      className={`rounded-[3px] object-contain transition-all ${isSelected ? 'invert' : ''} ${className}`} 
+      style={{ width: size, height: size }} 
+      alt="" 
+    />
+  );
+};
 import SEO from '../components/SEO';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -17,6 +28,8 @@ import * as workshopServices from '../services/instituteWorkshopServices';
 import * as workshopRequestServices from '../services/workshopRequestServices';
 import Modal from '../components/Modal';
 import { View } from '../types';
+import EditInstituteModal from '../components/EditInstituteModal';
+import ManageInstituteProfileModal from '../components/ManageInstituteProfileModal';
 
 const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
@@ -64,6 +77,8 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
     email: '',
     specialRequirements: ''
   });
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = React.useState(false);
 
   const ledgerEntries = [
     { title: 'Pixar Lighting Masterclass', expert: 'Sarah Jenkins', type: 'WORKSHOP', date: 'March 15, 2026', impact: '45 Students', status: 'COMPLETED' },
@@ -100,7 +115,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
       id: 'workshops',
       title: 'Intense Workshops',
       tag: 'TECHNICAL',
-      icon: Zap,
+      icon: LogoIcon,
       description: 'Intensive immersion into high-end production workflows. Best for bridging technical gaps in a short window.',
       list: ['4-8 Hour Session', 'Live Demo + Q&A', 'Pipeline Breakdown', 'Industry Best Practices'],
       rate: '$1,500 - $3,000 per session',
@@ -385,13 +400,13 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
       {/* Sub Header Section */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-12">
+          <div className="flex items-center gap-6">
             <div className="flex flex-col">
               <span className="text-xl font-bold tracking-tighter text-brand-primary leading-none">INHUB</span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-brand-purple mt-1">CONNECT WITH INDUSTRY</span>
             </div>
 
-            <div className="w-[1px] h-8 bg-gray-100 mx-4" />
+            <div className="w-[1px] h-8 bg-gray-100 mx-2" />
 
             <nav className="flex items-center gap-8">
               {[
@@ -417,18 +432,34 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
             </nav>
           </div>
 
-          <button
-            onClick={() => {
-              const talentCode = profile?.user?.talentId?.talentCode;
-              if (talentCode) {
-                navigate(`/talent/${talentCode}`);
-              }
-            }}
-            className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-[10px] font-bold uppercase tracking-widest text-brand-primary/60 transition-all border border-gray-100"
-          >
-            <ExternalLink size={14} className="text-brand-purple" />
-            PUBLIC PROFILE
-          </button>
+          <div className="flex gap-3 items-center">
+            <button
+              onClick={() => {
+                const talentCode = profile?.user?.talentId?.talentCode;
+                if (talentCode) {
+                  navigate(`/talent/${talentCode}`);
+                } else {
+                  alert('Public profile URL not generated yet. Please save your profile info first.');
+                }
+              }}
+              className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-[10px] font-bold uppercase tracking-widest text-brand-primary/60 transition-all border border-gray-100"
+            >
+              <ExternalLink size={14} className="text-brand-purple" />
+              PUBLIC PROFILE
+            </button>
+            <button
+              onClick={() => setIsManageModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-[10px] font-bold uppercase tracking-widest text-brand-primary/60 transition-all border border-gray-100"
+            >
+              MANAGE PORTFOLIO
+            </button>
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary hover:bg-brand-purple text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm"
+            >
+              EDIT PROFILE
+            </button>
+          </div>
         </div>
       </div>
 
@@ -518,7 +549,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       <div className="space-y-8">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-500 ${selectedModel === model.id ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/20' : 'bg-gray-50 text-brand-primary/40 group-hover:bg-brand-purple/10 group-hover:text-brand-purple'
                           }`}>
-                          <model.icon size={28} />
+                          <model.icon size={28} isSelected={selectedModel === model.id} />
                         </div>
 
                         <div className="space-y-3">
@@ -921,7 +952,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <div className="space-y-10">
                   <div className="flex items-center gap-6">
                     <div className="w-16 h-16 bg-brand-purple/5 rounded-[24px] flex items-center justify-center text-brand-purple border border-brand-purple/10">
-                      <Zap size={32} />
+                      <img src="/assets/logo_blck.png" className="w-[32px] h-[32px] rounded-[6px] object-contain" alt="" />
                     </div>
                     <div className="space-y-1">
                       <h1 className="text-6xl font-display font-bold text-brand-primary">AUI Nexus</h1>
@@ -946,7 +977,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   dynamicNexus.map((opp, idx) => (
                     <div key={idx} className="bg-white rounded-[48px] p-12 border border-gray-100 shadow-premium flex gap-10 group hover:border-brand-purple/30 transition-all duration-500">
                       <div className="w-32 h-32 bg-gray-50 rounded-3xl flex items-center justify-center text-brand-primary/20 shrink-0">
-                        <Zap size={48} className="group-hover:text-brand-purple transition-colors duration-500" />
+                        <img src="/assets/logo_blck.png" className="w-[48px] h-[48px] rounded-[10px] object-contain group-hover:scale-110 transition-transform duration-500" alt="" />
                       </div>
                       <div className="space-y-8">
                         <div className="space-y-4">
@@ -1009,7 +1040,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                             }}
                             className="absolute top-4 right-4 w-10 h-10 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 hover:scale-110 transition-transform"
                           >
-                            <motion.span animate={{ rotate: 90 }}><Zap size={16} /></motion.span>
+                            <motion.span animate={{ rotate: 90 }}><img src="/assets/logo_white.png" className="w-[16px] h-[16px] rounded-[3px] object-contain" alt="" /></motion.span>
                           </button>
                         </div>
                         <div className="space-y-1 text-left">
@@ -1066,7 +1097,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {[
                       { icon: Globe, title: 'Global Payroll', desc: 'Compliant international payments handled by us.' },
-                      { icon: Zap, title: 'Technical Sync', desc: 'We stress-test the pipeline before the session.' },
+                      { icon: LogoIcon, title: 'Technical Sync', desc: 'We stress-test the pipeline before the session.' },
                       { icon: BookOpen, title: 'Curriculum Prep', desc: 'Syncing expert knowledge with your goals.' },
                       { icon: Shield, title: 'Verified Only', desc: 'Every teacher has at least 10+ years production exp.' }
                     ].map((item) => (
@@ -1090,7 +1121,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     <div className="space-y-8">
                       <div className="flex items-center justify-between">
                         <div className="w-12 h-12 bg-brand-surface rounded-xl flex items-center justify-center text-brand-purple">
-                          <Zap size={24} />
+                          <img src="/assets/logo_blck.png" className="w-[24px] h-[24px] rounded-[5px] object-contain" alt="" />
                         </div>
                         <span className="px-3 py-1 bg-brand-purple/10 text-brand-purple text-[10px] font-bold rounded-full uppercase tracking-wider">ELITE TIER</span>
                       </div>
@@ -1300,7 +1331,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-6">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white">
-                      <Zap size={20} />
+                      <img src="/assets/logo_white.png" className="w-[20px] h-[20px] rounded-[4px] object-contain" alt="" />
                     </div>
                     <h4 className="font-bold text-brand-primary text-xl">AUI Advantage</h4>
                   </div>
@@ -1495,7 +1526,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
               <div className="p-8 bg-brand-purple/5 rounded-3xl border border-brand-purple/10 flex items-start gap-4">
                 <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center text-white flex-shrink-0">
-                  <Zap size={20} />
+                  <img src="/assets/logo_white.png" className="w-[20px] h-[20px] rounded-[4px] object-contain" alt="" />
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-bold text-brand-primary">AUI Advantage</h4>
@@ -1578,6 +1609,16 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
           </div>
         }
       />
+      <EditInstituteModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        profile={profile} 
+        onUpdate={fetchProfile}
+      />
+
+      {isManageModalOpen && (
+        <ManageInstituteProfileModal onClose={() => setIsManageModalOpen(false)} />
+      )}
     </div>
   );
 };

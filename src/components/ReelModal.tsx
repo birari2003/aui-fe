@@ -55,7 +55,7 @@ const ReelModal = ({ isOpen, onClose, reel, onAction }: {
                   variant="secondary"
                   className="w-full py-5 border-none text-sm font-bold"
                   onClick={() => {
-                    onAction('dashboard_institute');
+                    onAction('experts');
                     onClose();
                   }}
                 >

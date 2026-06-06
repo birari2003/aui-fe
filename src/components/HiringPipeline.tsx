@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, Search, Clock, ChevronRight, X, ShieldCheck, 
   MapPin, CheckCircle2, Phone, Mail, FileText, 
-  Briefcase as Portfolio, Zap, Star, MessageCircle, DollarSign, Calendar,
+  Briefcase as Portfolio, Star, MessageCircle, DollarSign, Calendar,
   ChevronDown, ChevronUp, ExternalLink, Sparkles, Shield,
   ArrowRight, Trash2, Plus, Filter, BarChart
 } from 'lucide-react';
