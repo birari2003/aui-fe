@@ -300,14 +300,15 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const avatarUrl = publicProfile?.profileImage ? getFileUrl(publicProfile.profileImage) : (professional?.avatarUrl || '');
   const displayTalentId = talentId?.talentCode || 'AUI-000000';
 
-  const insight = publicProfile?.auiInsight || 'Senior creative professional with a proven track record in high-impact projects. Consistently delivers exceptional results and excels in collaborative environments.';
+  const insight = publicProfile?.auiInsight || '';
   const timeline = Array.isArray(publicProfile?.experienceTimeline) ? publicProfile.experienceTimeline : [];
-  const showreel = {
+  const showreelUrl = publicProfile?.showreel?.url || '';
+  const showreel = showreelUrl ? {
     type: publicProfile?.showreel?.type || 'youtube',
-    url: publicProfile?.showreel?.url || professional?.showreelUrl || 'https://youtube.com',
+    url: showreelUrl,
     title: publicProfile?.showreel?.title || 'Professional Showreel',
-    duration: publicProfile?.showreel?.duration || '02:30'
-  };
+    duration: publicProfile?.showreel?.duration || ''
+  } : null;
   const workLedger = Array.isArray(publicProfile?.workLedger) ? publicProfile.workLedger : [];
 
   const handleShare = async () => {
@@ -566,12 +567,16 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                 <h3 className="font-bold text-lg">AUI Insight</h3>
               </div>
             </div>
-            <div className="relative">
-              <span className="absolute -left-1 -top-1 text-2xl text-[#E5E7EB] font-serif italic">“</span>
-              <p className="text-[#374151] text-sm leading-relaxed font-medium pl-5">
-                {insight}
-              </p>
-            </div>
+            {insight ? (
+              <div className="relative">
+                <span className="absolute -left-1 -top-1 text-2xl text-[#E5E7EB] font-serif italic">“</span>
+                <p className="text-[#374151] text-sm leading-relaxed font-medium pl-5">
+                  {insight}
+                </p>
+              </div>
+            ) : (
+              <p className="text-[#9CA3AF] text-sm italic">No insight available yet.</p>
+            )}
           </div>
 
           {/* Experience Timeline */}
@@ -607,38 +612,44 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <h3 className="font-bold text-lg">Showreel</h3>
           </div>
 
-          <div
-            className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium"
-          >
-            {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${getYouTubeId(showreel.url)}?autoplay=0`}
-                title={showreel.title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            ) : showreel.url && showreel.url.includes('vimeo.com') ? (
-              <iframe
-                src={`https://player.vimeo.com/video/${getVimeoId(showreel.url)}`}
-                title={showreel.title}
-                className="w-full h-full border-0"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            ) : (
-              <video
-                src={getFileUrl(showreel.url)}
-                controls
-                className="w-full h-full object-contain"
-                poster={'/assets/showreel_thumbnail_1777487470036.png'}
-              />
-            )}
-            <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
-              <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
-              <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>
+          {showreel ? (
+            <div
+              className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium"
+            >
+              {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${getYouTubeId(showreel.url)}?autoplay=0`}
+                  title={showreel.title}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : showreel.url && showreel.url.includes('vimeo.com') ? (
+                <iframe
+                  src={`https://player.vimeo.com/video/${getVimeoId(showreel.url)}`}
+                  title={showreel.title}
+                  className="w-full h-full border-0"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <video
+                  src={getFileUrl(showreel.url)}
+                  controls
+                  className="w-full h-full object-contain"
+                  poster={'/assets/showreel_thumbnail_1777487470036.png'}
+                />
+              )}
+              <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
+                <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
+                {showreel.duration && <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center justify-center rounded-[20px] bg-[#F9FAFB] border border-dashed border-[#E5E7EB] py-12">
+              <p className="text-[#9CA3AF] text-sm italic">No showreel added yet.</p>
+            </div>
+          )}
         </div>
 
         {/* Work Ledger Section */}

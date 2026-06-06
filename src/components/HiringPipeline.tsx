@@ -609,23 +609,48 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
                     </>
                   )}
 
+                  {activePhase === 'agreement' && (
+                    <>
+                      <Button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedApp(app); setIsAgreementModalOpen(true); }}
+                        className="px-12 py-5 bg-[#1a1f28] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+                      >
+                        Update Agreement
+                      </Button>
+                      <div className="flex items-center gap-2 px-6 py-4 bg-emerald-50 border border-emerald-200 rounded-[1.5rem]">
+                        <Clock size={16} className="text-emerald-600" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">Agreement Shared</p>
+                          <p className="text-[9px] text-emerald-500">Sent to artist. Pending acceptance.</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   {activePhase === 'hired' && (
-                    <div className="flex items-center gap-8">
-                      <div className="text-right">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Hired Amount</p>
-                        <p className="text-2xl font-black text-emerald-600">
-                          {app.agreementDetails?.currency || 'USD'} {app.agreementDetails?.amount || app.verifiedResponse?.expectedCTC || 'N/A'}
+                    <>
+                      <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border border-emerald-200 rounded-[1.5rem]">
+                        <CheckCircle2 size={18} className="text-emerald-600" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">Artist Hired</p>
+                          <p className="text-[9px] text-emerald-500">Accepted by {app.professional?.fullName || 'artist'}</p>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Current Comp</p>
+                        <p className="font-bold text-gray-900">{app.verifiedResponse?.currentCTC || '—'}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Expected Comp</p>
+                        <p className="font-bold text-gray-900">{app.verifiedResponse?.expectedCTC || '—'}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Final Settlement</p>
+                        <p className="font-bold text-emerald-600">
+                          {app.agreementDetails?.currency || ''} {app.agreementDetails?.amount || '—'}{app.agreementDetails?.compensationType ? ` / ${app.agreementDetails.compensationType}` : ''}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Start Date</p>
-                        <p className="font-bold text-gray-900">{app.agreementDetails?.startDate || 'N/A'}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Duration</p>
-                        <p className="font-bold text-gray-900">{app.agreementDetails?.duration || 'N/A'}</p>
-                      </div>
-                    </div>
+                    </>
                   )}
 
                   {activePhase === 'rejected' && (

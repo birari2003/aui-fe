@@ -87,41 +87,33 @@ const VerificationSheetModal = ({
         period: item.period || item.date || ''
       }));
 
-      const currentComp = timeline.find((item: any) => item.period?.toLowerCase().includes('present'))?.company || (timeline[0]?.company || 'DNEG');
+      const currentComp = timeline.find((item: any) => item.period?.toLowerCase().includes('present'))?.company || (timeline[0]?.company || '');
 
       const ledger = (Array.isArray(publicProfile?.workLedger) ? publicProfile.workLedger : []).map((item: any) => ({
         project: item.project || item.projectName || '',
-        studio: item.studio || 'Meta',
+        studio: item.studio || '',
         role: item.role || '',
         year: item.year || ''
       }));
 
       setFormData({
-        talentId: profile.user?.talentId?.talentCode || 'AUI-8RP-S',
+        talentId: profile.user?.talentId?.talentCode || '',
         name: profile.fullName || '',
-        primarySkill: profile.primarySkill || (profile.skills && profile.skills[0]) || 'Animation',
-        position: (profile.position ? (profile.position.charAt(0).toUpperCase() + profile.position.slice(1)) : 'Lead Character Designer'),
-        experience: profile.experienceYears ? `${profile.experienceYears}y` : '8y',
-        experienceTimeline: timeline.length > 0 ? timeline : [
-          { role: 'Lead Character Des', company: 'DNEG', period: '2024 - Present' },
-          { role: 'Lighting Artist', company: 'Framestore', period: '2021 - 2024' },
-          { role: 'Associate Artist', company: 'Technicolor', period: '2018 - 2021' },
-        ],
+        primarySkill: profile.primarySkill || (profile.skills && profile.skills[0]) || '',
+        position: (profile.position ? (profile.position.charAt(0).toUpperCase() + profile.position.slice(1)) : ''),
+        experience: profile.experienceYears ? `${profile.experienceYears}y` : '',
+        experienceTimeline: timeline,
         currentCompany: currentComp,
         currentCTC: '',
         expectedCTC: '',
         noticePeriod: '',
-        location: profile.location || 'Mumbai, India',
-        relocationPreference: 'Yes',
+        location: profile.location || '',
+        relocationPreference: '',
         aboutMe: profile.bio || '',
         showreelLinks: [
-          publicProfile?.showreel?.url || profile.showreelUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-        ],
-        workLedger: ledger.length > 0 ? ledger : [
-          { project: 'Metaverse Cha', studio: 'Meta', role: 'Lead Designer', year: '6m' },
-          { project: 'Feature Film: ', studio: 'Roll A Rock', role: 'Lighting Lead', year: '3m' },
-          { project: 'Nexus Chronic', studio: 'Nexus Interact', role: 'Senior Animat', year: 'Ongoing' },
-        ]
+          publicProfile?.showreel?.url || ''
+        ].filter((l: string) => l),
+        workLedger: ledger
       });
     }
   }, [profile, publicProfile, isOpen]);
