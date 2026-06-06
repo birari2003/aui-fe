@@ -125,6 +125,12 @@ const getYouTubeId = (url: string) => {
   return (match && match[2].length === 11) ? match[2] : 'default';
 };
 
+const getVimeoId = (url: string) => {
+  if (!url) return '';
+  const match = url.match(/(?:www\.|player\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/);
+  return match ? match[3] : '';
+};
+
 const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
   const { talentCode } = useParams<{ talentCode: string }>();
@@ -286,6 +292,9 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   };
 
   const { professional, publicProfile, talentId } = profileData;
+  const userLevel = (professional?.level || 'junior').toLowerCase();
+  const levelStyle = levelStyles[userLevel] || levelStyles.junior;
+  const highlight = levelHighlightStyles[userLevel] || levelHighlightStyles.junior;
   const displayName = professional?.fullName || 'Professional';
   const hasAvatar = !!(publicProfile?.profileImage || professional?.avatarUrl);
   const avatarUrl = publicProfile?.profileImage ? getFileUrl(publicProfile.profileImage) : (professional?.avatarUrl || '');
@@ -293,7 +302,12 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
   const insight = publicProfile?.auiInsight || 'Senior creative professional with a proven track record in high-impact projects. Consistently delivers exceptional results and excels in collaborative environments.';
   const timeline = Array.isArray(publicProfile?.experienceTimeline) ? publicProfile.experienceTimeline : [];
-  const showreel = publicProfile?.showreel || { type: 'youtube', url: 'https://youtube.com', title: 'Professional Showreel', duration: '02:30' };
+  const showreel = {
+    type: publicProfile?.showreel?.type || 'youtube',
+    url: publicProfile?.showreel?.url || professional?.showreelUrl || 'https://youtube.com',
+    title: publicProfile?.showreel?.title || 'Professional Showreel',
+    duration: publicProfile?.showreel?.duration || '02:30'
+  };
   const workLedger = Array.isArray(publicProfile?.workLedger) ? publicProfile.workLedger : [];
 
   const handleShare = async () => {
@@ -457,7 +471,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                 </div>
               </div>
               <div className="bg-[#1E1B4B] text-white px-4 py-2.5 rounded-xl flex flex-col items-center justify-center leading-tight">
-                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{professional?.position || 'Mid'}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{levelStyle.label}</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest">Level</span>
               </div>
             </div>
@@ -493,11 +507,11 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             </div>
 
-            <div className="bg-[#EFF6FF] rounded-xl p-3.5 flex items-center gap-4">
-              <div className="w-2.5 h-2.5 bg-[#2563EB] rounded-full"></div>
+            <div className={`rounded-xl p-3.5 flex items-center gap-4 ${highlight.className}`}>
+              <div className={`w-2.5 h-2.5 rounded-full ${highlight.dotClassName}`}></div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#2563EB]">Industry Experienced</span>
-                <span className="text-xs text-[#64748B]">Proven track record</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">{highlight.title}</span>
+                <span className="text-xs opacity-90">{highlight.subtitle}</span>
               </div>
             </div>
 
@@ -596,12 +610,20 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           <div
             className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium"
           >
-            {showreel.type === 'youtube' ? (
+            {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
               <iframe
                 src={`https://www.youtube.com/embed/${getYouTubeId(showreel.url)}?autoplay=0`}
                 title={showreel.title}
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : showreel.url && showreel.url.includes('vimeo.com') ? (
+              <iframe
+                src={`https://player.vimeo.com/video/${getVimeoId(showreel.url)}`}
+                title={showreel.title}
+                className="w-full h-full border-0"
+                allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
               ></iframe>
             ) : (

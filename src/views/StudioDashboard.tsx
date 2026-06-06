@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, BadgeCheck, Bookmark, Briefcase, Calendar, Check, Clock, FileText, RotateCcw, ShieldCheck, Star, Users, X, ExternalLink } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Bookmark, Briefcase, Calendar, Check, Clock, FileText, RotateCcw, ShieldCheck, Star, Users, X, ExternalLink, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { toast } from 'react-toastify';
@@ -17,10 +17,11 @@ import {
   updateStudioRequestProfessional,
 } from '../services/studioServices';
 import { getMyStudioPublicProfile } from '../services/studioProfileService';
-import { API_ENDPOINTS } from '../utils/urls';
+import { API_ENDPOINTS, BASE_URL } from '../utils/urls';
 import { View } from '../types';
 import HiringByStudio from '../components/hiringByStudio';
 import OpportunityModal from '../components/OpportunityModal';
+import TalentAvatar from '../components/TalentAvatar';
 
 type ProfessionalRow = {
   id: number;
@@ -68,6 +69,11 @@ const FALLBACK_IMAGES = [
   'https://picsum.photos/seed/studio-discover-5/1200/900',
   'https://picsum.photos/seed/studio-discover-6/1200/900',
 ];
+const getFileUrl = (path: string) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${BASE_URL}/${path.replace(/\\/g, '/')}`;
+};
 
 const LEVEL_OPTIONS = [
   { label: 'All Levels', value: '' },
@@ -164,6 +170,9 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const [type, setType] = React.useState('');
   const [availableOnly, setAvailableOnly] = React.useState(false);
   const [verifiedOnly, setVerifiedOnly] = React.useState(false);
+  const [sortBy, setSortBy] = React.useState<string>('experience-desc');
+  const [benchDepartment, setBenchDepartment] = React.useState('');
+  const [benchSortBy, setBenchSortBy] = React.useState<string>('experience-desc');
 
   const [benchRows, setBenchRows] = React.useState<BenchRow[]>([]);
   const [requestRows, setRequestRows] = React.useState<StudioRequestRow[]>([]);
@@ -347,14 +356,13 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
         ...p,
         talentCode: code,
         displayName: name,
-        image: p.avatarUrl || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length],
+        image: p.avatarUrl ? getFileUrl(p.avatarUrl) : '',
       };
     });
 
   const renderProfessionalCard = (talent: (typeof normalized)[number], index: number) => {
     const level = levelStyles[talent.level] || levelStyles.junior;
     const highlight = levelHighlightStyles[talent.level] || levelHighlightStyles.junior;
-    const availabilityLabel = isAvailableNow(talent.availability) ? 'AVAILABLE NOW' : 'REVIEWING';
     const roleLabel = positionLabels[talent.position] || 'Artist';
     const productionLabel = productionTypeLabels[talent.productionType] || 'Production';
 
@@ -368,25 +376,12 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
         <Card className="overflow-hidden rounded-[16px] border border-[#e1e1e6] bg-[#f7f7f8] p-0 shadow-[0_1px_0_rgba(17,24,39,0.02),0_8px_20px_rgba(15,23,42,0.05)]">
           <div className="grid grid-cols-1 md:grid-cols-[162px_1fr] gap-0">
             <div className="relative min-h-[248px] md:min-h-[262px] bg-[#d8dbe2]">
-              <img
-                src={talent.image}
-                alt={talent.displayName}
+              <TalentAvatar
+                talentCode={talent.talentCode}
+                initialAvatarUrl={talent.image}
                 className="h-full w-full object-cover object-center"
+                iconSize={48}
               />
-              <div className="absolute left-3 top-3 rounded-full bg-[#ececec]/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#3a4048] shadow-sm backdrop-blur-sm">
-                {availabilityLabel}
-              </div>
-              <button
-                type="button"
-                onClick={() => toggleBench(talent)}
-                disabled={actionLoadingId === talent.id}
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#7e8692] shadow-sm backdrop-blur-sm transition-premium hover:text-[#101725]"
-              >
-                <Star
-                  size={15}
-                  className={benchIds.has(talent.id) ? 'fill-[#4f46e5] text-[#4f46e5]' : 'text-[#7e8692]'}
-                />
-              </button>
             </div>
 
             <div className="flex flex-col justify-between px-4 py-4 md:px-5 md:py-4 bg-[#f7f7f8]">
@@ -508,9 +503,36 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     );
   };
 
+  const sortedNormalized = [...normalized].sort((a, b) => {
+    if (sortBy === 'name-asc') {
+      return (a.displayName || '').localeCompare(b.displayName || '');
+    }
+    if (sortBy === 'name-desc') {
+      return (b.displayName || '').localeCompare(a.displayName || '');
+    }
+    if (sortBy === 'experience-desc') {
+      const expA = Number(a.experienceYears) || 0;
+      const expB = Number(b.experienceYears) || 0;
+      return expB - expA;
+    }
+    if (sortBy === 'experience-asc') {
+      const expA = Number(a.experienceYears) || 0;
+      const expB = Number(b.experienceYears) || 0;
+      return expA - expB;
+    }
+    if (sortBy === 'availability-asc') {
+      const availA = isAvailableNow(a.availability);
+      const availB = isAvailableNow(b.availability);
+      if (availA && !availB) return -1;
+      if (!availA && availB) return 1;
+      return 0;
+    }
+    return 0;
+  });
+
   const filteredTalent = activeTab === 'bench'
-    ? normalized.filter((p) => benchCodes.has(p.talentCode))
-    : normalized;
+    ? sortedNormalized.filter((p) => benchCodes.has(p.talentCode))
+    : sortedNormalized;
 
   const benchDisplayRows = benchRows.map((row, index) => {
     const talent = row.professional;
@@ -520,11 +542,51 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
       talent,
       talentCode,
       displayName: talent?.fullName || talent?.user?.email?.split('@')[0] || 'Unknown Professional',
-      image: talent?.avatarUrl || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length],
+      image: talent?.avatarUrl ? getFileUrl(talent.avatarUrl) : '',
       role: talent?.position || 'artist',
       level: talent?.level || 'junior',
       availability: talent?.availability || 'Immediate',
+      experienceYears: talent?.experienceYears || 0,
     };
+  });
+
+  const filteredBenchRows = benchDisplayRows.filter((row) => {
+    const talent = row.professional;
+    if (!talent) return false;
+
+    // Filter by department (benchDepartment)
+    if (benchDepartment && (!talent.primarySkill || !talent.primarySkill.toLowerCase().includes(benchDepartment.toLowerCase()))) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const sortedBenchRows = [...filteredBenchRows].sort((a, b) => {
+    if (benchSortBy === 'name-asc') {
+      return (a.displayName || '').localeCompare(b.displayName || '');
+    }
+    if (benchSortBy === 'name-desc') {
+      return (b.displayName || '').localeCompare(a.displayName || '');
+    }
+    if (benchSortBy === 'experience-desc') {
+      const expA = Number(a.experienceYears) || 0;
+      const expB = Number(b.experienceYears) || 0;
+      return expB - expA;
+    }
+    if (benchSortBy === 'experience-asc') {
+      const expA = Number(a.experienceYears) || 0;
+      const expB = Number(b.experienceYears) || 0;
+      return expA - expB;
+    }
+    if (benchSortBy === 'availability-asc') {
+      const availA = isAvailableNow(a.availability);
+      const availB = isAvailableNow(b.availability);
+      if (availA && !availB) return -1;
+      if (!availA && availB) return 1;
+      return 0;
+    }
+    return 0;
   });
 
   const statusClass: Record<string, string> = {
@@ -882,30 +944,57 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <p className="text-base md:text-lg text-[#6f7782]">Shortlisted talent ready for quick engagement.</p>
               </div>
               
-              {inviteMode && (
-                <div className="flex items-center gap-6">
-                  <div className="space-y-1">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#b2b6bc]">FILTER BY DEPARTMENT</div>
-                    <select className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold min-w-[200px] outline-none">
-                      <option>All Departments</option>
-                    </select>
-                  </div>
-                  <button 
-                    onClick={selectedTalentIds.size === benchRows.length ? handleDeselectAll : handleSelectAll}
-                    className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-black transition-colors"
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="space-y-1 text-left">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#b2b6bc]">FILTER BY DEPARTMENT</div>
+                  <select 
+                    value={benchDepartment}
+                    onChange={(e) => setBenchDepartment(e.target.value)}
+                    className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold min-w-[180px] outline-none"
                   >
-                    {selectedTalentIds.size === benchRows.length ? 'DESELECT ALL' : 'SELECT ALL'}
-                  </button>
-                  <button 
-                    disabled={selectedTalentIds.size === 0}
-                    onClick={() => setConfirmModalOpen(true)}
-                    className="h-14 px-8 bg-[#ff0055] hover:bg-[#e6004d] text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-xl shadow-[#ff0055]/20 disabled:opacity-50 disabled:shadow-none"
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">SEND OPPORTUNITY ({selectedTalentIds.size})</span>
-                    <ArrowRight size={18} />
-                  </button>
+                    <option value="">All Departments</option>
+                    <option value="character">Character Animation</option>
+                    <option value="compositing">Compositing</option>
+                    <option value="lighting">Lighting</option>
+                    <option value="modeling">Modeling</option>
+                    <option value="fx">FX</option>
+                  </select>
                 </div>
-              )}
+
+                <div className="space-y-1 text-left">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#b2b6bc]">SORT BY</div>
+                  <select 
+                    value={benchSortBy}
+                    onChange={(e) => setBenchSortBy(e.target.value)}
+                    className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold min-w-[180px] outline-none"
+                  >
+                    <option value="experience-desc">Experience (Highest)</option>
+                    <option value="experience-asc">Experience (Lowest)</option>
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="availability-asc">Available First</option>
+                  </select>
+                </div>
+
+                {inviteMode && (
+                  <div className="flex items-center gap-6 mt-5 md:mt-0">
+                    <button 
+                      onClick={selectedTalentIds.size === benchRows.length ? handleDeselectAll : handleSelectAll}
+                      className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-black transition-colors"
+                    >
+                      {selectedTalentIds.size === benchRows.length ? 'DESELECT ALL' : 'SELECT ALL'}
+                    </button>
+                    <button 
+                      disabled={selectedTalentIds.size === 0}
+                      onClick={() => setConfirmModalOpen(true)}
+                      className="h-14 px-8 bg-[#ff0055] hover:bg-[#e6004d] text-white rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-xl shadow-[#ff0055]/20 disabled:opacity-50 disabled:shadow-none"
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">SEND OPPORTUNITY ({selectedTalentIds.size})</span>
+                      <ArrowRight size={18} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {benchDisplayRows.length === 0 ? (
@@ -914,8 +1003,15 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <p className="mt-2 text-[#6f7782]">Bookmark professionals from Discover to start building your team.</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {benchDisplayRows.map((row) => (
+              <>
+                {sortedBenchRows.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center">
+                    <p className="text-2xl font-bold text-[#0a0f1a]">No matching artists found</p>
+                    <p className="mt-2 text-[#6f7782]">Try adjusting your filters to discover benched talent.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {sortedBenchRows.map((row) => (
                   <Card 
                     key={row.id} 
                     onClick={() => inviteMode && toggleTalentSelection(row.professionalId)}
@@ -928,10 +1024,18 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     <div className="grid grid-cols-1 xl:grid-cols-[1.8fr_0.7fr_auto_auto] gap-6 items-center">
                       <div className="flex items-center gap-6 min-w-0">
                         <div className="relative shrink-0">
-                          <img src={row.image} alt={row.displayName} className="h-28 w-28 rounded-3xl object-cover" />
+                          <TalentAvatar
+                            talentCode={row.talentCode}
+                            initialAvatarUrl={row.image}
+                            className="h-28 w-28 rounded-3xl object-cover"
+                            iconSize={36}
+                          />
                           {inviteMode && (
                             <button 
-                              onClick={() => toggleTalentSelection(row.professionalId)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleTalentSelection(row.professionalId);
+                              }}
                               className={`absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
                                 selectedTalentIds.has(row.professionalId)
                                 ? 'bg-black border-black text-white scale-110'
@@ -964,7 +1068,10 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       {!inviteMode && (
                         <Button
                           className="h-14 px-10 bg-black hover:bg-black text-white uppercase tracking-[0.2em] text-[10px] font-black rounded-2xl"
-                          onClick={() => openOpportunityModal(row.talent)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openOpportunityModal(row.talent);
+                          }}
                         >
                           SEND OPPORTUNITY
                         </Button>
@@ -973,7 +1080,10 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       <button
                         type="button"
                         className="text-rose-500 text-[10px] font-black uppercase tracking-[0.25em] hover:text-rose-600 transition-colors"
-                        onClick={() => toggleBench(row.talent)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleBench(row.talent);
+                        }}
                         disabled={actionLoadingId === row.talent.id}
                       >
                         Remove
@@ -983,6 +1093,8 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 ))}
               </div>
             )}
+          </>
+        )}
           </section>
         )}
 
@@ -1002,14 +1114,19 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
               <div className="space-y-6">
                 {requestRows.map((row, index) => {
                   const professional = row.professional;
-                  const image = professional?.avatarUrl || FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+                  const image = professional?.avatarUrl ? getFileUrl(professional.avatarUrl) : '';
                   const name = professional?.fullName || professional?.user?.email?.split('@')[0] || 'Unknown Professional';
 
                   return (
                     <Card key={row.id} className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8">
                       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr_0.7fr] gap-6 items-center">
                         <div className="flex items-center gap-5 min-w-0">
-                          <img src={image} alt={name} className="h-24 w-24 rounded-xl object-cover" />
+                          <TalentAvatar
+                            talentCode={professional?.user?.talentId?.talentCode || ''}
+                            initialAvatarUrl={image}
+                            className="h-24 w-24 rounded-xl object-cover"
+                            iconSize={32}
+                          />
                           <div>
                             <h4 className="text-xl md:text-2xl font-bold text-brand-primary">{name}</h4>
                             <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#b2b6bc]">
@@ -1080,7 +1197,8 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
         artist={selectedProfessional ? {
           name: selectedProfessional.fullName || selectedProfessional.user?.email?.split('@')[0] || 'Unknown',
           role: selectedProfessional.position || 'Artist',
-          avatar: selectedProfessional.avatarUrl || FALLBACK_IMAGES[0]
+          avatar: selectedProfessional.avatarUrl ? getFileUrl(selectedProfessional.avatarUrl) : '',
+          talentCode: selectedProfessional.user?.talentId?.talentCode
         } : null}
         onSend={handleSendOpportunity}
       />

@@ -12,6 +12,7 @@ import Card from './Card';
 import Button from './Button';
 import { getJobApplications, updateApplicationStatus, finalizeAgreement } from '../services/studioServices';
 import { BASE_URL } from '../utils/urls';
+import TalentAvatar from './TalentAvatar';
 
 const getFileUrl = (path: string) => {
   if (!path) return '';
@@ -20,7 +21,14 @@ const getFileUrl = (path: string) => {
 };
 
 const ResponseSheet = ({ app }: { app: any }) => {
-  const verified = app.verifiedResponse || {};
+  let verified = app.verifiedResponse || {};
+  if (typeof verified === 'string') {
+    try {
+      verified = JSON.parse(verified);
+    } catch (e) {
+      verified = {};
+    }
+  }
   const timeline = verified.experienceTimeline || [];
   const ledger = verified.workLedger || [];
   const links = verified.showreelLinks || [];
@@ -190,8 +198,8 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
     startDate: new Date().toISOString().split('T')[0],
     duration: '6 Months',
     compensationType: 'Monthly',
-    currency: 'USD ($)',
-    amount: '7500'
+    currency: '',
+    amount: ''
   });
 
   const token = localStorage.getItem('token');
@@ -207,11 +215,49 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
 
       if (filteredRes.ok) {
         const data = await filteredRes.json();
-        setApplications(data.data);
+        const parsedData = (data.data || []).map((app: any) => {
+          let verified = app.verifiedResponse;
+          if (typeof verified === 'string') {
+            try {
+              verified = JSON.parse(verified);
+            } catch (e) {
+              verified = {};
+            }
+          }
+          let agreement = app.agreementDetails;
+          if (typeof agreement === 'string') {
+            try {
+              agreement = JSON.parse(agreement);
+            } catch (e) {
+              agreement = {};
+            }
+          }
+          return { ...app, verifiedResponse: verified, agreementDetails: agreement };
+        });
+        setApplications(parsedData);
       }
       if (allRes.ok) {
         const data = await allRes.json();
-        setAllApplications(data.data);
+        const parsedData = (data.data || []).map((app: any) => {
+          let verified = app.verifiedResponse;
+          if (typeof verified === 'string') {
+            try {
+              verified = JSON.parse(verified);
+            } catch (e) {
+              verified = {};
+            }
+          }
+          let agreement = app.agreementDetails;
+          if (typeof agreement === 'string') {
+            try {
+              agreement = JSON.parse(agreement);
+            } catch (e) {
+              agreement = {};
+            }
+          }
+          return { ...app, verifiedResponse: verified, agreementDetails: agreement };
+        });
+        setAllApplications(parsedData);
       }
     } catch (err) {
       console.error('Failed to fetch applications:', err);
@@ -244,6 +290,14 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
 
   const handleFinalizeAgreement = async () => {
     if (!token || !selectedApp) return;
+
+    // Validate that all fields are filled
+    const { type, startDate, duration, compensationType, currency, amount } = agreementForm;
+    if (!type || !startDate || !duration.trim() || !compensationType || !currency || !amount.trim()) {
+      toast.warning('Please fill in all details (Engagement Type, Start Date, Duration, Compensation, Currency, and Amount).');
+      return;
+    }
+
     try {
       const res = await finalizeAgreement(token, selectedApp.id, agreementForm);
       if (res.ok) {
@@ -291,7 +345,7 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
             <ChevronRight className="rotate-180" size={14} /> Back to Open Roles
           </button>
           <h2 className="text-4xl font-black tracking-tight text-gray-900">
-            Hiring Pipeline: <span className="text-[#7c00ff]">{jobTitle}</span>
+            <span className="text-[#7c00ff]">{jobTitle}</span>
           </h2>
         </div>
       </div>
@@ -367,10 +421,11 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
                   {/* Photo & Basic Info */}
                   <div className="flex gap-8 items-start flex-1">
                     <div className="relative">
-                      <img 
-                        src={getFileUrl(app.professional?.avatarUrl) || `https://picsum.photos/seed/${app.id}/200`} 
-                        className="w-32 h-32 rounded-[2.5rem] object-cover shadow-2xl shadow-black/10" 
-                        alt="" 
+                      <TalentAvatar 
+                        talentCode={app.professional?.user?.talentId?.talentCode || `AUI-${String(app.professional?.id).padStart(6, '0')}`}
+                        initialAvatarUrl={app.professional?.avatarUrl ? getFileUrl(app.professional.avatarUrl) : undefined}
+                        className="w-32 h-32 rounded-[2.5rem] object-cover shadow-2xl shadow-black/10"
+                        iconSize={36}
                       />
                       {app.professional?.verificationStatus && (
                         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-black text-white text-[8px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full whitespace-nowrap border-2 border-white shadow-lg">
@@ -398,11 +453,11 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
                         {app.contactInfoShared && (
                           <>
                             <span className="w-1 h-1 rounded-full bg-emerald-200" />
-                            <span className="flex items-center gap-2 text-emerald-600">
+                            <span className="flex items-center gap-2 text-emerald-600 normal-case">
                               <Phone size={14} /> {app.professional?.user?.phone}
                             </span>
                             <span className="w-1 h-1 rounded-full bg-emerald-200" />
-                            <span className="flex items-center gap-2 text-emerald-600">
+                            <span className="flex items-center gap-2 text-emerald-600 normal-case">
                               <Mail size={14} /> {app.professional?.user?.email}
                             </span>
                           </>
@@ -672,6 +727,7 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
                     onChange={(e) => setAgreementForm({...agreementForm, currency: e.target.value})}
                     className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-bold text-sm"
                   >
+                    <option value="">Select Currency</option>
                     <option>USD ($)</option>
                     <option>INR (₹)</option>
                     <option>EUR (€)</option>
@@ -684,7 +740,7 @@ const HiringPipeline: React.FC<HiringPipelineProps> = ({ jobId, jobTitle, onBack
                       type="text" 
                       value={agreementForm.amount}
                       onChange={(e) => setAgreementForm({...agreementForm, amount: e.target.value})}
-                      placeholder="7500"
+                      placeholder="e.g. 7500"
                       className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-bold text-sm" 
                     />
                     <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" size={18} />

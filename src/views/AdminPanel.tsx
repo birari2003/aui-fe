@@ -446,39 +446,60 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     </div>
   );
 
-  const renderInstituteDetails = (data: any) => (
-    <div className="space-y-8">
-      {renderDetailSection("Institute Profile", [
-        { label: "Institute Name", value: data.instituteName },
-        { label: "Email", value: data.email },
-        { label: "Contact Person", value: data.contactPerson },
-        { label: "Designation", value: data.designation },
-        { label: "Location", value: data.location },
-        { label: "Website", value: data.website },
-      ])}
-      {renderDetailSection("Educational Info", [
-        { label: "Student Count", value: data.studentCount },
-        { label: "Branch Count", value: data.branchCount },
-        { label: "Courses Offered", value: data.coursesOffered },
-        { label: "Conducts Workshops", value: data.conductsWorkshops ? "Yes" : "No" },
-        { label: "Industry Exposure", value: data.industryExposure },
-        { label: "Years in Education", value: data.yearsInEducation },
-      ])}
-      {renderDetailSection("Additional Info", [
-        { label: "Support Needed", value: data.supportNeeded },
-        { label: "Active Services", value: data.activeServices },
-        { label: "Requirements", value: data.requirements },
-        { label: "Verification URL", value: data.verificationUrl },
-      ])}
-      {renderDetailSection("Platform Meta", [
-        { label: "Institute ID", value: data.id },
-        { label: "User ID", value: data.userId },
-        { label: "Verification Status", value: data.verificationStatus ? "Verified" : "Unverified" },
-        { label: "Created At", value: data.createdAt || data.created_at },
-        { label: "Updated At", value: data.updatedAt || data.updated_at },
-      ])}
-    </div>
-  );
+  const renderInstituteDetails = (data: any) => {
+    let parsedServices = "";
+    if (data.servicesRequired) {
+      try {
+        const parsed = JSON.parse(data.servicesRequired);
+        parsedServices = Array.isArray(parsed) ? parsed.join(", ") : String(parsed);
+      } catch (e) {
+        parsedServices = String(data.servicesRequired);
+      }
+    }
+
+    let parsedLinks = "";
+    if (data.officialLinks) {
+      try {
+        const parsed = JSON.parse(data.officialLinks);
+        parsedLinks = Array.isArray(parsed) ? parsed.join(", ") : String(parsed);
+      } catch (e) {
+        parsedLinks = String(data.officialLinks);
+      }
+    }
+
+    return (
+      <div className="space-y-8">
+        {renderDetailSection("Institute Profile", [
+          { label: "Institute Name", value: data.instituteName },
+          { label: "Email", value: data.email },
+          { label: "Contact Person", value: data.contactPerson },
+          { label: "Designation", value: data.designation },
+          { label: "Location", value: data.location },
+          { label: "Website", value: data.website },
+        ])}
+        {renderDetailSection("Educational Info", [
+          { label: "Student Count", value: data.studentCount },
+          { label: "Branch Count", value: data.branchCount },
+          { label: "Courses Offered", value: data.coursesOffered },
+          { label: "Conducts Workshops", value: data.conductsWorkshops ? "Yes" : "No" },
+          { label: "Industry Exposure", value: data.industryExposure },
+          { label: "Years in Education", value: data.yearsInEducation },
+        ])}
+        {renderDetailSection("Additional Info", [
+          { label: "Services Required from AUI", value: parsedServices },
+          { label: "Official Institute Links", value: parsedLinks },
+          { label: "Requirements", value: data.requirements },
+        ])}
+        {renderDetailSection("Platform Meta", [
+          { label: "Institute ID", value: data.id },
+          { label: "User ID", value: data.userId },
+          { label: "Verification Status", value: data.verificationStatus ? "Verified" : "Unverified" },
+          { label: "Created At", value: data.createdAt || data.created_at },
+          { label: "Updated At", value: data.updatedAt || data.updated_at },
+        ])}
+      </div>
+    );
+  };
 
   const renderUserList = (tab: string) => {
     const roleMap: Record<string, string> = {

@@ -16,20 +16,44 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
   const [restrictedMessage, setRestrictedMessage] = React.useState('');
 
   const handleAction = (v: View) => {
-    if (userRole) {
+    if (!userRole) {
+      if (v === 'hire' || v === 'dashboard_studio') {
+        setRestrictedMessage('To access this feature, please login or register with a studio account.');
+        setIsRestrictedModalOpen(true);
+        return;
+      }
+      if (v === 'experts') {
+        setRestrictedMessage('To access this feature, please login or register with an institute account.');
+        setIsRestrictedModalOpen(true);
+        return;
+      }
+    } else {
       if (v === 'register_select') {
         setRestrictedMessage(`You have already joined as a ${userRole}. You can access your dashboard from the top right menu.`);
         setIsRestrictedModalOpen(true);
         return;
       }
       
+      if (userRole === 'professional') {
+        if (v === 'hire' || v === 'dashboard_studio') {
+          setRestrictedMessage('You have registered as a professional. To access this feature, kindly login with a studio account.');
+          setIsRestrictedModalOpen(true);
+          return;
+        }
+        if (v === 'experts') {
+          setRestrictedMessage('You have registered as a professional. To access this feature, kindly login with an institute account.');
+          setIsRestrictedModalOpen(true);
+          return;
+        }
+      }
+
       if ((v === 'hire' || v === 'dashboard_studio') && userRole === 'institute') {
-        setRestrictedMessage('This feature is for studios. Institutes can book industry experts for their students.');
+        setRestrictedMessage('You have registered as an institute. To access this feature, kindly login with a studio account.');
         setIsRestrictedModalOpen(true);
         return;
       }
       if (v === 'experts' && userRole === 'studio') {
-        setRestrictedMessage('This feature is for institutes. Studios can hire verified talent directly.');
+        setRestrictedMessage('You have registered as a studio. To access this feature, kindly login with an institute account.');
         setIsRestrictedModalOpen(true);
         return;
       }
@@ -80,17 +104,17 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
 
         <LiveActivity />
 
-        <ReelsSection onAction={onStart} />
+        <ReelsSection onAction={handleAction} />
 
         <div className="max-w-7xl mx-auto px-6 space-y-32 pb-32">
           {/* Trust Section */}
           <section className="space-y-10 pt-16">
             <p className="text-center text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">Trusted by Studios, Institutes, and Industry Professionals</p>
-            <div className="flex flex-wrap justify-center gap-12 transition-premium">
+            {/* <div className="flex flex-wrap justify-center gap-12 transition-premium">
               {['PIXAR-STYLE', 'DREAMWORKS-STYLE', 'NETFLIX-STYLE', 'DISNEY-STYLE'].map(logo => (
                 <div key={logo} className="text-xl font-display font-bold tracking-tighter text-brand-primary hover:text-brand-accent transition-premium cursor-default">{logo}</div>
               ))}
-            </div>
+            </div> */}
           </section>
 
           {/* Metrics */}

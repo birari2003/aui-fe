@@ -326,17 +326,29 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
         name: true, primarySkill: true, position: true, experience: true,
         currentCompany: true, currentCTC: true, expectedCTC: true, noticePeriod: true,
         location: true, relocationPreference: true, showreel: true, workLedger: true
-      }
+      },
+      attachments: Array.isArray(job.attachments)
+        ? job.attachments
+        : (typeof job.attachments === 'string'
+            ? (() => {
+                try {
+                  const p = JSON.parse(job.attachments);
+                  return Array.isArray(p) ? p : [job.attachments];
+                } catch {
+                  return [job.attachments];
+                }
+              })()
+            : [])
     };
 
     setEditingJob({
       ...normalizedJob,
       productionType: predefinedProductionTypes.includes(normalizedJob.productionType || '') ? normalizedJob.productionType : (normalizedJob.productionType ? 'Other' : ''),
-      customProductionType: predefinedProductionTypes.includes(normalizedJob.productionType || '') ? '' : normalizedJob.productionType,
+      customProductionType: predefinedProductionTypes.includes(normalizedJob.productionType || '') ? '' : (normalizedJob.productionType || ''),
       projectFormat: predefinedProjectFormats.includes(normalizedJob.projectFormat || '') ? normalizedJob.projectFormat : (normalizedJob.projectFormat ? 'Other' : ''),
-      customProjectFormat: predefinedProjectFormats.includes(normalizedJob.projectFormat || '') ? '' : normalizedJob.projectFormat,
+      customProjectFormat: predefinedProjectFormats.includes(normalizedJob.projectFormat || '') ? '' : (normalizedJob.projectFormat || ''),
       timeZonePreference: TIME_ZONES.includes(normalizedJob.timeZonePreference || '') ? normalizedJob.timeZonePreference : (normalizedJob.timeZonePreference ? 'Other' : 'No Preference'),
-      customTimeZone: TIME_ZONES.includes(normalizedJob.timeZonePreference || '') ? '' : normalizedJob.timeZonePreference,
+      customTimeZone: TIME_ZONES.includes(normalizedJob.timeZonePreference || '') ? '' : (normalizedJob.timeZonePreference || ''),
       softwareTools: Array.isArray(normalizedJob.softwareTools) ? normalizedJob.softwareTools.join(', ') : normalizedJob.softwareTools || '',
     });
     setIsEditModalOpen(true);
@@ -1382,7 +1394,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                   </div>
 
                   {/* Existing Attachments */}
-                  {editingJob.attachments && editingJob.attachments.length > 0 && (
+                  {editingJob.attachments && Array.isArray(editingJob.attachments) && editingJob.attachments.length > 0 && (
                     <div className="space-y-3">
                       <div className="text-[9px] font-black uppercase tracking-widest text-gray-300">
                         UPLOADED FILES ({editingJob.attachments.length})
@@ -1398,7 +1410,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                             <button
                               type="button"
                               onClick={() => {
-                                const updated = editingJob.attachments!.filter((_: string, i: number) => i !== idx);
+                                const updated = (editingJob.attachments || []).filter((_: string, i: number) => i !== idx);
                                 setEditingJob({ ...editingJob, attachments: updated });
                               }}
                               className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

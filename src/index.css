@@ -67,3 +67,21 @@
     @apply border border-white/10 hover:border-brand-accent/50 transition-all duration-300 ease-out;
   }
 }
+
+/* Hide native WebKit calendar indicator and make the whole date field click-to-open */
+input[type="date"] {
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  color: transparent;
+  background: transparent;
+  cursor: pointer;
+}

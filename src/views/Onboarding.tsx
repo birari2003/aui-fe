@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { ShieldCheck, ChevronRight, ChevronLeft, Sparkles, Plus, X } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Input from '../components/Input';
@@ -20,6 +20,19 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
     message: '',
     type: 'info' as 'info' | 'success' | 'warning' | 'error'
   });
+
+  const [selectedServices, setSelectedServices] = React.useState<string[]>([]);
+  const [instituteLinks, setInstituteLinks] = React.useState<string[]>(['']);
+
+  React.useEffect(() => {
+    if (role === 'institute') {
+      setFormData((prev: any) => ({
+        ...prev,
+        'Services Required': selectedServices,
+        'Official Links': instituteLinks,
+      }));
+    }
+  }, [selectedServices, instituteLinks, role]);
 
   const calculateLevel = (exp: number) => {
     if (exp === 0) return 'Fresher';
@@ -162,12 +175,8 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
     },
     { 
       title: 'AUI Collaboration', 
-      description: 'Help us understand how we can support you.',
-      fields: [
-        { label: 'Support Needed from AUI', type: 'select', options: ['Workshops', 'Mentorship', 'Portfolio Reviews'] },
-        { label: 'Active Services', type: 'select', options: ['Workshops', 'Mentorship', 'Portfolio Reviews'] },
-        { label: 'Verification Link / URL', type: 'url' }
-      ] 
+      description: 'Help us understand how AUI can support your institute.',
+      fields: []
     },
     { title: 'Submit Approval', description: 'Ready to join the network.', fields: [] }
   ];
@@ -237,9 +246,8 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
                              formData['Industry Exposure Frequency'] === 'Occasionally' ? 'occasionally' : 
                              formData['Industry Exposure Frequency'] === 'Never' ? 'never' : 'occasionally'),
           yearsInEducation: Number(formData['Years in Education']),
-          supportNeeded: formData['Support Needed from AUI'],
-          activeServices: formData['Active Services'],
-          verificationUrl: formData['Verification Link / URL'],
+          servicesRequired: JSON.stringify(formData['Services Required'] || []),
+          officialLinks: JSON.stringify(formData['Official Links'] || []),
         };
       }
 
@@ -312,55 +320,153 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
         >
           <Card className="bg-white border-gray-100 shadow-premium p-8 md:p-12 rounded-[2.5rem]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-              {currentSteps[step-1].fields.filter((f: any) => !f.condition || f.condition(formData)).map((field: any) => (
-                <div key={field.label} className={field.type === 'textarea' || field.type === 'calendar' ? 'md:col-span-2' : ''}>
-                  {field.type === 'select' ? (
-                    <Select 
-                      label={field.label} 
-                      options={field.options} 
-                      className="bg-brand-surface/50 border-gray-100 focus:bg-white" 
-                      value={formData[field.label] || ''}
-                      onChange={(e: any) => handleInputChange(field.label, e.target.value)}
-                    />
-                  ) : field.type === 'textarea' ? (
-                    <div className="space-y-2 w-full text-left">
-                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">{field.label}</label>
-                      <textarea 
-                        className="w-full p-4 bg-brand-surface/50 rounded-brand text-sm outline-none border border-gray-100 focus:border-brand-accent focus:bg-white transition-premium h-32 resize-none shadow-sm" 
-                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`} 
-                        value={formData[field.label] || ''}
-                        onChange={(e) => handleInputChange(field.label, e.target.value)}
-                      />
-                    </div>
-                  ) : field.type === 'calendar' ? (
-                    <div className="space-y-6">
-                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">{field.label}</label>
-                      <div className="grid grid-cols-7 gap-2 p-8 bg-brand-surface/30 rounded-[2rem] border border-gray-100/50">
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-                          <button 
-                            key={d} 
-                            type="button"
-                            className="aspect-square flex items-center justify-center text-sm font-medium hover:bg-brand-accent hover:text-white rounded-xl transition-premium hover:shadow-premium group relative"
+              {role === 'institute' && step === 3 ? (
+                <div className="md:col-span-2 space-y-8 text-left">
+                  {/* Services Required Checkboxes */}
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
+                      * Services Required from AUI:
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        'Workshops',
+                        'Portfolio Reviews',
+                        'Mentorship Programs',
+                        'Industry Experts',
+                        'Studio Visits',
+                        'Placement Support'
+                      ].map((service) => {
+                        const isChecked = selectedServices.includes(service);
+                        return (
+                          <label
+                            key={service}
+                            className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                              isChecked
+                                ? 'bg-brand-primary/5 border-brand-primary/30 shadow-sm'
+                                : 'bg-brand-surface/30 border-gray-100 hover:bg-brand-surface/50'
+                            }`}
                           >
-                            {d}
-                            <span className="absolute bottom-1 w-1 h-1 bg-brand-accent/30 rounded-full group-hover:bg-white" />
-                          </button>
-                        ))}
-                      </div>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedServices(selectedServices.filter((s) => s !== service));
+                                } else {
+                                  setSelectedServices([...selectedServices, service]);
+                                }
+                              }}
+                              className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary border-gray-300"
+                            />
+                            <span className="text-sm font-semibold text-brand-primary">{service}</span>
+                          </label>
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <Input 
-                      label={field.label} 
-                      type={field.type} 
-                      placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`} 
-                      value={field.readOnly ? (formData[field.valueKey] || '') : (formData[field.label] || '')}
-                      readOnly={field.readOnly}
-                      onChange={(e: any) => handleInputChange(field.label, e.target.value)}
-                      className={field.readOnly ? 'bg-gray-50/50 border-gray-100 font-bold text-brand-accent' : 'bg-brand-surface/50 border-gray-100 focus:bg-white'}
-                    />
-                  )}
+                  </div>
+
+                  {/* Official Links Dynamic List */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">
+                        * Official Institute Link :
+                      </label>
+                      <p className="text-xs text-text-muted mt-1 font-medium">
+                        Website, LinkedIn, Google Business, or Social Media URL
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {instituteLinks.map((link, idx) => (
+                        <div key={idx} className="flex gap-3 items-center">
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={link}
+                            onChange={(e) => {
+                              const updated = [...instituteLinks];
+                              updated[idx] = e.target.value;
+                              setInstituteLinks(updated);
+                            }}
+                            className="flex-1 px-5 py-3.5 bg-brand-surface/50 rounded-2xl border border-gray-100 focus:border-brand-accent focus:bg-white outline-none transition-premium text-brand-primary font-medium shadow-sm"
+                            required
+                          />
+                          {instituteLinks.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = instituteLinks.filter((_, i) => i !== idx);
+                                setInstituteLinks(updated);
+                              }}
+                              className="p-3.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-2xl transition-premium border border-red-100"
+                            >
+                              <X size={18} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setInstituteLinks([...instituteLinks, ''])}
+                      className="px-6 py-2.5 bg-brand-primary/5 hover:bg-brand-primary/10 border border-brand-primary/10 rounded-xl text-xs font-bold uppercase tracking-wider text-brand-primary transition-premium flex items-center gap-2"
+                    >
+                      <Plus size={14} /> Add URL
+                    </button>
+                  </div>
                 </div>
-              ))}
+              ) : (
+                currentSteps[step-1].fields.filter((f: any) => !f.condition || f.condition(formData)).map((field: any) => (
+                  <div key={field.label} className={field.type === 'textarea' || field.type === 'calendar' ? 'md:col-span-2' : ''}>
+                    {field.type === 'select' ? (
+                      <Select 
+                        label={field.label} 
+                        options={field.options} 
+                        className="bg-brand-surface/50 border-gray-100 focus:bg-white" 
+                        value={formData[field.label] || ''}
+                        onChange={(e: any) => handleInputChange(field.label, e.target.value)}
+                      />
+                    ) : field.type === 'textarea' ? (
+                      <div className="space-y-2 w-full text-left">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">{field.label}</label>
+                        <textarea 
+                          className="w-full p-4 bg-brand-surface/50 rounded-brand text-sm outline-none border border-gray-100 focus:border-brand-accent focus:bg-white transition-premium h-32 resize-none shadow-sm" 
+                          placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`} 
+                          value={formData[field.label] || ''}
+                          onChange={(e) => handleInputChange(field.label, e.target.value)}
+                        />
+                      </div>
+                    ) : field.type === 'calendar' ? (
+                      <div className="space-y-6">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">{field.label}</label>
+                        <div className="grid grid-cols-7 gap-2 p-8 bg-brand-surface/30 rounded-[2rem] border border-gray-100/50">
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                            <button 
+                              key={d} 
+                              type="button"
+                              className="aspect-square flex items-center justify-center text-sm font-medium hover:bg-brand-accent hover:text-white rounded-xl transition-premium hover:shadow-premium group relative"
+                            >
+                              {d}
+                              <span className="absolute bottom-1 w-1 h-1 bg-brand-accent/30 rounded-full group-hover:bg-white" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <Input 
+                        label={field.label} 
+                        type={field.type} 
+                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`} 
+                        value={field.readOnly ? (formData[field.valueKey] || '') : (formData[field.label] || '')}
+                        readOnly={field.readOnly}
+                        onChange={(e: any) => handleInputChange(field.label, e.target.value)}
+                        className={field.readOnly ? 'bg-gray-50/50 border-gray-100 font-bold text-brand-accent' : 'bg-brand-surface/50 border-gray-100 focus:bg-white'}
+                      />
+                    )}
+                  </div>
+                ))
+              )}
 
               {step === totalSteps && (
                 <div className="md:col-span-2 text-center py-8 space-y-6">
@@ -425,6 +531,53 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
                       console.error('Status check error:', err);
                     } finally {
                       setLoading(false);
+                    }
+                  }
+
+                  // Generic validation for standard fields of the current step
+                  const currentFields = currentSteps[step - 1].fields || [];
+                  for (const f of currentFields) {
+                    const field = f as any;
+                    if (field.condition && !field.condition(formData)) continue;
+                    if (field.readOnly) continue;
+                    let value = formData[field.label];
+                    if (field.type === 'select' && (value === undefined || value === null || value === '')) {
+                      const firstOption = field.options?.[0];
+                      if (firstOption && !firstOption.toLowerCase().startsWith('select')) {
+                        value = firstOption;
+                        formData[field.label] = firstOption;
+                      }
+                    }
+                    if (value === undefined || value === null || (typeof value === 'string' && (!value.trim() || value.toLowerCase().startsWith('select')))) {
+                      setModal({
+                        isOpen: true,
+                        title: 'Required Field',
+                        message: `Please enter or select your ${field.label.toLowerCase()} to continue.`,
+                        type: 'warning'
+                      });
+                      return;
+                    }
+                  }
+
+                  // Custom step 3 validation for institute
+                  if (role === 'institute' && step === 3) {
+                    if (selectedServices.length === 0) {
+                      setModal({
+                        isOpen: true,
+                        title: 'Selection Required',
+                        message: 'Please select at least one service required from AUI.',
+                        type: 'warning'
+                      });
+                      return;
+                    }
+                    if (instituteLinks.length === 0 || instituteLinks.some(link => !link.trim())) {
+                      setModal({
+                        isOpen: true,
+                        title: 'Link Required',
+                        message: 'Please enter at least one official institute link.',
+                        type: 'warning'
+                      });
+                      return;
                     }
                   }
                   

@@ -10,8 +10,10 @@ import {
   Calendar,
   User,
   ArrowUpRight,
-  FileText
+  FileText,
+  Sparkles
 } from 'lucide-react';
+import TalentAvatar from './TalentAvatar';
 
 interface OpportunityModalProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ interface OpportunityModalProps {
     name: string;
     role: string;
     avatar: string;
+    talentCode?: string;
   } | null;
   onSend: (data: any) => void;
 }
@@ -39,14 +42,19 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
     'CET (Central European Time)',
     'JST (Japan Standard Time)',
     'AEST (Australian Eastern Standard Time)',
-    'Other'
   ];
 
   React.useEffect(() => {
-    fetch('https://liveapi.in/geo/country/')
+    fetch('https://restcountries.com/v3.1/all')
       .then(res => res.json())
-      .then(data => setCountries(Object.entries(data)))
-      .catch(err => console.error('Failed to fetch countries:', err));
+      .then(data => {
+        const list = data.map((c: any) => [c.cca2, c.name.common] as [string, string]);
+        list.sort((a: any, b: any) => a[1].localeCompare(b[1]));
+        setCountries(list);
+      })
+      .catch(err => {
+        console.error('Failed to fetch countries:', err);
+      });
   }, []);
 
   const [formData, setFormData] = useState({
@@ -111,7 +119,13 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                 </div>
                 <div className="h-12 w-[1px] bg-gray-800 mx-2" />
                 <div className="flex items-center gap-3">
-                  <img src={artist.avatar} alt={artist.name} className="w-12 h-12 rounded-xl object-cover" />
+                  <TalentAvatar
+                    talentCode={artist.talentCode || ''}
+                    initialAvatarUrl={artist.avatar}
+                    className="w-12 h-12 rounded-xl object-cover"
+                    iconSize={20}
+                    placeholderClassName="bg-white/5 text-gray-400 border border-white/10"
+                  />
                   <div className="space-y-0.5">
                     <div className="text-sm font-black text-white">{artist.name}</div>
                     <div className="text-[9px] font-black uppercase tracking-widest text-gray-500">{artist.role}</div>
@@ -196,8 +210,8 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
               <div className="grid grid-cols-2 gap-10">
                 <section className="space-y-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
-                      <img src="/assets/logo_blck.png" className="w-[16px] h-[16px] rounded-[3px] object-contain" alt="" />
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                      <Sparkles size={16} />
                     </div>
                     <h3 className="text-xs font-black uppercase tracking-[0.25em] text-gray-900">OPPORTUNITY OVERVIEW</h3>
                   </div>

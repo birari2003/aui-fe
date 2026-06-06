@@ -142,8 +142,16 @@ const StudioProfile = ({ setView }: { setView: (v: View) => void }) => {
         formattedApplications = appRows
           .filter((x: any) => x.status === 'hired')
           .map((x: any) => {
-            const budget = x.agreementDetails
-              ? `${x.agreementDetails.currency || 'USD'} ${x.agreementDetails.amount || ''}`.trim()
+            let agreement = x.agreementDetails;
+            if (typeof agreement === 'string') {
+              try {
+                agreement = JSON.parse(agreement);
+              } catch (e) {
+                agreement = {};
+              }
+            }
+            const budget = agreement
+              ? `${agreement.currency || 'USD'} ${agreement.amount || ''}`.trim()
               : '';
             return {
               id: `app_${x.id}`,

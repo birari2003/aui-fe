@@ -47,7 +47,7 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
         </div>
       </div>
 
-      <div className="relative">
+      {/* <div className="relative">
         <div 
           ref={scrollRef}
           className="flex gap-8 overflow-x-auto no-scrollbar px-6 md:px-[calc((100vw-1280px)/2+24px)] pb-12"
@@ -61,10 +61,10 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
             />
           ))}
         </div>
-        {/* Fade edges */}
+        
         <div className="absolute top-0 left-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent pointer-events-none hidden xl:block" />
         <div className="absolute top-0 right-0 bottom-0 w-32 bg-gradient-to-l from-white to-transparent pointer-events-none hidden xl:block" />
-      </div>
+      </div> */}
     </section>
   );
 };

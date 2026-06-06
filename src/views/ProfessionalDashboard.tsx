@@ -16,6 +16,7 @@ import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { BASE_URL } from '../utils/urls';
 import SEO from '../components/SEO';
+import { getMyPublicProfile } from '../services/publicProfileServices';
 
 const EditableField = ({ label, value, field, type = 'text', locked = false, isEditing, onEdit, onChange }: any) => {
   return (
@@ -62,6 +63,7 @@ const VerificationSheetModal = ({
   isOpen,
   onClose,
   profile,
+  publicProfile,
   opportunity,
   onSubmit,
   loading
@@ -69,6 +71,7 @@ const VerificationSheetModal = ({
   isOpen: boolean;
   onClose: () => void;
   profile: any;
+  publicProfile: any;
   opportunity: any;
   onSubmit: (data: any) => void;
   loading: boolean;
@@ -78,33 +81,50 @@ const VerificationSheetModal = ({
 
   React.useEffect(() => {
     if (profile && isOpen) {
+      const timeline = (Array.isArray(publicProfile?.experienceTimeline) ? publicProfile.experienceTimeline : []).map((item: any) => ({
+        role: item.role || '',
+        company: item.company || '',
+        period: item.period || item.date || ''
+      }));
+
+      const currentComp = timeline.find((item: any) => item.period?.toLowerCase().includes('present'))?.company || (timeline[0]?.company || 'DNEG');
+
+      const ledger = (Array.isArray(publicProfile?.workLedger) ? publicProfile.workLedger : []).map((item: any) => ({
+        project: item.project || item.projectName || '',
+        studio: item.studio || 'Meta',
+        role: item.role || '',
+        year: item.year || ''
+      }));
+
       setFormData({
         talentId: profile.user?.talentId?.talentCode || 'AUI-8RP-S',
         name: profile.fullName || '',
-        primarySkill: profile.skills?.[0] || 'Animation',
-        position: profile.currentRole || 'Lead Character Designer',
+        primarySkill: profile.primarySkill || (profile.skills && profile.skills[0]) || 'Animation',
+        position: (profile.position ? (profile.position.charAt(0).toUpperCase() + profile.position.slice(1)) : 'Lead Character Designer'),
         experience: profile.experienceYears ? `${profile.experienceYears}y` : '8y',
-        experienceTimeline: [
+        experienceTimeline: timeline.length > 0 ? timeline : [
           { role: 'Lead Character Des', company: 'DNEG', period: '2024 - Present' },
           { role: 'Lighting Artist', company: 'Framestore', period: '2021 - 2024' },
           { role: 'Associate Artist', company: 'Technicolor', period: '2018 - 2021' },
         ],
-        currentCompany: 'DNEG',
+        currentCompany: currentComp,
         currentCTC: '',
         expectedCTC: '',
         noticePeriod: '',
         location: profile.location || 'Mumbai, India',
         relocationPreference: 'Yes',
         aboutMe: profile.bio || '',
-        showreelLinks: [profile.showreelUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ'],
-        workLedger: [
+        showreelLinks: [
+          publicProfile?.showreel?.url || profile.showreelUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+        ],
+        workLedger: ledger.length > 0 ? ledger : [
           { project: 'Metaverse Cha', studio: 'Meta', role: 'Lead Designer', year: '6m' },
           { project: 'Feature Film: ', studio: 'Roll A Rock', role: 'Lighting Lead', year: '3m' },
           { project: 'Nexus Chronic', studio: 'Nexus Interact', role: 'Senior Animat', year: 'Ongoing' },
         ]
       });
     }
-  }, [profile, isOpen]);
+  }, [profile, publicProfile, isOpen]);
 
   if (!isOpen || !formData) return null;
 
@@ -668,7 +688,7 @@ const OpportunityDetailsModal = ({
 
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-brand-primary">
-              <img src="/assets/logo_blck.png" className="w-[18px] h-[18px] rounded-[4px] object-contain" alt="" />
+              <Sparkles size={18} className="text-brand-primary" />
               <h4 className="text-xs font-black uppercase tracking-widest">Opportunity Overview</h4>
             </div>
             <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 text-text-secondary font-medium leading-relaxed">
@@ -723,6 +743,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
   const navigate = useNavigate();
   const location = useLocation();
   const [profile, setProfile] = React.useState<any>(null);
+  const [publicProfile, setPublicProfile] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isPublicModalOpen, setIsPublicModalOpen] = React.useState(false);
@@ -858,19 +879,30 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
     if (!token) return;
 
     try {
-      const [profRes, studioReqRes, studioJobRes, appRes, notifRes, studiosRes, instRes] = await Promise.all([
+      const [profRes, studioReqRes, studioJobRes, appRes, notifRes, studiosRes, instRes, pubProfileRes] = await Promise.all([
         getMyProfile(token),
         getStudioRequests(token),
         getStudioJobPostings(token),
         getMyApplications(token),
         getNotifications(token),
         getAllStudioProfiles(),
-        searchInstitutes(token)
+        searchInstitutes(token),
+        getMyPublicProfile(token).catch(err => {
+          console.error("Failed to fetch public profile:", err);
+          return { ok: false, json: () => Promise.resolve(null) } as any;
+        })
       ]);
 
       if (profRes.ok) {
         const data = await profRes.json();
         setProfile(data.data);
+      }
+
+      if (pubProfileRes && pubProfileRes.ok) {
+        const pubData = await pubProfileRes.json();
+        if (pubData && pubData.ok) {
+          setPublicProfile(pubData.data);
+        }
       }
 
       if (studioReqRes.ok) {
@@ -885,7 +917,18 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
 
       if (appRes.ok) {
         const appData = await appRes.json();
-        setJobApplications(Array.isArray(appData.data) ? appData.data : []);
+        const parsedData = (appData.data || []).map((app: any) => {
+          let agreement = app.agreementDetails;
+          if (typeof agreement === 'string') {
+            try {
+              agreement = JSON.parse(agreement);
+            } catch (e) {
+              agreement = {};
+            }
+          }
+          return { ...app, agreementDetails: agreement };
+        });
+        setJobApplications(parsedData);
       }
 
       if (notifRes.ok) {
@@ -1033,6 +1076,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
         isOpen={isVerificationModalOpen}
         onClose={() => setIsVerificationModalOpen(false)}
         profile={profile}
+        publicProfile={publicProfile}
         opportunity={selectedOpp}
         loading={isSubmittingResponse}
         onSubmit={handleApply}
@@ -1301,7 +1345,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex bg-gray-50/50 p-1 rounded-2xl border border-gray-100 overflow-x-auto no-scrollbar">
                   {[
-                    { id: 'opportunities', label: 'Opportunities', icon: LogoIconHiringOS, count: studioRequests.length + studioJobPostings.length },
+                    { id: 'opportunities', label: 'Opportunities', icon: Sparkles, count: studioRequests.length + studioJobPostings.length },
                     { id: 'applications', label: 'Applications', icon: Layers, count: jobApplications.length },
                     { id: 'engagements', label: 'Engagements', icon: Briefcase, count: jobApplications.filter(a => a.status === 'hired' || a.status === 'agreement').length },
                     { id: 'activity', label: 'Activity Hub', icon: Activity, count: activityItems.length },
@@ -1373,7 +1417,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         <div className="space-y-4 flex-1 flex flex-col justify-between">
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 text-brand-accent">
-                              <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain" alt="" />
+                              <Sparkles size={14} className="text-brand-accent" />
                               <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
                             </div>
 
@@ -1436,7 +1480,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         <div className="space-y-4 flex-1 flex flex-col justify-between">
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 text-brand-accent">
-                              <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain" alt="" />
+                              <Sparkles size={14} className="text-brand-accent" />
                               <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
                             </div>
 

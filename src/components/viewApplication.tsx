@@ -22,6 +22,7 @@ import Button from './Button';
 import Card from './Card';
 import Badge from './Badge';
 import SEO from './SEO';
+import TalentAvatar from './TalentAvatar';
 import { getJobApplications, getStudioJobPostings, updateApplicationStatus, finalizeAgreement } from '../services/studioServices';
 import { BASE_URL } from '../utils/urls';
 import { toast } from 'react-toastify';
@@ -34,6 +35,7 @@ interface Applicant {
   experience: string;
   matchScore: number;
   avatar: string;
+  initialAvatarUrl?: string;
   isVerified: boolean;
   position: string;
   primarySkill: string;
@@ -163,6 +165,14 @@ const ViewApplication: React.FC = () => {
 
   const handleFinalizeAgreement = async () => {
     if (!token || !selectedAppId) return;
+
+    // Validate that all fields are filled
+    const { currency, amount, startDate, duration } = agreementForm;
+    if (!currency || !amount.toString().trim() || !startDate || !duration.trim()) {
+      toast.warning('Please fill in all details (Currency, Amount, Start Date, and Duration).');
+      return;
+    }
+
     try {
       const res = await finalizeAgreement(token, selectedAppId, agreementForm);
       if (res.ok) {
@@ -196,6 +206,24 @@ const ViewApplication: React.FC = () => {
     const name = pro?.fullName || pro?.user?.email?.split('@')[0] || 'Unknown';
     const avatar = pro?.avatarUrl ? getFileUrl(pro.avatarUrl) : `https://picsum.photos/seed/${item.id}/200/200`;
     
+    let verified = item.verifiedResponse || {};
+    if (typeof verified === 'string') {
+      try {
+        verified = JSON.parse(verified);
+      } catch (e) {
+        verified = {};
+      }
+    }
+    
+    let agreement = item.agreementDetails;
+    if (typeof agreement === 'string') {
+      try {
+        agreement = JSON.parse(agreement);
+      } catch (e) {
+        agreement = {};
+      }
+    }
+    
     return {
       id: String(item.id),
       name,
@@ -204,20 +232,21 @@ const ViewApplication: React.FC = () => {
       experience: pro?.experienceYears ? `${pro.experienceYears}y Exp` : '0y Exp',
       matchScore: 98,
       avatar,
+      initialAvatarUrl: pro?.avatarUrl ? getFileUrl(pro.avatarUrl) : undefined,
       isVerified: true,
       position: pro?.position || 'Artist',
       primarySkill: pro?.primarySkill || 'Production',
-      currentCTC: item.verifiedResponse?.currentCTC || '—',
-      expectedCTC: item.verifiedResponse?.expectedCTC || '—',
-      noticePeriod: item.verifiedResponse?.noticePeriod || 'Immediate',
-      relocationPref: item.verifiedResponse?.relocationPreference || 'Yes',
-      availability: item.verifiedResponse?.availability || 'Available Now',
-      location: item.verifiedResponse?.location || pro?.location || 'India',
+      currentCTC: verified.currentCTC || '—',
+      expectedCTC: verified.expectedCTC || '—',
+      noticePeriod: verified.noticePeriod || 'Immediate',
+      relocationPref: verified.relocationPreference || 'Yes',
+      availability: verified.availability || 'Available Now',
+      location: verified.location || pro?.location || 'India',
       status: mapDbStatusToFrontend(item.status),
       contactInfoShared: item.contactInfoShared,
       email: pro?.user?.email,
       phone: pro?.user?.phone,
-      agreementDetails: item.agreementDetails,
+      agreementDetails: agreement,
     };
   });
 
@@ -241,7 +270,12 @@ const ViewApplication: React.FC = () => {
         <div className="w-full lg:w-1/3 space-y-8">
           <div className="flex gap-6">
             <div className="relative w-32 h-32 shrink-0">
-              <img src={applicant.avatar} alt={applicant.name} className="w-full h-full rounded-[2rem] object-cover" />
+              <TalentAvatar 
+                talentCode={applicant.talentId}
+                initialAvatarUrl={applicant.initialAvatarUrl}
+                className="w-full h-full rounded-[2rem] object-cover"
+                iconSize={36}
+              />
               <div className="absolute -bottom-2 -left-2 -right-2 bg-black/80 backdrop-blur-sm text-[8px] font-black text-white py-1.5 px-2 rounded-lg text-center uppercase tracking-widest">
                 PROFILE VERIFIED
               </div>
