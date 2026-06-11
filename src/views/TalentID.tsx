@@ -340,58 +340,12 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const handleShare = async () => {
     const url = window.location.href;
 
-    /*
-    // --- Own profile: Growth Share Flow ---
+    // --- Own profile: Growth Share Flow (without card generation) ---
     if (isOwnProfile) {
-      setIsGeneratingCard(true);
       setPostText(buildPostText(url));
-      try {
-        const result = await generateCardImage();
-        if (!result) { setIsGeneratingCard(false); return; }
-        const { dataUrl, blob } = result;
-        setCardImageDataUrl(dataUrl);
-
-        const file = new File([blob], `TalentID-${displayTalentId}.png`, { type: 'image/png' });
-
-        // Mobile: Web Share API Level 2 — image auto-attached
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: `${displayName} — AUI Talent ID`,
-              text: buildPostText(url),
-            });
-            setIsGeneratingCard(false);
-            return; // Done! Native share sheet handled everything
-          } catch (err) {
-            if ((err as Error).name === 'AbortError') {
-              setIsGeneratingCard(false);
-              return;
-            }
-            // Fall through to modal
-          }
-        }
-
-        // Desktop: copy image to clipboard automatically
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob }),
-          ]);
-          setImgCopied(true);
-          setTimeout(() => setImgCopied(false), 4000);
-        } catch (_) {
-          // Clipboard image write not supported — silent, modal still opens
-        }
-
-        setIsGrowthShareModalOpen(true);
-      } catch (err) {
-        console.error('Error generating card:', err);
-      } finally {
-        setIsGeneratingCard(false);
-      }
+      setIsGrowthShareModalOpen(true);
       return;
     }
-    */
 
     // --- Other's profile: simple share ---
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -407,6 +361,31 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
       }
     } else {
       setIsShareModalOpen(true);
+    }
+  };
+
+  const handleSimpleOptionClick = async (e: React.MouseEvent, opt: { name: string; url: string }) => {
+    if (isOwnProfile) {
+      e.preventDefault();
+      const textToCopy = buildPostText(window.location.href);
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        setPlatformToast(`✓ Post text copied! Opening ${opt.name}...`);
+        setTimeout(() => setPlatformToast(""), 4000);
+      } catch (err) {
+        console.error('Failed to copy text:', err);
+      }
+      
+      let targetUrl = opt.url;
+      if (opt.name === 'WhatsApp') {
+        targetUrl = `https://wa.me/?text=${encodeURIComponent(textToCopy)}`;
+      } else if (opt.name === 'X') {
+        targetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(textToCopy.substring(0, 240))}`;
+      }
+      
+      setTimeout(() => {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      }, 500);
     }
   };
 
@@ -454,6 +433,12 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   ];
 
   const handlePlatformClick = async (plt: { name: string; copiesText: boolean; url: string }) => {
+    let finalUrl = plt.url;
+    if (plt.name === 'WhatsApp') {
+      finalUrl = `https://wa.me/?text=${encodeURIComponent(postText)}`;
+    } else if (plt.name === 'X') {
+      finalUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(postText.substring(0, 240))}`;
+    }
 
     if (plt.copiesText) {
       // Step 1: copy text reliably FIRST
@@ -461,8 +446,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         await navigator.clipboard.writeText(postText);
       } catch (err) {
         console.error('Clipboard write failed:', err);
-        // Still open the platform even if copy fails
-        window.open(plt.url, '_blank', 'noopener,noreferrer');
+        window.open(finalUrl, '_blank', 'noopener,noreferrer');
         return;
       }
 
@@ -472,14 +456,14 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
       // Step 3: open platform AFTER a short delay so clipboard write is fully committed
       setTimeout(() => {
-        window.open(plt.url, '_blank', 'noopener,noreferrer');
+        window.open(finalUrl, '_blank', 'noopener,noreferrer');
         setTimeout(() => {
           setActivePlatform('');
           setPlatformToast('');
         }, 4000);
       }, 400);
     } else {
-      window.open(plt.url, '_blank', 'noopener,noreferrer');
+      window.open(finalUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -981,14 +965,15 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         />
       </main>
 
-      {/* ── Simple Share Modal (non-own-profile) ── */}
       {isShareModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setIsShareModalOpen(false)}>
           <div className="bg-white rounded-[28px] w-full max-w-md shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="bg-gradient-to-r from-[#1e1b4b] to-[#2563EB] px-6 py-5 flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200">Share Profile</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200">
+                  {isOwnProfile ? 'Share Your Profile' : 'Share Profile'}
+                </p>
                 <h3 className="text-lg font-black text-white mt-0.5">{displayName}</h3>
               </div>
               <button onClick={() => setIsShareModalOpen(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
@@ -997,9 +982,16 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </div>
             {/* Platform Grid */}
             <div className="p-6 space-y-5">
+              {platformToast && (
+                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
+                  <span className="text-emerald-500 text-base">📋</span>
+                  <p className="text-xs font-bold text-emerald-800">{platformToast}</p>
+                </div>
+              )}
               <div className="grid grid-cols-5 gap-3">
                 {simpleShareOptions.map(opt => (
                   <a key={opt.name} href={opt.url} target="_blank" rel="noopener noreferrer"
+                    onClick={(e) => handleSimpleOptionClick(e, opt)}
                     className="flex flex-col items-center gap-2 group"
                   >
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: opt.bg }}>
@@ -1042,34 +1034,6 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </div>
 
             <div className="overflow-y-auto flex-1 p-6 space-y-5">
-              {/* Image copied banner */}
-              {imgCopied && (
-                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
-                  <span className="text-emerald-500 text-lg">✓</span>
-                  <div>
-                    <p className="text-xs font-black text-emerald-800">Card image copied to clipboard!</p>
-                    <p className="text-[10px] text-emerald-600 mt-0.5">Paste it directly into your LinkedIn / X / Facebook post composer.</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Card Preview + Download */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 bg-[#F8F9FB] border border-[#E5E7EB] rounded-2xl p-4">
-                {cardImageDataUrl && (
-                  <img src={cardImageDataUrl} alt="Talent ID Card" className="h-20 w-auto rounded-xl border border-gray-200 shadow-sm object-contain" />
-                )}
-                <div className="flex-1 min-w-0 text-center sm:text-left">
-                  <p className="text-xs font-black text-[#111827]">Your Talent ID Card</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">Download and attach this image when posting on LinkedIn or X for maximum impact.</p>
-                </div>
-                <button
-                  onClick={downloadCard}
-                  className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#111827] hover:bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
-                >
-                  <DownloadIcon size={12} />
-                  Save Card
-                </button>
-              </div>
 
               {/* Editable Post Text */}
               <div className="space-y-2">
@@ -1080,7 +1044,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                 <textarea
                   value={postText}
                   onChange={e => setPostText(e.target.value)}
-                  rows={8}
+                  rows={15}
                   className="w-full bg-[#F8F9FB] border border-[#E5E7EB] rounded-2xl p-4 text-xs text-[#374151] font-medium leading-relaxed outline-none focus:border-[#2563EB] transition-colors resize-none"
                 />
               </div>
