@@ -23,6 +23,7 @@ import ViewApplication from '../components/viewApplication';
 import TermsPage from '../views/Terms';
 import PrivacyPage from '../views/Privacy';
 import ContactPage from '../views/Contact';
+import SitemapPage from '../views/Sitemap';
 import { useParams } from 'react-router-dom';
 
 interface AppRoutesProps {
@@ -62,6 +63,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
     else if (path === '/terms') setView('terms');
     else if (path === '/privacy') setView('privacy');
     else if (path === '/contact') setView('contact');
+    else if (path === '/sitemap') setView('sitemap');
   }, [location.pathname, setView]);
 
   // Helper to sync legacy state-based setView with URL-based navigate
@@ -87,6 +89,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       case 'terms': navigate('/terms'); break;
       case 'privacy': navigate('/privacy'); break;
       case 'contact': navigate('/contact'); break;
+      case 'sitemap': navigate('/sitemap'); break;
     }
   };
 
@@ -129,6 +132,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/sitemap" element={<SitemapPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

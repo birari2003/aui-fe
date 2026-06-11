@@ -20,7 +20,8 @@ export type View =
   | 'institute_list'
   | 'terms'
   | 'privacy'
-  | 'contact';
+  | 'contact'
+  | 'sitemap';
 
 export interface ConfidenceScore {
   experience: number;

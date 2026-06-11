@@ -222,6 +222,7 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
               <Link to="/terms" className="hover:text-brand-primary transition-premium">Terms</Link>
               <Link to="/privacy" className="hover:text-brand-primary transition-premium">Privacy</Link>
               <Link to="/contact" className="hover:text-brand-primary transition-premium">Contact</Link>
+              <Link to="/sitemap" className="hover:text-brand-primary transition-premium">Sitemap</Link>
             </div>
             <p className="text-xs text-text-muted">© 2026 AUI – Production Talent Network. All rights reserved.</p>
           </div>
