@@ -351,12 +351,25 @@ const StudioTalentID = () => {
                     </div>
                   </div>
                 ) : (
-                  <iframe 
-                    src={getEmbedUrl(profile.studioReelUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4')} 
-                    className="w-full h-full border-0" 
-                    allow="autoplay; fullscreen" 
-                    title="Studio Reel"
-                  />
+                  <div className="relative w-full h-full">
+                    <iframe 
+                      src={getEmbedUrl(profile.studioReelUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4')} 
+                      className="w-full h-full border-0" 
+                      allow="autoplay; fullscreen" 
+                      title="Studio Reel"
+                    />
+                    {profile.studioReelUrl && (profile.studioReelUrl.includes('youtube.com') || profile.studioReelUrl.includes('youtu.be') || profile.studioReelUrl.includes('vimeo.com')) && (
+                      <a
+                        href={profile.studioReelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-20"
+                      >
+                        <ExternalLink size={12} className="text-white" />
+                        Watch on {profile.studioReelUrl.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
 

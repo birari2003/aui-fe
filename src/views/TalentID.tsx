@@ -32,7 +32,8 @@ import {
   BadgeCheck,
   Users,
   User,
-  Film
+  Film,
+  ExternalLink
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import Modal from '../components/Modal';
@@ -138,6 +139,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isWorkLedgerOpen, setIsWorkLedgerOpen] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const [me, setMe] = useState<any>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -749,34 +751,89 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <div
               className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium"
             >
-              {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
-                <iframe
-                  src={`https://www.youtube.com/embed/${getYouTubeId(showreel.url)}?autoplay=0`}
-                  title={showreel.title}
-                  className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              ) : showreel.url && showreel.url.includes('vimeo.com') ? (
-                <iframe
-                  src={`https://player.vimeo.com/video/${getVimeoId(showreel.url)}`}
-                  title={showreel.title}
-                  className="w-full h-full border-0"
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+              {!isPlaying ? (
+                <div 
+                  className="w-full h-full relative cursor-pointer flex items-center justify-center bg-brand-surface"
+                  onClick={() => setIsPlaying(true)}
+                >
+                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
+                    <img 
+                      src={`https://img.youtube.com/vi/${getYouTubeId(showreel.url)}/hqdefault.jpg`} 
+                      className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
+                      alt="YouTube Showreel Cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/20 via-brand-purple/20 to-brand-accent/20" />
+                  )}
+                  {/* Play Button Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-white transition-all duration-500">
+                      <Play size={24} className="fill-[#4F46E5] text-[#4F46E5] ml-1" />
+                    </div>
+                  </div>
+                  
+                  {/* Top Bar on Cover */}
+                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                    <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
+                    {showreel.duration && <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>}
+                  </div>
+                  
+                  {/* External Link on Cover */}
+                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be') || showreel.url.includes('vimeo.com')) && (
+                    <a
+                      href={showreel.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink size={12} className="text-white" />
+                      Watch on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                    </a>
+                  )}
+                </div>
               ) : (
-                <video
-                  src={getFileUrl(showreel.url)}
-                  controls
-                  className="w-full h-full object-contain"
-                  poster={'/assets/showreel_thumbnail_1777487470036.png'}
-                />
+                <>
+                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYouTubeId(showreel.url)}?autoplay=1`}
+                      title={showreel.title}
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  ) : showreel.url && showreel.url.includes('vimeo.com') ? (
+                    <iframe
+                      src={`https://player.vimeo.com/video/${getVimeoId(showreel.url)}?autoplay=1`}
+                      title={showreel.title}
+                      className="w-full h-full border-0"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <video
+                      src={getFileUrl(showreel.url)}
+                      controls
+                      autoPlay
+                      className="w-full h-full object-contain"
+                      poster={'/assets/showreel_thumbnail_1777487470036.png'}
+                    />
+                  )}
+                  
+                  {/* External Link when playing */}
+                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be') || showreel.url.includes('vimeo.com')) && (
+                    <a
+                      href={showreel.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
+                    >
+                      <ExternalLink size={12} className="text-white" />
+                      Watch on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                    </a>
+                  )}
+                </>
               )}
-              <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
-                <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
-                {showreel.duration && <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>}
-              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center rounded-[20px] bg-[#F9FAFB] border border-dashed border-[#E5E7EB] py-12">

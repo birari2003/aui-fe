@@ -9,7 +9,7 @@ import {
   Layout, ShieldCheck,
   Building2, Clock,
   GraduationCap, BookOpen, BarChart3, Quote,
-  Trophy
+  Trophy, ExternalLink
 } from 'lucide-react';
 
 const LogoIconWhite = ({ size = 18 }: { size?: number }) => {
@@ -319,11 +319,24 @@ const InstitutePublicProfile = () => {
                   </div>
                </div>
             ) : (
-               <iframe 
-                src={getEmbedUrl(profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4')} 
-                className="w-full h-full border-0" 
-                allow="autoplay; fullscreen" 
-              />
+              <div className="relative w-full h-full">
+                <iframe 
+                  src={getEmbedUrl(profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4')} 
+                  className="w-full h-full border-0" 
+                  allow="autoplay; fullscreen" 
+                />
+                {(profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4') && ((profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4').includes('youtube.com') || (profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4').includes('youtu.be') || (profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4').includes('vimeo.com')) && (
+                  <a
+                    href={profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-20"
+                  >
+                    <ExternalLink size={12} className="text-white" />
+                    Watch on {(profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4').includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                  </a>
+                )}
+              </div>
             )}
          </div>
       </div>
