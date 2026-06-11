@@ -17,7 +17,10 @@ export type View =
   | 'hire'
   | 'experts'
   | 'studio_list'
-  | 'institute_list';
+  | 'institute_list'
+  | 'terms'
+  | 'privacy'
+  | 'contact';
 
 export interface ConfidenceScore {
   experience: number;

@@ -31,7 +31,7 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
           <h2 className="text-5xl md:text-6xl font-display font-bold tracking-tight text-brand-primary">Featured Professionals, Institutes & Studios</h2>
           <p className="text-text-secondary text-xl max-w-xl">See how professionals teach, institutes train, and studios create in real production environments.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="hidden md:flex gap-4">
           <button 
             onClick={() => scroll('left')}
             className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-text-muted hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-premium"

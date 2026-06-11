@@ -20,6 +20,9 @@ import AdminPanel from '../views/AdminPanel';
 import PendingApprovalPage from '../views/PendingApproval';
 import StudioTalentID from '../views/StudioTalentID';
 import ViewApplication from '../components/viewApplication';
+import TermsPage from '../views/Terms';
+import PrivacyPage from '../views/Privacy';
+import ContactPage from '../views/Contact';
 import { useParams } from 'react-router-dom';
 
 interface AppRoutesProps {
@@ -56,6 +59,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
     else if (path === '/dashboard/institute') setView('experts');
     else if (path === '/dashboard/pro') setView('dashboard_pro');
     else if (path === '/admin') setView('admin');
+    else if (path === '/terms') setView('terms');
+    else if (path === '/privacy') setView('privacy');
+    else if (path === '/contact') setView('contact');
   }, [location.pathname, setView]);
 
   // Helper to sync legacy state-based setView with URL-based navigate
@@ -78,6 +84,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       case 'experts': navigate('/experts'); break;
       case 'studio_list': navigate('/studios'); break;
       case 'institute_list': navigate('/institutes'); break;
+      case 'terms': navigate('/terms'); break;
+      case 'privacy': navigate('/privacy'); break;
+      case 'contact': navigate('/contact'); break;
     }
   };
 
@@ -117,6 +126,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/admin" element={<AdminPanel setView={handleSetView} />} />
       <Route path="/job/:jobId/applications" element={<ViewApplication />} />
       <Route path="/pending-approval" element={<PendingApprovalPage onBack={() => handleSetView('landing')} />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

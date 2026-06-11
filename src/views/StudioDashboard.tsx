@@ -168,8 +168,6 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const [level, setLevel] = React.useState('');
   const [position, setPosition] = React.useState('');
   const [type, setType] = React.useState('');
-  const [availableOnly, setAvailableOnly] = React.useState(false);
-  const [verifiedOnly, setVerifiedOnly] = React.useState(false);
   const [sortBy, setSortBy] = React.useState<string>('experience-desc');
   const [benchDepartment, setBenchDepartment] = React.useState('');
   const [benchSortBy, setBenchSortBy] = React.useState<string>('experience-desc');
@@ -267,13 +265,14 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
       }
 
       const query: Record<string, string> = {};
-      if (skill.trim()) query.skill = skill.trim();
+      // When 'other' is selected, fetch all and filter client-side
+      const resolvedSkill = skill === 'other' ? '' : skill.trim();
+      if (resolvedSkill) query.skill = resolvedSkill;
       if (experience.trim() && !Number.isNaN(Number(experience))) {
         query.minExperience = String(Number(experience));
       }
       if (level) query.level = level;
       if (position) query.role = position;
-      if (verifiedOnly) query.verified = 'true';
 
       const response = await searchProfessionals(token, query);
 
@@ -293,7 +292,7 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     } finally {
       setLoading(false);
     }
-  }, [experience, level, position, skill, verifiedOnly]);
+  }, [experience, level, position, skill,]);
 
   React.useEffect(() => {
     fetchProfessionals();
@@ -346,9 +345,15 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     }
   };
 
+  const KNOWN_SKILLS = ['animation', 'lighting', 'fx', 'layout', 'compositing'];
+
   const normalized = professionals
     .filter((p) => (type ? p.productionType === type : true))
-    .filter((p) => (availableOnly ? isAvailableNow(p.availability) : true))
+    .filter((p) => {
+      if (skill !== 'other') return true;
+      const s = (p.primarySkill || '').toLowerCase();
+      return !KNOWN_SKILLS.some((k) => s.includes(k));
+    })
     .map((p, index) => {
       const code = p.user?.talentId?.talentCode || `AUI-${String(p.id).padStart(6, '0')}`;
       const name = p.fullName?.trim() || p.user?.email?.split('@')[0] || 'Unknown Professional';
@@ -554,9 +559,12 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     const talent = row.professional;
     if (!talent) return false;
 
-    // Filter by department (benchDepartment)
-    if (benchDepartment && (!talent.primarySkill || !talent.primarySkill.toLowerCase().includes(benchDepartment.toLowerCase()))) {
-      return false;
+    // Filter by department (benchDepartment) — match any word in the filter phrase
+    if (benchDepartment) {
+      const deptWords = benchDepartment.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      const skillLower = (talent.primarySkill || '').toLowerCase();
+      const anyMatch = deptWords.some((word) => skillLower.includes(word));
+      if (!anyMatch) return false;
     }
 
     return true;
@@ -603,8 +611,6 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     setLevel('');
     setPosition('');
     setType('');
-    setAvailableOnly(false);
-    setVerifiedOnly(false);
   };
 
   const openOpportunityModal = (professional: ProfessionalRow) => {
@@ -835,20 +841,23 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-[#efeff1] p-5 shadow-sm">
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.78fr_0.98fr_0.98fr_0.98fr_auto_auto_auto] xl:items-end">
-                <FilterSelect
-                  label="Skill"
-                  value={skill}
-                  onChange={setSkill}
-                  options={[
-                    { label: 'All Skills', value: '' },
-                    { label: 'Character Animation', value: 'character' },
-                    { label: 'Compositing', value: 'compositing' },
-                    { label: 'Lighting', value: 'lighting' },
-                    { label: 'Modeling', value: 'modeling' },
-                    { label: 'FX', value: 'fx' },
-                  ]}
-                />
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.78fr_0.98fr_0.98fr_0.98fr] xl:items-end">
+                <div className="space-y-1 text-left">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Skill</div>
+                  <select
+                    value={skill}
+                    onChange={(e) => setSkill(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-brand-primary outline-none transition-premium focus:border-brand-primary"
+                  >
+                    <option value="">All Skills</option>
+                    <option value="animation">Animation</option>
+                    <option value="lighting">Lighting</option>
+                    <option value="fx">FX</option>
+                    <option value="layout">Layout</option>
+                    <option value="compositing">Compositing</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
 
                 <div className="space-y-1 text-left">
                   <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Experience</div>
@@ -865,41 +874,6 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <FilterSelect label="Level" value={level} onChange={setLevel} options={LEVEL_OPTIONS} />
                 <FilterSelect label="Position" value={position} onChange={setPosition} options={POSITION_OPTIONS} />
                 <FilterSelect label="Type" value={type} onChange={setType} options={TYPE_OPTIONS} />
-
-                <button
-                  type="button"
-                  onClick={() => setAvailableOnly((prev) => !prev)}
-                  className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 h-[44px]"
-                >
-                  <span className={`relative inline-block h-5 w-10 rounded-full transition-premium ${availableOnly ? 'bg-brand-primary' : 'bg-gray-300'}`}>
-                    <span
-                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-premium ${availableOnly ? 'left-5' : 'left-0.5'}`}
-                    />
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6f7782]">Available</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setVerifiedOnly((prev) => !prev)}
-                  className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 h-[44px]"
-                >
-                  <span className={`relative inline-block h-5 w-10 rounded-full transition-premium ${verifiedOnly ? 'bg-brand-primary' : 'bg-gray-300'}`}>
-                    <span
-                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-premium ${verifiedOnly ? 'left-5' : 'left-0.5'}`}
-                    />
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#6f7782]">Verified</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 h-[44px] text-[#9aa0a8] transition-premium hover:text-brand-primary"
-                  aria-label="Reset filters"
-                >
-                  <RotateCcw size={16} />
-                </button>
               </div>
             </div>
 
@@ -953,11 +927,11 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold min-w-[180px] outline-none"
                   >
                     <option value="">All Departments</option>
-                    <option value="character">Character Animation</option>
-                    <option value="compositing">Compositing</option>
+                    <option value="animation">Animation</option>
                     <option value="lighting">Lighting</option>
-                    <option value="modeling">Modeling</option>
                     <option value="fx">FX</option>
+                    <option value="layout">Layout</option>
+                    <option value="compositing">Compositing</option>
                   </select>
                 </div>
 

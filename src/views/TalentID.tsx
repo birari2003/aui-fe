@@ -143,7 +143,15 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isEngagementModalOpen, setIsEngagementModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isGrowthShareModalOpen, setIsGrowthShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [postCopied, setPostCopied] = useState(false);
+  const [imgCopied, setImgCopied] = useState(false);
+  const [platformToast, setPlatformToast] = useState('');
+  const [activePlatform, setActivePlatform] = React.useState('');
+  const [isGeneratingCard, setIsGeneratingCard] = useState(false);
+  const [cardImageDataUrl, setCardImageDataUrl] = useState<string>('');
+  const [postText, setPostText] = useState<string>('');
   const [isSubmittingEngagement, setIsSubmittingEngagement] = useState(false);
   const cardRef = React.useRef<HTMLDivElement>(null);
   const downloadCardRef = React.useRef<HTMLDivElement>(null);
@@ -302,7 +310,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
   const insight = publicProfile?.auiInsight || '';
   const timeline = Array.isArray(publicProfile?.experienceTimeline) ? publicProfile.experienceTimeline : [];
-  const showreelUrl = publicProfile?.showreel?.url || '';
+  const showreelUrl = publicProfile?.showreel?.url || professional?.showreelUrl || professional?.showreel_url || '';
   const showreel = showreelUrl ? {
     type: publicProfile?.showreel?.type || 'youtube',
     url: showreelUrl,
@@ -311,22 +319,89 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   } : null;
   const workLedger = Array.isArray(publicProfile?.workLedger) ? publicProfile.workLedger : [];
 
+  const buildPostText = (url: string) =>
+    `Excited to share my AUI Talent ID.\n\nAUI Talent is a professional network connecting studios, institutes, industry experts, and creative professionals.\n\nMy Talent ID serves as my professional identity, showcasing my experience, skills, and verified profile in one place.\n\nView my profile:\n${url}\n\nJoin the network:\nAUITalent.com\n\n#AUITalent #Animation #VFX #Gaming #CreativeIndustry`;
+
+  const generateCardImage = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {
+    if (!downloadCardRef.current) return null;
+    const dataUrl = await toPng(downloadCardRef.current, {
+      cacheBust: true,
+      skipFonts: true,
+      backgroundColor: '#f7f7f8',
+      style: { borderRadius: '16px' },
+    });
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return { dataUrl, blob };
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
-    // Check if it's mobile and navigator.share is available
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
+    /*
+    // --- Own profile: Growth Share Flow ---
+    if (isOwnProfile) {
+      setIsGeneratingCard(true);
+      setPostText(buildPostText(url));
+      try {
+        const result = await generateCardImage();
+        if (!result) { setIsGeneratingCard(false); return; }
+        const { dataUrl, blob } = result;
+        setCardImageDataUrl(dataUrl);
+
+        const file = new File([blob], `TalentID-${displayTalentId}.png`, { type: 'image/png' });
+
+        // Mobile: Web Share API Level 2 — image auto-attached
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `${displayName} — AUI Talent ID`,
+              text: buildPostText(url),
+            });
+            setIsGeneratingCard(false);
+            return; // Done! Native share sheet handled everything
+          } catch (err) {
+            if ((err as Error).name === 'AbortError') {
+              setIsGeneratingCard(false);
+              return;
+            }
+            // Fall through to modal
+          }
+        }
+
+        // Desktop: copy image to clipboard automatically
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob }),
+          ]);
+          setImgCopied(true);
+          setTimeout(() => setImgCopied(false), 4000);
+        } catch (_) {
+          // Clipboard image write not supported — silent, modal still opens
+        }
+
+        setIsGrowthShareModalOpen(true);
+      } catch (err) {
+        console.error('Error generating card:', err);
+      } finally {
+        setIsGeneratingCard(false);
+      }
+      return;
+    }
+    */
+
+    // --- Other's profile: simple share ---
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile && navigator.share) {
       try {
         await navigator.share({
           title: `AUI Talent - ${displayName}`,
           text: `Check out ${displayName}'s professional portfolio on AUI.`,
-          url: url,
+          url,
         });
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Error sharing:', err);
-        }
+        if ((err as Error).name !== 'AbortError') console.error('Error sharing:', err);
       }
     } else {
       setIsShareModalOpen(true);
@@ -343,26 +418,79 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
     }
   };
 
-  const shareOptions = [
-    { name: 'WhatsApp', icon: MessageCircle, color: '#25D366', url: `https://wa.me/?text=${encodeURIComponent(`Check out ${displayName}'s portfolio: `)}${encodeURIComponent(window.location.href)}` },
-    { name: 'Facebook', icon: Facebook, color: '#1877F2', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}` },
-    { name: 'X', icon: Twitter, color: '#000000', url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${displayName}'s portfolio: `)}&url=${encodeURIComponent(window.location.href)}` },
-    { name: 'LinkedIn', icon: Linkedin, color: '#0A66C2', url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}` },
-    { name: 'Email', icon: Mail, color: '#EA4335', url: `mailto:?subject=${encodeURIComponent(`AUI Talent Portfolio: ${displayName}`)}&body=${encodeURIComponent(`Check out this professional portfolio on AUI: ${window.location.href}`)}` },
-    { name: 'Embed', icon: Code, color: '#6B7280', onClick: () => alert('Embed code copied to clipboard!') },
+  const copyPostText = async () => {
+    try {
+      await navigator.clipboard.writeText(postText);
+      setPostCopied(true);
+      setTimeout(() => setPostCopied(false), 2500);
+    } catch (err) {
+      console.error('Failed to copy post:', err);
+    }
+  };
+
+  const downloadCard = () => {
+    if (!cardImageDataUrl) return;
+    const link = document.createElement('a');
+    link.download = `TalentID-${displayTalentId}.png`;
+    link.href = cardImageDataUrl;
+    link.click();
+  };
+
+  const simpleShareOptions = [
+    { name: 'WhatsApp', icon: MessageCircle, color: '#25D366', bg: '#e8fdf0', url: `https://wa.me/?text=${encodeURIComponent(`Check out ${displayName}'s AUI Talent profile: ${window.location.href}`)}` },
+    { name: 'LinkedIn', icon: Linkedin, color: '#0A66C2', bg: '#e8f0fb', url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}` },
+    { name: 'X', icon: Twitter, color: '#000', bg: '#f0f0f0', url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out ${displayName}'s AUI Talent profile:`)}&url=${encodeURIComponent(window.location.href)}` },
+    { name: 'Facebook', icon: Facebook, color: '#1877F2', bg: '#e8f0fc', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}` },
+    { name: 'Email', icon: Mail, color: '#EA4335', bg: '#fef0ee', url: `mailto:?subject=${encodeURIComponent(`AUI Talent: ${displayName}`)}&body=${encodeURIComponent(`View ${displayName}'s professional portfolio: ${window.location.href}`)}` },
   ];
+
+  const growthSharePlatforms = [
+    { name: 'LinkedIn', icon: Linkedin, color: '#0A66C2', copiesText: true, url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}` },
+    { name: 'WhatsApp', icon: MessageCircle, color: '#25D366', copiesText: false, url: `https://wa.me/?text=${encodeURIComponent(postText)}` },
+    { name: 'X', icon: Twitter, color: '#000', copiesText: false, url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(postText.substring(0, 240))}` },
+    { name: 'Facebook', icon: Facebook, color: '#1877F2', copiesText: true, url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}` },
+  ];
+
+  const handlePlatformClick = async (plt: { name: string; copiesText: boolean; url: string }) => {
+
+    if (plt.copiesText) {
+      // Step 1: copy text reliably FIRST
+      try {
+        await navigator.clipboard.writeText(postText);
+      } catch (err) {
+        console.error('Clipboard write failed:', err);
+        // Still open the platform even if copy fails
+        window.open(plt.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      // Step 2: show visual confirmation on button
+      setActivePlatform(plt.name);
+      setPlatformToast(`✓ Post text copied! Switch to ${plt.name} and press Ctrl+V (or ⌘V) to paste.`);
+
+      // Step 3: open platform AFTER a short delay so clipboard write is fully committed
+      setTimeout(() => {
+        window.open(plt.url, '_blank', 'noopener,noreferrer');
+        setTimeout(() => {
+          setActivePlatform('');
+          setPlatformToast('');
+        }, 4000);
+      }, 400);
+    } else {
+      window.open(plt.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+
 
   const handleDownload = async () => {
     if (downloadCardRef.current === null) return;
-
     try {
       const dataUrl = await toPng(downloadCardRef.current, {
         cacheBust: true,
         skipFonts: true,
         backgroundColor: '#f7f7f8',
-        style: {
-          borderRadius: '16px'
-        }
+        style: { borderRadius: '16px' },
       });
       const link = document.createElement('a');
       link.download = `TalentID-${displayTalentId}.png`;
@@ -404,28 +532,32 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-xl text-xs font-bold text-[#111827] border border-[#E5E7EB] transition-all"
+              disabled={isGeneratingCard}
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 hover:bg-gray-50 rounded-xl text-xs font-bold text-[#111827] border border-[#E5E7EB] transition-all disabled:opacity-60"
             >
-              <Share2 size={14} className="text-[#2563EB]" />
-              Share Talent ID
+              {isGeneratingCard
+                ? <span className="w-3.5 h-3.5 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
+                : <Share2 size={14} className="text-[#2563EB]" />
+              }
+              <span className="hidden sm:inline">{isGeneratingCard ? 'Preparing…' : 'Share Talent ID'}</span>
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
             >
               <DownloadIcon size={14} />
-              Download Talent ID
+              <span className="hidden sm:inline">Download Talent ID</span>
             </button>
             {!isOwnProfile && isStudio && (
               <>
                 <button
                   onClick={() => setIsEngagementModalOpen(true)}
-                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all"
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all"
                 >
-                  Request Engagement <Send size={14} />
+                  <span className="hidden sm:inline">Request Engagement</span> <Send size={14} />
                 </button>
                 <button
                   onClick={handleToggleBench}
@@ -460,18 +592,18 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
           {/* Right Column: Info */}
           <div className="flex-1 p-6 flex flex-col space-y-4">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-[#2563EB] font-bold text-[10px] uppercase tracking-widest">
                   <ShieldCheck size={14} className="text-[#2563EB]" />
                   AUI Verified Talent
                 </div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold tracking-tight">{displayName}</h1>
-                  <CheckCircle2 size={20} className="text-[#2563EB]" />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-3xl font-bold tracking-tight text-[#111827]">{displayName}</h1>
+                  <CheckCircle2 size={20} className="text-[#2563EB] shrink-0" />
                 </div>
               </div>
-              <div className="bg-[#1E1B4B] text-white px-4 py-2.5 rounded-xl flex flex-col items-center justify-center leading-tight">
+              <div className="bg-[#1E1B4B] text-white px-4 py-2.5 rounded-xl flex flex-col items-center justify-center leading-tight self-start sm:self-auto shrink-0">
                 <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{levelStyle.label}</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest">Level</span>
               </div>
@@ -480,33 +612,34 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <div className="space-y-1">
               <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[0.2em]">Talent ID</div>
               <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-2xl p-3 flex items-center justify-center">
-                <span className="text-3xl font-bold tracking-[0.3em] text-[#0F172A] font-mono uppercase">{displayTalentId}</span>
+                <span className="text-2xl sm:text-3xl font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[#0F172A] font-mono uppercase">{displayTalentId}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-8 py-2 border-b border-[#F1F5F9]">
+            <div className="grid grid-cols-3 gap-2 sm:gap-6 py-2 border-b border-[#F1F5F9]">
               <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
-                  <Star size={12} />
-                  Experience Level
+                <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider sm:tracking-widest">
+                  <Star size={10} className="shrink-0" />
+                  <span className="truncate">Experience</span>
                 </div>
-                <div className="text-sm font-bold">{professional?.experienceYears || '0'}+ Years</div>
+                <div className="text-xs sm:text-sm font-bold">{professional?.experienceYears || '0'}+ Years</div>
               </div>
               <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
-                  <Briefcase size={12} />
-                  Production Types
+                <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider sm:tracking-widest">
+                  <Briefcase size={10} className="shrink-0" />
+                  <span className="truncate">Production</span>
                 </div>
-                <div className="text-sm font-bold">{professional?.productionType || 'Feature Film'}</div>
+                <div className="text-xs sm:text-sm font-bold truncate">{professional?.productionType || 'Feature Film'}</div>
               </div>
               <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
-                  <img src="/assets/logo_blck.png" className="w-[12px] h-[12px] rounded-[3px] object-contain" alt="" />
-                  Primary Skill
+                <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider sm:tracking-widest">
+                  <img src="/assets/logo_blck.png" className="w-[10px] h-[10px] rounded-[2px] object-contain shrink-0" alt="" />
+                  <span className="truncate">Primary Skill</span>
                 </div>
-                <div className="text-sm font-bold">{professional?.primarySkill || 'Artist'}</div>
+                <div className="text-xs sm:text-sm font-bold truncate">{professional?.primarySkill || 'Artist'}</div>
               </div>
             </div>
+
 
             <div className={`rounded-xl p-3.5 flex items-center gap-4 ${highlight.className}`}>
               <div className={`w-2.5 h-2.5 rounded-full ${highlight.dotClassName}`}></div>
@@ -670,27 +803,28 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             {workLedger.length > 0 ? workLedger.map((project: any, idx: number) => (
               <div key={idx} className="border border-[#F1F5F9] rounded-[20px] overflow-hidden">
                 <div
-                  className="p-5 flex items-center gap-6 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
+                  className="p-5 flex flex-col md:flex-row items-center md:items-start gap-6 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
                   onClick={() => setIsWorkLedgerOpen(idx === 0 ? !isWorkLedgerOpen : true)}
                 >
-                  <div className="w-[180px] h-[180px] md:h-auto md:aspect-square bg-gray-900 rounded-xl overflow-hidden shrink-0">
+                  <div className="w-full md:w-[180px] h-[180px] md:h-auto md:aspect-square bg-gray-900 rounded-xl overflow-hidden shrink-0">
                     <img
                       src={publicProfile?.workLedgerImage ? getFileUrl(publicProfile.workLedgerImage) : (project.shotSamples?.length > 0 ? getFileUrl(project.shotSamples[0]) : '/assets/superhero_team_thumbnail_1777487519840.png')}
                       alt={project.projectName}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="flex-1 self-start pt-2">
-                    <div className="flex justify-between items-start w-full">
+                  <div className="flex-1 w-full pt-2">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-3">
                       <div className="space-y-1">
-                        <h4 className="text-xl font-bold">{project.projectName}</h4>
+                        <h4 className="text-xl font-bold text-[#111827]">{project.projectName}</h4>
                         <div className="text-[#64748B] text-sm font-medium">{project.role}  •  {project.year}  •  {project.type}</div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between sm:justify-end gap-4">
                         <span className="bg-[#DCFCE7] text-[#166534] px-4 py-1.5 rounded-full text-xs font-bold">{project.status}</span>
                         {(idx === 0 && isWorkLedgerOpen) ? <ChevronUp size={20} className="text-[#94A3B8]" /> : <ChevronDown size={20} className="text-[#94A3B8]" />}
                       </div>
                     </div>
+
 
                     {(idx === 0 && isWorkLedgerOpen) && (
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 pt-6 border-t border-[#F1F5F9]">
@@ -790,58 +924,170 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         />
       </main>
 
-      {/* Share Modal */}
-      <Modal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        title="Share"
-        showFooter={false}
-        className="!p-0"
-        message={
-          <div className="p-8 space-y-8">
-            <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-2">
-              {shareOptions.map((option) => (
-                <a
-                  key={option.name}
-                  href={option.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => {
-                    if (option.onClick) {
-                      e.preventDefault();
-                      option.onClick();
-                    }
-                  }}
-                  className="flex flex-col items-center gap-3 min-w-[70px] group transition-transform hover:-translate-y-1"
-                >
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg transition-all group-hover:shadow-xl"
-                    style={{ backgroundColor: option.color }}
+      {/* ── Simple Share Modal (non-own-profile) ── */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setIsShareModalOpen(false)}>
+          <div className="bg-white rounded-[28px] w-full max-w-md shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#1e1b4b] to-[#2563EB] px-6 py-5 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-200">Share Profile</p>
+                <h3 className="text-lg font-black text-white mt-0.5">{displayName}</h3>
+              </div>
+              <button onClick={() => setIsShareModalOpen(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                <span className="text-lg leading-none">×</span>
+              </button>
+            </div>
+            {/* Platform Grid */}
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-5 gap-3">
+                {simpleShareOptions.map(opt => (
+                  <a key={opt.name} href={opt.url} target="_blank" rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2 group"
                   >
-                    <option.icon size={24} />
-                  </div>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{option.name}</span>
-                </a>
-              ))}
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ backgroundColor: opt.bg }}>
+                      <opt.icon size={22} style={{ color: opt.color }} />
+                    </div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{opt.name}</span>
+                  </a>
+                ))}
+              </div>
+              {/* Copy Link */}
+              <div className="flex items-center gap-2 bg-[#F8F9FB] border border-[#E5E7EB] rounded-2xl p-3">
+                <LinkIcon size={14} className="text-gray-400 shrink-0" />
+                <p className="text-xs text-[#374151] font-medium flex-1 truncate">{window.location.href}</p>
+                <button
+                  onClick={copyToClipboard}
+                  className={`shrink-0 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                    copied ? 'bg-emerald-500 text-white' : 'bg-[#111827] text-white hover:bg-gray-800'
+                  }`}
+                >
+                  {copied ? '✓ Copied' : 'Copy'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Growth Share Modal (own profile only) ── */}
+      {isGrowthShareModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" onClick={() => setIsGrowthShareModalOpen(false)}>
+          <div className="bg-white rounded-[32px] w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#1e1b4b] via-[#2d2487] to-[#2563EB] px-7 py-6 flex items-center justify-between shrink-0">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-blue-200">Grow Your Reach</p>
+                <h3 className="text-2xl font-black text-white mt-1 tracking-tight">Share Your Identity</h3>
+                <p className="text-xs text-blue-200/80 mt-1">Post to LinkedIn, WhatsApp, and more</p>
+              </div>
+              <button onClick={() => setIsGrowthShareModalOpen(false)} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition-colors">×</button>
             </div>
 
-            <div className="relative">
-              <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-2xl p-4 pr-32 overflow-hidden">
-                <p className="text-xs text-[#111827] font-medium truncate">
-                  {window.location.href}
-                </p>
+            <div className="overflow-y-auto flex-1 p-6 space-y-5">
+              {/* Image copied banner */}
+              {imgCopied && (
+                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3">
+                  <span className="text-emerald-500 text-lg">✓</span>
+                  <div>
+                    <p className="text-xs font-black text-emerald-800">Card image copied to clipboard!</p>
+                    <p className="text-[10px] text-emerald-600 mt-0.5">Paste it directly into your LinkedIn / X / Facebook post composer.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Card Preview + Download */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 bg-[#F8F9FB] border border-[#E5E7EB] rounded-2xl p-4">
+                {cardImageDataUrl && (
+                  <img src={cardImageDataUrl} alt="Talent ID Card" className="h-20 w-auto rounded-xl border border-gray-200 shadow-sm object-contain" />
+                )}
+                <div className="flex-1 min-w-0 text-center sm:text-left">
+                  <p className="text-xs font-black text-[#111827]">Your Talent ID Card</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">Download and attach this image when posting on LinkedIn or X for maximum impact.</p>
+                </div>
+                <button
+                  onClick={downloadCard}
+                  className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#111827] hover:bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                >
+                  <DownloadIcon size={12} />
+                  Save Card
+                </button>
               </div>
+
+              {/* Editable Post Text */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Post Text</p>
+                  <span className="text-[9px] text-gray-300 font-medium">Tap to edit</span>
+                </div>
+                <textarea
+                  value={postText}
+                  onChange={e => setPostText(e.target.value)}
+                  rows={8}
+                  className="w-full bg-[#F8F9FB] border border-[#E5E7EB] rounded-2xl p-4 text-xs text-[#374151] font-medium leading-relaxed outline-none focus:border-[#2563EB] transition-colors resize-none"
+                />
+              </div>
+
+              {/* Platform Buttons */}
+              {platformToast && (
+                <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3">
+                  <span className="text-blue-500 text-base">📋</span>
+                  <p className="text-xs font-bold text-blue-800">{platformToast}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {growthSharePlatforms.map(plt => {
+                  const isActive = activePlatform === plt.name;
+                  return (
+                    <button
+                      key={plt.name}
+                      onClick={() => handlePlatformClick(plt)}
+                      disabled={isActive}
+                      className="flex flex-col items-center gap-2 group w-full"
+                    >
+                      <div
+                        className={`w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-white text-xs font-bold transition-all relative ${
+                          isActive
+                            ? 'bg-emerald-500 scale-95 shadow-lg'
+                            : 'group-hover:opacity-90 group-hover:shadow-lg'
+                        }`}
+                        style={isActive ? {} : { backgroundColor: plt.color }}
+                      >
+                        {isActive ? (
+                          <>
+                            <CheckCircle2 size={16} />
+                            <span className="text-[10px] font-black uppercase tracking-wider">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <plt.icon size={16} />
+                            <span className="text-[10px] font-black uppercase tracking-wider">{plt.name}</span>
+                            {plt.copiesText && (
+                              <span className="absolute -top-1.5 -right-1.5 bg-white text-[7px] font-black text-gray-600 border border-gray-200 rounded-full px-1.5 py-0.5 shadow-sm">PASTE</span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Copy Post */}
               <button
-                onClick={copyToClipboard}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-[#111827] text-white hover:bg-gray-900'
-                  }`}
+                onClick={copyPostText}
+                className={`w-full py-3.5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all ${
+                  postCopied
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#374151]'
+                }`}
               >
-                {copied ? 'Copied!' : 'Copy'}
+                {postCopied ? '✓ Post Text Copied!' : 'Copy Post Text'}
               </button>
             </div>
           </div>
-        }
-      />
+        </div>
+      )}
 
       {/* Hidden Parent Wrapper positioned off-screen */}
       <div

@@ -8,9 +8,10 @@ interface ManagePublicProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
+  profile?: any;
 }
 
-const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isOpen, onClose, onUpdate }) => {
+const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isOpen, onClose, onUpdate, profile }) => {
   const [activeTab, setActiveTab] = useState<'insight' | 'timeline' | 'showreel' | 'workLedger'>('insight');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,7 +43,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
     if (isOpen) {
       fetchCurrentProfile();
     }
-  }, [isOpen]);
+  }, [isOpen, profile]);
 
   const fetchCurrentProfile = async () => {
     const token = localStorage.getItem('token');
@@ -53,15 +54,43 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
       if (res.ok) {
         const data = await res.json();
         if (data.data) {
+          const fetchedShowreelUrl = data.data.showreel?.url || '';
+          const fallbackShowreelUrl = fetchedShowreelUrl || profile?.showreelUrl || profile?.showreel_url || '';
+
           setFormData({
             auiInsight: data.data.auiInsight || '',
             experienceTimeline: Array.isArray(data.data.experienceTimeline) ? data.data.experienceTimeline : [],
-            showreel: data.data.showreel || { type: 'youtube', url: '', title: '', duration: '' },
+            showreel: {
+              type: data.data.showreel?.type || 'youtube',
+              url: fallbackShowreelUrl,
+              title: data.data.showreel?.title || 'Professional Showreel',
+              duration: data.data.showreel?.duration || '',
+            },
             workLedger: Array.isArray(data.data.workLedger) ? data.data.workLedger : [],
             profileImage: data.data.profileImage || '',
             workLedgerImage: data.data.workLedgerImage || '',
           });
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            showreel: {
+              type: 'youtube',
+              url: profile?.showreelUrl || profile?.showreel_url || '',
+              title: 'Professional Showreel',
+              duration: '',
+            }
+          }));
         }
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          showreel: {
+            type: 'youtube',
+            url: profile?.showreelUrl || profile?.showreel_url || '',
+            title: 'Professional Showreel',
+            duration: '',
+          }
+        }));
       }
     } catch (err) {
       console.error('Error fetching public profile:', err);

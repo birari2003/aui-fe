@@ -1053,6 +1053,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
         isOpen={isPublicModalOpen}
         onClose={() => setIsPublicModalOpen(false)}
         onUpdate={fetchDashboardData}
+        profile={profile}
       />
       <OpportunityDetailsModal
         isOpen={isOppModalOpen}
