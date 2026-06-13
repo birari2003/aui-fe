@@ -19,17 +19,21 @@ const EngagementModal: React.FC<EngagementModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     projectTimeline: '',
-    productionType: 'film' as 'film' | 'tv' | 'web' | 'ads' | 'other',
+    productionType: 'film' as string,
     engagementBrief: '',
     proposedBudget: '',
     startDate: '',
   });
+  const [customProductionType, setCustomProductionType] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      productionType: formData.productionType === 'other' ? customProductionType : formData.productionType
+    });
   };
 
   return (
@@ -68,7 +72,7 @@ const EngagementModal: React.FC<EngagementModalProps> = ({
                 <Briefcase className="absolute left-4 top-3.5 text-text-muted" size={18} />
                 <select
                   value={formData.productionType}
-                  onChange={(e) => setFormData({ ...formData, productionType: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, productionType: e.target.value })}
                   className="w-full pl-12 pr-5 py-3.5 bg-brand-surface rounded-2xl border border-transparent focus:border-brand-accent outline-none font-bold appearance-none"
                 >
                   <option value="film">Feature Film</option>
@@ -78,6 +82,18 @@ const EngagementModal: React.FC<EngagementModalProps> = ({
                   <option value="other">Other</option>
                 </select>
               </div>
+              {formData.productionType === 'other' && (
+                <div className="mt-2 animate-in fade-in duration-200">
+                  <input
+                    type="text"
+                    placeholder="Specify production type..."
+                    required
+                    value={customProductionType}
+                    onChange={(e) => setCustomProductionType(e.target.value)}
+                    className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-transparent focus:border-brand-accent outline-none font-bold text-sm"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

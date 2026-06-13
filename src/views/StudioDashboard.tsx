@@ -663,7 +663,11 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        toast.error(body?.message || 'Failed to send invitations');
+        if (body?.missingFromBench && body.missingFromBench.length > 0) {
+          toast.error("You can only send requests to professionals who are currently on your bench.");
+        } else {
+          toast.error(body?.message || 'Failed to send invitations');
+        }
         return;
       }
       
@@ -694,7 +698,14 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError(body?.message || 'Failed to send opportunity.');
+        if (body?.missingFromBench && body.missingFromBench.length > 0) {
+          const errMsg = "You can only send requests to professionals who are currently on your bench.";
+          setError(errMsg);
+          toast.error(errMsg);
+        } else {
+          setError(body?.message || 'Failed to send opportunity.');
+          toast.error(body?.message || 'Failed to send opportunity.');
+        }
         return;
       }
 

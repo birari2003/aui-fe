@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
+import { toast } from 'react-toastify';
 import {
   Sparkles,
   ShieldCheck,
@@ -252,12 +253,21 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         ...formData
       });
       if (res.ok) {
+        toast.success("Engagement request sent successfully.");
         setIsEngagementModalOpen(false);
         // Maybe navigate to engagements tab
         navigate('/hire');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        if (body?.missingFromBench && body.missingFromBench.length > 0) {
+          toast.error("You can only send requests to professionals who are currently on your bench.");
+        } else {
+          toast.error(body?.message || 'Failed to request engagement.');
+        }
       }
     } catch (err) {
       console.error('Failed to request engagement:', err);
+      toast.error('Failed to request engagement.');
     } finally {
       setIsSubmittingEngagement(false);
     }
