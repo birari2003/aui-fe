@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight } from 'lucide-react';
+import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight, Network } from 'lucide-react';
 import Button from '../components/Button';
 import SEO from '../components/SEO';
 import Card from '../components/Card';
@@ -528,7 +528,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                     loadNexus();
                   }}
                 >
-                  <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] mr-2 inline-block object-contain" alt="" /> Manage Nexus
+                  <Network size={14} className="mr-2 inline-block" /> Manage Nexus
                 </Button>
                 <Button
                   variant="ghost"

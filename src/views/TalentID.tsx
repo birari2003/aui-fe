@@ -41,7 +41,7 @@ import Modal from '../components/Modal';
 import QRCode from 'react-qr-code';
 import { getPublicProfileByCode } from '../services/publicProfileServices';
 import { getMe } from '../services/userServices';
-import { addTalentToBench, createStudioRequestProfessional } from '../services/studioServices';
+import { addTalentToBench, removeTalentFromBench, getTalentBench, createStudioRequestProfessional } from '../services/studioServices';
 import EngagementModal from '../components/EngagementModal';
 import { View, UserRole } from '../types';
 import { BASE_URL } from '../utils/urls';
@@ -156,6 +156,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const [cardImageDataUrl, setCardImageDataUrl] = useState<string>('');
   const [postText, setPostText] = useState<string>('');
   const [isSubmittingEngagement, setIsSubmittingEngagement] = useState(false);
+  const [isBenched, setIsBenched] = useState(false);
   const cardRef = React.useRef<HTMLDivElement>(null);
   const downloadCardRef = React.useRef<HTMLDivElement>(null);
   const [downloadAvatarUrl, setDownloadAvatarUrl] = useState<string>('');
@@ -228,17 +229,53 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const isOwnProfile = me?.id === profileData?.id;
   const isStudio = userRole === 'studio';
 
+  const checkBenchStatus = async (professionalId: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await getTalentBench(token);
+      if (res.ok) {
+        const data = await res.json();
+        const benchedRows = Array.isArray(data.data) ? data.data : [];
+        const found = benchedRows.some((row: any) => row.professionalId === professionalId);
+        setIsBenched(found);
+      }
+    } catch (err) {
+      console.error('Failed to check bench status:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (profileData?.professional?.id && userRole === 'studio') {
+      checkBenchStatus(profileData.professional.id);
+    }
+  }, [profileData, userRole]);
+
   const handleToggleBench = async () => {
     const token = localStorage.getItem('token');
     if (!token || !profileData?.professional?.id) return;
 
     try {
-      await addTalentToBench(token, profileData.professional.id);
-      // Navigate to bench section in Studio Dashboard
-      navigate('/hire');
-      // We could use a query param but StudioDashboard currently uses state
+      if (isBenched) {
+        const res = await removeTalentFromBench(token, profileData.professional.id);
+        if (res.ok) {
+          setIsBenched(false);
+          toast.success("Removed from bench successfully.");
+        } else {
+          toast.error("Failed to remove from bench.");
+        }
+      } else {
+        const res = await addTalentToBench(token, profileData.professional.id);
+        if (res.ok) {
+          setIsBenched(true);
+          toast.success("Added to bench successfully.");
+        } else {
+          toast.error("Failed to add to bench.");
+        }
+      }
     } catch (err) {
-      console.error('Failed to add to bench:', err);
+      console.error('Failed to toggle bench:', err);
+      toast.error("An error occurred while updating bench.");
     }
   };
 
@@ -549,17 +586,17 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             </button>
             {!isOwnProfile && isStudio && (
               <>
-                <button
+                {/* <button
                   onClick={() => setIsEngagementModalOpen(true)}
                   className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all"
                 >
                   <span className="hidden sm:inline">Request Engagement</span> <Send size={14} />
-                </button>
+                </button> */}
                 <button
                   onClick={handleToggleBench}
                   className="p-1.5 hover:bg-gray-100 rounded-lg text-[#6B7280]"
                 >
-                  <Bookmark size={18} />
+                  <Bookmark size={18} fill={isBenched ? "#6B7280" : "none"} />
                 </button>
               </>
             )}
@@ -629,7 +666,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider sm:tracking-widest">
-                  <img src="/assets/logo_blck.png" className="w-[10px] h-[10px] rounded-[2px] object-contain shrink-0" alt="" />
+                  <Award size={10} className="shrink-0 text-text-muted" />
                   <span className="truncate">Primary Skill</span>
                 </div>
                 <div className="text-xs sm:text-sm font-bold truncate">{professional?.primarySkill || 'Artist'}</div>
@@ -677,7 +714,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                   onClick={handleToggleBench}
                   className="w-14 bg-[#2563EB] hover:bg-[#1D4ED8] text-white flex items-center justify-center rounded-xl transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)]"
                 >
-                  <Bookmark size={20} fill="white" />
+                  <Bookmark size={20} fill={isBenched ? "white" : "none"} />
                 </button>
               </div>
             )}
@@ -1212,7 +1249,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
                     <div className="border-l border-[#e5e7eb] pl-4 min-w-0">
                       <div className="flex items-center gap-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#9aa0a8]">
-                        <img src="/assets/logo_blck.png" className="w-[11px] h-[11px] rounded-[2px] object-contain" alt="" /> Primary Skill
+                        <Award size={11} className="text-[#9aa0a8]" /> Primary Skill
                       </div>
                       <div className="mt-1 text-[11px] font-bold text-[#1d2532] truncate">
                         {professional?.primarySkill || 'Artist'}

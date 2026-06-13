@@ -1,18 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen, MessageSquare, Search, CheckCircle2, Globe, Shield, Clock, ExternalLink, Users, XCircle } from 'lucide-react';
+import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen, MessageSquare, Search, CheckCircle2, Globe, Shield, Clock, ExternalLink, Users, XCircle, Cpu, Laptop, Network, Sparkles } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-
-const LogoIcon = ({ size = 18, isSelected, className = "" }: { size?: number; isSelected?: boolean; className?: string }) => {
-  return (
-    <img 
-      src="/assets/logo_blck.png" 
-      className={`rounded-[3px] object-contain transition-all ${isSelected ? 'invert' : ''} ${className}`} 
-      style={{ width: size, height: size }} 
-      alt="" 
-    />
-  );
-};
 import SEO from '../components/SEO';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -115,7 +104,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
       id: 'workshops',
       title: 'Intense Workshops',
       tag: 'TECHNICAL',
-      icon: LogoIcon,
+      icon: Laptop,
       description: 'Intensive immersion into high-end production workflows. Best for bridging technical gaps in a short window.',
       list: ['4-8 Hour Session', 'Live Demo + Q&A', 'Pipeline Breakdown', 'Industry Best Practices'],
       rate: '$1,500 - $3,000 per session',
@@ -952,7 +941,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 <div className="space-y-10">
                   <div className="flex items-center gap-6">
                     <div className="w-16 h-16 bg-brand-purple/5 rounded-[24px] flex items-center justify-center text-brand-purple border border-brand-purple/10">
-                      <img src="/assets/logo_blck.png" className="w-[32px] h-[32px] rounded-[6px] object-contain" alt="" />
+                      <Network size={32} className="text-brand-purple" />
                     </div>
                     <div className="space-y-1">
                       <h1 className="text-6xl font-display font-bold text-brand-primary">AUI Nexus</h1>
@@ -977,7 +966,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   dynamicNexus.map((opp, idx) => (
                     <div key={idx} className="bg-white rounded-[48px] p-12 border border-gray-100 shadow-premium flex gap-10 group hover:border-brand-purple/30 transition-all duration-500">
                       <div className="w-32 h-32 bg-gray-50 rounded-3xl flex items-center justify-center text-brand-primary/20 shrink-0">
-                        <img src="/assets/logo_blck.png" className="w-[48px] h-[48px] rounded-[10px] object-contain group-hover:scale-110 transition-transform duration-500" alt="" />
+                        <Network size={48} className="text-brand-purple group-hover:scale-110 transition-transform duration-500" />
                       </div>
                       <div className="space-y-8">
                         <div className="space-y-4">
@@ -1040,7 +1029,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                             }}
                             className="absolute top-4 right-4 w-10 h-10 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 hover:scale-110 transition-transform"
                           >
-                            <motion.span animate={{ rotate: 90 }}><img src="/assets/logo_white.png" className="w-[16px] h-[16px] rounded-[3px] object-contain" alt="" /></motion.span>
+                            <ArrowRight size={16} />
                           </button>
                         </div>
                         <div className="space-y-1 text-left">
@@ -1097,7 +1086,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {[
                       { icon: Globe, title: 'Global Payroll', desc: 'Compliant international payments handled by us.' },
-                      { icon: LogoIcon, title: 'Technical Sync', desc: 'We stress-test the pipeline before the session.' },
+                      { icon: Cpu, title: 'Technical Sync', desc: 'We stress-test the pipeline before the session.' },
                       { icon: BookOpen, title: 'Curriculum Prep', desc: 'Syncing expert knowledge with your goals.' },
                       { icon: Shield, title: 'Verified Only', desc: 'Every teacher has at least 10+ years production exp.' }
                     ].map((item) => (
@@ -1121,7 +1110,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     <div className="space-y-8">
                       <div className="flex items-center justify-between">
                         <div className="w-12 h-12 bg-brand-surface rounded-xl flex items-center justify-center text-brand-purple">
-                          <img src="/assets/logo_blck.png" className="w-[24px] h-[24px] rounded-[5px] object-contain" alt="" />
+                          <Sparkles size={24} className="text-brand-purple" />
                         </div>
                         <span className="px-3 py-1 bg-brand-purple/10 text-brand-purple text-[10px] font-bold rounded-full uppercase tracking-wider">ELITE TIER</span>
                       </div>

@@ -164,6 +164,7 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const [actionLoadingId, setActionLoadingId] = React.useState<number | null>(null);
 
   const [skill, setSkill] = React.useState('');
+  const [otherSkillSearch, setOtherSkillSearch] = React.useState('');
   const [experience, setExperience] = React.useState('');
   const [level, setLevel] = React.useState('');
   const [position, setPosition] = React.useState('');
@@ -352,7 +353,12 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     .filter((p) => {
       if (skill !== 'other') return true;
       const s = (p.primarySkill || '').toLowerCase();
-      return !KNOWN_SKILLS.some((k) => s.includes(k));
+      const isKnown = KNOWN_SKILLS.some((k) => s.includes(k));
+      if (isKnown) return false;
+      if (otherSkillSearch.trim()) {
+        return s.includes(otherSkillSearch.toLowerCase().trim());
+      }
+      return true;
     })
     .map((p, index) => {
       const code = p.user?.talentId?.talentCode || `AUI-${String(p.id).padStart(6, '0')}`;
@@ -607,6 +613,7 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
   const resetFilters = () => {
     setSkill('');
+    setOtherSkillSearch('');
     setExperience('');
     setLevel('');
     setPosition('');
@@ -857,7 +864,12 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                   <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Skill</div>
                   <select
                     value={skill}
-                    onChange={(e) => setSkill(e.target.value)}
+                    onChange={(e) => {
+                      setSkill(e.target.value);
+                      if (e.target.value !== 'other') {
+                        setOtherSkillSearch('');
+                      }
+                    }}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-brand-primary outline-none transition-premium focus:border-brand-primary"
                   >
                     <option value="">All Skills</option>
@@ -868,6 +880,17 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
                     <option value="compositing">Compositing</option>
                     <option value="other">Other</option>
                   </select>
+                  {skill === 'other' && (
+                    <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <input
+                        type="text"
+                        value={otherSkillSearch}
+                        onChange={(e) => setOtherSkillSearch(e.target.value)}
+                        placeholder="Search custom skill..."
+                        className="w-full h-[44px] rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-brand-primary outline-none transition-premium focus:border-brand-primary"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1 text-left">

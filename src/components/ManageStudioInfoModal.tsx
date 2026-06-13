@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, Save, Building2, MapPin, Mail, Globe, 
   Users, Briefcase, Linkedin, UserCircle, 
-  Calendar, Layers, TrendingUp, Compass, Target
+  Calendar, Layers, TrendingUp, Compass, Target, Phone
 } from 'lucide-react';
 import { getStudioInfo, updateStudioInfo } from '../services/studioServices';
 import { toast } from 'react-toastify';
@@ -16,6 +16,8 @@ interface StudioInfoData {
   projectType: 'international' | 'domestic' | 'both';
   annualProjects: number;
   hiringTiers: string;
+  email: string;
+  phone: string;
 }
 
 const INITIAL_DATA: StudioInfoData = {
@@ -27,6 +29,8 @@ const INITIAL_DATA: StudioInfoData = {
   projectType: 'both',
   annualProjects: 0,
   hiringTiers: '',
+  email: '',
+  phone: '',
 };
 
 const ManageStudioInfoModal = ({ onClose }: { onClose: () => void }) => {
@@ -45,7 +49,9 @@ const ManageStudioInfoModal = ({ onClose }: { onClose: () => void }) => {
           if (payload.data) {
             setFormData({
               ...INITIAL_DATA,
-              ...payload.data
+              ...payload.data,
+              email: payload.data.email || (payload.data.user?.email || ''),
+              phone: payload.data.phone || (payload.data.user?.phone || '')
             });
           }
         }
@@ -136,6 +142,30 @@ const ManageStudioInfoModal = ({ onClose }: { onClose: () => void }) => {
                 onChange={(e) => setFormData({...formData, designation: e.target.value})}
                 className="w-full bg-brand-surface/50 border border-brand-accent/10 rounded-2xl px-6 py-4 outline-none focus:border-brand-primary transition-colors"
                 placeholder="e.g. Head of Production"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2">
+                <Mail size={12} /> Email (Read-only)
+              </label>
+              <input
+                disabled
+                type="email"
+                value={formData.email}
+                className="w-full bg-gray-100 border border-brand-accent/10 rounded-2xl px-6 py-4 outline-none text-text-muted cursor-not-allowed transition-colors"
+                placeholder="Email Address"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1 flex items-center gap-2">
+                <Phone size={12} /> Contact No.
+              </label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                className="w-full bg-brand-surface/50 border border-brand-accent/10 rounded-2xl px-6 py-4 outline-none focus:border-brand-primary transition-colors"
+                placeholder="Phone Number"
               />
             </div>
           </div>

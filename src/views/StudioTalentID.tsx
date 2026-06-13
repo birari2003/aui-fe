@@ -7,7 +7,7 @@ import {
   Linkedin, Instagram, Youtube, Twitter,
   CheckCircle2, Star, Briefcase, Users,
   Target, Layout, ShieldCheck,
-  Building2, Plus, Clock, ExternalLink
+  Building2, Plus, Clock, ExternalLink, Sparkles
 } from 'lucide-react';
 import { getStudioPublicProfileByCode } from '../services/studioProfileService';
 import { BASE_URL } from '../utils/urls';
@@ -21,6 +21,7 @@ const StudioTalentID = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const goToTalentPool = () => {
     navigate('/hire');
@@ -137,7 +138,7 @@ const StudioTalentID = () => {
 
   const seoTitle = profile ? `${profile.name} - Studio Portfolio` : "Loading Studio Profile";
   const seoDescription = profile 
-    ? `${profile.name} is a verified studio specializing in ${profile.specialty || 'creative production'}. Completed ${profile.projectsCompleted || '0'}+ projects. View their projects, open roles, and showreel.`
+    ? `${profile.name} is a verified studio specializing in ${profile.specialty || 'creative production'}. Completed ${profile.projectsCompleted || '0'} projects. View their projects, open roles, and showreel.`
     : "View studio profiles and creative showcases on AUI.";
   const seoKeywords = profile 
     ? `${profile.name}, ${profile.specialty || ''}, studio profile, animation studio, VFX studio, AUI`
@@ -222,32 +223,36 @@ const StudioTalentID = () => {
                     </a>
                   )}
                 </div>
-
-                <p className="text-white/50 text-sm md:text-base leading-relaxed max-w-3xl font-semibold italic">
-                  "{profile.about || 'We are a global creative studio delivering top-tier animation and VFX for feature films, series, and commercials.'}"
-                </p>
               </div>
             </div>
 
             {/* Middle Row: Stats Bar */}
             <div className="flex flex-wrap items-center gap-6 md:gap-10 py-4 border-y border-white/10 w-full lg:w-fit px-6 bg-white/5 backdrop-blur-sm rounded-xl">
               <div className="space-y-0">
-                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">{profile.projectsCompleted || '48'}+</div>
+                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
+                  {profile.projectsCompleted || '0'}
+                </div>
                 <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Projects</div>
               </div>
               <div className="hidden md:block h-8 w-[1px] bg-white/20" />
               <div className="space-y-0">
-                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">{profile.artistsHired || '126'}+</div>
+                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
+                  {profile.artistsHired || '0'}
+                </div>
                 <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Artists</div>
               </div>
               <div className="hidden md:block h-8 w-[1px] bg-white/20" />
               <div className="space-y-0">
-                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">{profile.yearsActive || '8'}+</div>
+                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
+                  {profile.yearsActive || '0'}
+                </div>
                 <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Years</div>
               </div>
               <div className="hidden md:block h-8 w-[1px] bg-white/20" />
               <div className="space-y-0">
-                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">{profile.awardsWon || '12'}</div>
+                <div className="text-2xl md:text-3xl font-black text-white tabular-nums tracking-tighter">
+                  {profile.awardsWon || '0'}
+                </div>
                 <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em]">Awards</div>
               </div>
             </div>
@@ -276,48 +281,79 @@ const StudioTalentID = () => {
         </div>
       </div>
 
-      {/* 2. THREE-CARD ROW: About, What We Do, Why Us */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-        {/* About Studio */}
-        <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 relative overflow-hidden h-full flex flex-col justify-between border border-gray-100 group hover:-translate-y-0.5 transition-all duration-500">
-          <div className="space-y-2">
-            <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2">About Studio</h3>
-            <p className="text-gray-500 leading-relaxed text-[13px] font-medium">
-              {profile.about || "Roll A Rock Studios is an award-winning animation and VFX studio with expertise in feature films, OTT series, commercials, and real-time content."}
-            </p>
+      {/* 2. ABOUT, WHY US, WHAT WE DO & SERVICES ROW */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 grid grid-cols-1 lg:grid-cols-3 gap-3 mt-2">
+        {/* LHS Column: About & Why Us */}
+        <div className="flex flex-col gap-3">
+          {/* About Studio */}
+          <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 relative overflow-hidden flex flex-col justify-between border border-gray-100 group hover:-translate-y-0.5 transition-all duration-500 flex-1">
+            <div className="space-y-2">
+              <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2">About Studio</h3>
+              <p className="text-gray-500 leading-relaxed text-[13px] font-medium text-justify">
+                {profile.about || "Roll A Rock Studios is an award-winning animation and VFX studio with expertise in feature films, OTT series, commercials, and real-time content."}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center ml-auto mt-4 group-hover:bg-[#4F46E5]/5 transition-colors border border-gray-100">
+              <Building2 className="text-gray-300 w-6 h-6 group-hover:text-[#4F46E5] transition-colors" />
+            </div>
           </div>
-          <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center ml-auto mt-4 group-hover:bg-[#4F46E5]/5 transition-colors border border-gray-100">
-            <Building2 className="text-gray-300 w-6 h-6 group-hover:text-[#4F46E5] transition-colors" />
+
+          {/* Why Work With Us */}
+          <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 border border-gray-100 hover:-translate-y-0.5 transition-all duration-500 flex-1">
+            <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2 mb-3 text-left">Why Work With Us</h3>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {(Array.isArray(profile.whyWorkWithUs) && profile.whyWorkWithUs.length > 0 ? profile.whyWorkWithUs : ['Creative Team', 'On-time Delivery', 'Global Standards', 'Learning Hub', 'Cutting-edge Tech', 'Vibrant Culture']).slice(0, 6).map((point: string, i: number) => (
+                <div key={i} className="flex items-start gap-2.5 group">
+                  <div className="w-6 h-6 bg-[#EEF2FF] rounded-lg flex items-center justify-center text-[#4F46E5] shrink-0 mt-0.5 group-hover:bg-[#4F46E5] group-hover:text-white transition-all shadow-sm">
+                     {i % 2 === 0 ? <CheckCircle2 size={12} /> : <Star size={12} />}
+                  </div>
+                  <p className="text-[12px] font-medium text-gray-500 leading-relaxed text-justify flex-1 transition-colors">
+                    {point}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* What We Do */}
-        <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 h-full border border-gray-100 hover:-translate-y-0.5 transition-all duration-500">
-          <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2 mb-3">What We Do</h3>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-            {(Array.isArray(profile.whatWeDo) && profile.whatWeDo.length > 0 ? profile.whatWeDo : ['Concept Development', 'Lighting & Rendering', 'Animation Production', 'Post Production', 'Visual Effects', 'Real-time Engines']).slice(0, 6).map((service: string, i: number) => (
-              <div key={i} className="flex items-center gap-2 group">
-                <div className="w-8 h-8 bg-[#EEF2FF] rounded-lg flex items-center justify-center text-[#4F46E5] shrink-0 group-hover:bg-[#4F46E5] group-hover:text-white transition-all shadow-sm">
-                  {i === 0 ? <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain group-hover:invert transition-all" alt="" /> : i === 1 ? <Target size={14} /> : i === 2 ? <Layout size={14} /> : i === 3 ? <Clock size={14} /> : i === 4 ? <ShieldCheck size={14} /> : <img src="/assets/logo_blck.png" className="w-[14px] h-[14px] rounded-[3px] object-contain group-hover:invert transition-all" alt="" />}
+        {/* RHS Column: What We Do & Services (Wide Card, Spans 2 Cols on large screens) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 border border-gray-100 hover:-translate-y-0.5 transition-all duration-500 flex flex-col">
+          <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2 mb-4 text-left">What We Do</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+            {/* Left Column: What We Do (Big sentences, justify aligned) */}
+            <div className="space-y-3 pr-2 text-justify">
+              {(Array.isArray(profile.whatWeDo) && profile.whatWeDo.length > 0 ? profile.whatWeDo : [
+                "We produce high-end character animation, visual effects, and immersive virtual production for filmmakers worldwide.",
+                "Our dedicated team leverages cutting-edge technology to transform creative concepts into stunning cinematic realities."
+              ]).map((paragraph: string, i: number) => (
+                <div key={i} className="flex gap-2.5 items-start">
+                  <div className="w-5 h-5 bg-[#EEF2FF] rounded-md flex items-center justify-center text-[#4F46E5] shrink-0 mt-0.5 shadow-sm">
+                    <Sparkles size={11} />
+                  </div>
+                  <p className="text-gray-500 leading-relaxed text-[12.5px] font-medium flex-1">
+                    {paragraph}
+                  </p>
                 </div>
-                <span className="text-[11px] font-black text-gray-700 leading-tight group-hover:text-[#4F46E5] transition-colors">{service}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
 
-        {/* Why Work With Us */}
-        <div className="bg-white rounded-2xl p-4 shadow-lg shadow-gray-200/50 h-full border border-gray-100 hover:-translate-y-0.5 transition-all duration-500">
-          <h3 className="text-lg font-black tracking-tight border-b border-gray-50 pb-2 mb-3">Why Work With Us</h3>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-            {(Array.isArray(profile.whyWorkWithUs) && profile.whyWorkWithUs.length > 0 ? profile.whyWorkWithUs : ['Creative Team', 'On-time Delivery', 'Global Standards', 'Learning Hub', 'Cutting-edge Tech', 'Vibrant Culture']).slice(0, 6).map((point: string, i: number) => (
-              <div key={i} className="flex items-center gap-2 group">
-                <div className="w-8 h-8 bg-[#EEF2FF] rounded-lg flex items-center justify-center text-[#4F46E5] shrink-0 group-hover:bg-[#4F46E5] group-hover:text-white transition-all shadow-sm">
-                   {i % 2 === 0 ? <CheckCircle2 size={14} /> : <Star size={14} />}
-                </div>
-                <span className="text-[11px] font-black text-gray-700 leading-tight group-hover:text-[#4F46E5] transition-colors">{point}</span>
+            {/* Right Column: Services (Small words / tags / button styles) */}
+            <div className="border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 text-left">Services Provided</h4>
+              <div className="flex flex-wrap gap-2">
+                {(Array.isArray(profile.services) && profile.services.length > 0 ? profile.services : [
+                  'Programming', 'Development', 'Teaching', 'Skill Development'
+                ]).map((service: string, i: number) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-[#EEF2FF] border border-gray-100 rounded-xl group transition-all duration-300">
+                    <div className="w-5 h-5 bg-white group-hover:bg-[#4F46E5] group-hover:text-white rounded-md flex items-center justify-center text-[#4F46E5] shrink-0 transition-colors shadow-sm">
+                      {i % 4 === 0 ? <Sparkles size={11} /> : i % 4 === 1 ? <Target size={11} /> : i % 4 === 2 ? <Layout size={11} /> : <Clock size={11} />}
+                    </div>
+                    <span className="text-[11px] font-black text-gray-700 leading-tight group-hover:text-[#4F46E5] transition-colors">{service}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
@@ -347,26 +383,28 @@ const StudioTalentID = () => {
                       </div>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-                      <div className="text-white font-black text-[9px] tracking-[0.2em] uppercase opacity-80">02:45 / 02:45</div>
+                      <div className="text-white font-black text-[9px] tracking-[0.2em] uppercase opacity-80">
+                        {Array.isArray(profile.extraVideos) && profile.extraVideos.length > 0 ? `${profile.extraVideos.length + 1} Videos Available` : 'Showreel'}
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="relative w-full h-full">
                     <iframe 
-                      src={getEmbedUrl(profile.studioReelUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4')} 
+                      src={getEmbedUrl(currentVideoUrl || profile.studioReelUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4')} 
                       className="w-full h-full border-0" 
                       allow="autoplay; fullscreen" 
                       title="Studio Reel"
                     />
-                    {profile.studioReelUrl && (profile.studioReelUrl.includes('youtube.com') || profile.studioReelUrl.includes('youtu.be') || profile.studioReelUrl.includes('vimeo.com')) && (
+                    {(currentVideoUrl || profile.studioReelUrl) && ((currentVideoUrl || profile.studioReelUrl).includes('youtube.com') || (currentVideoUrl || profile.studioReelUrl).includes('youtu.be') || (currentVideoUrl || profile.studioReelUrl).includes('vimeo.com')) && (
                       <a
-                        href={profile.studioReelUrl}
+                        href={currentVideoUrl || profile.studioReelUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-20"
                       >
                         <ExternalLink size={12} className="text-white" />
-                        Watch on {profile.studioReelUrl.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                        Watch on {(currentVideoUrl || profile.studioReelUrl).includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
                       </a>
                     )}
                   </div>
@@ -376,27 +414,50 @@ const StudioTalentID = () => {
               {/* More Videos List */}
               <div className="flex-[3] space-y-3">
                 <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] border-l-4 border-[#4F46E5] pl-2">Videos</h4>
-                <div className="space-y-2">
-                  {[
-                    { title: 'Showreel 2024', dur: '02:45' },
-                    { title: 'Cyber City 2099', dur: '03:12' },
-                    { title: 'The Last Kingdom', dur: '04:03' },
-                    { title: 'BTS - Production', dur: '02:48' },
-                  ].map((v, i) => (
-                    <div key={i} className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-all cursor-pointer group border border-transparent hover:border-gray-100">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {/* Main Showreel */}
+                  {profile.studioReelUrl && (
+                    <div 
+                      onClick={() => {
+                        setCurrentVideoUrl(profile.studioReelUrl);
+                        setIsPlaying(true);
+                      }}
+                      className={`flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-all cursor-pointer group border ${(!currentVideoUrl || currentVideoUrl === profile.studioReelUrl) ? 'border-[#4F46E5]/30 bg-gray-50' : 'border-transparent hover:border-gray-100'}`}
+                    >
                       <div className="w-20 h-14 bg-gray-900 rounded-md shrink-0 flex items-center justify-center overflow-hidden border border-gray-100 relative shadow-sm">
-                         <Play size={12} className="text-white/30 group-hover:text-white transition-all" />
+                         <Play size={12} className={`${(!currentVideoUrl || currentVideoUrl === profile.studioReelUrl) ? 'text-[#4F46E5]' : 'text-white/30 group-hover:text-white'} transition-all`} />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[9px] font-black text-gray-800 truncate leading-tight group-hover:text-[#4F46E5] transition-colors">{v.title}</div>
-                        <div className="text-[8px] text-gray-400 font-bold uppercase mt-0.5 tracking-tighter">{v.dur}</div>
+                        <div className={`text-[9px] font-black truncate leading-tight group-hover:text-[#4F46E5] transition-colors ${(!currentVideoUrl || currentVideoUrl === profile.studioReelUrl) ? 'text-[#4F46E5] font-black' : 'text-gray-800'}`}>Main Showreel</div>
+                        <div className="text-[8px] text-gray-400 font-bold uppercase mt-0.5 tracking-tighter">Reel</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {Array.isArray(profile.extraVideos) && profile.extraVideos.map((v: any, i: number) => (
+                    <div 
+                      key={i} 
+                      onClick={() => {
+                        setCurrentVideoUrl(v.url);
+                        setIsPlaying(true);
+                      }}
+                      className={`flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded-lg transition-all cursor-pointer group border ${currentVideoUrl === v.url ? 'border-[#4F46E5]/30 bg-gray-50' : 'border-transparent hover:border-gray-100'}`}
+                    >
+                      <div className="w-20 h-14 bg-gray-900 rounded-md shrink-0 flex items-center justify-center overflow-hidden border border-gray-100 relative shadow-sm">
+                         <Play size={12} className={`${currentVideoUrl === v.url ? 'text-[#4F46E5]' : 'text-white/30 group-hover:text-white'} transition-all`} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className={`text-[9px] font-black truncate leading-tight group-hover:text-[#4F46E5] transition-colors ${currentVideoUrl === v.url ? 'text-[#4F46E5] font-black' : 'text-gray-800'}`}>{v.title || `Video ${i + 1}`}</div>
+                        {v.duration && <div className="text-[8px] text-gray-400 font-bold uppercase mt-0.5 tracking-tighter">{v.duration}</div>}
                       </div>
                     </div>
                   ))}
+                  {(!profile.extraVideos || profile.extraVideos.length === 0) && !profile.studioReelUrl && (
+                    <div className="text-center py-6 text-[10px] text-gray-400 font-medium">
+                      No videos uploaded.
+                    </div>
+                  )}
                 </div>
-                <button className="text-[9px] font-black text-[#4F46E5] uppercase tracking-[0.2em] flex items-center gap-1 hover:translate-x-1 transition-transform px-1">
-                  View <ArrowRight size={10} />
-                </button>
               </div>
             </div>
           </div>

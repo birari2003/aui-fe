@@ -12,13 +12,6 @@ import {
   Trophy, ExternalLink
 } from 'lucide-react';
 
-const LogoIconWhite = ({ size = 18 }: { size?: number }) => {
-  return <img src="/assets/logo_white.png" className="rounded-[3px] object-contain" style={{ width: size, height: size }} alt="" />;
-};
-
-const LogoIconBlack = ({ size = 24 }: { size?: number }) => {
-  return <img src="/assets/logo_blck.png" className="rounded-[4px] object-contain group-hover:invert transition-all" style={{ width: size, height: size }} alt="" />;
-};
 import { getInstitutePublicProfileByCode } from '../services/instituteProfileService';
 import { BASE_URL } from '../utils/urls';
 
@@ -234,7 +227,7 @@ const InstitutePublicProfile = () => {
              </div>
              <div className="flex gap-12">
                 {[
-                  { label: 'Industry Workshops Conducted', val: profile.workshopsConducted || '24', icon: LogoIconWhite },
+                  { label: 'Industry Workshops Conducted', val: profile.workshopsConducted || '24', icon: BookOpen },
                   { label: 'Mentorship Sessions Completed', val: profile.mentorshipSessions || '18', icon: Users },
                   { label: 'Portfolio Reviews Conducted', val: profile.portfolioReviews || '12', icon: Briefcase },
                 ].map((p, i) => (
@@ -262,7 +255,7 @@ const InstitutePublicProfile = () => {
         {/* Features Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
            {[
-             { label: 'Industry-Oriented Curriculum', icon: LogoIconBlack, desc: 'Designed with industry experts' },
+             { label: 'Industry-Oriented Curriculum', icon: GraduationCap, desc: 'Designed with industry experts' },
              { label: 'Expert Mentorship', icon: Users, desc: 'Learn from working professionals' },
              { label: 'Practical Learning', icon: Layout, desc: 'Hands-on projects and live training' },
              { label: 'Placement Support', icon: BarChart3, desc: '100+ hiring partners across India' },

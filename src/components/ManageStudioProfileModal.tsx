@@ -18,7 +18,7 @@ interface Project {
 
 interface ExtraVideo {
   title: string;
-  duration: string;
+  duration?: string;
   url: string;
 }
 
@@ -30,11 +30,12 @@ interface StudioProfileData {
   phone: string;
   website: string;
   about: string;
-  projectsCompleted: number;
-  artistsHired: number;
-  yearsActive: number;
-  awardsWon: number;
+  projectsCompleted: string;
+  artistsHired: string;
+  yearsActive: string;
+  awardsWon: string;
   whatWeDo: string[];
+  services: string[];
   whyWorkWithUs: string[];
   studioReelUrl: string;
   extraVideos: ExtraVideo[];
@@ -58,11 +59,12 @@ const INITIAL_DATA: StudioProfileData = {
   phone: '',
   website: '',
   about: '',
-  projectsCompleted: 0,
-  artistsHired: 0,
-  yearsActive: 0,
-  awardsWon: 0,
+  projectsCompleted: '0',
+  artistsHired: '0',
+  yearsActive: '0',
+  awardsWon: '0',
   whatWeDo: [],
+  services: [],
   whyWorkWithUs: [],
   studioReelUrl: '',
   extraVideos: [],
@@ -100,6 +102,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
               ...INITIAL_DATA,
               ...payload.data,
               whatWeDo: payload.data.whatWeDo || [],
+              services: payload.data.services || [],
               whyWorkWithUs: payload.data.whyWorkWithUs || [],
               extraVideos: payload.data.extraVideos || [],
               projects: payload.data.projects || [],
@@ -157,6 +160,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
 
       // Handle JSON fields
       data.append('whatWeDo', JSON.stringify(formData.whatWeDo));
+      data.append('services', JSON.stringify(formData.services));
       data.append('whyWorkWithUs', JSON.stringify(formData.whyWorkWithUs));
       data.append('extraVideos', JSON.stringify(formData.extraVideos));
       data.append('socialLinks', JSON.stringify(formData.socialLinks));
@@ -381,9 +385,9 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                     <stat.icon className="mx-auto text-brand-accent" size={20} />
                     <label className="text-[8px] font-bold uppercase tracking-widest text-text-muted">{stat.label}</label>
                     <input
-                      type="number"
+                      type="text"
                       value={(formData as any)[stat.key]}
-                      onChange={(e) => setFormData({...formData, [stat.key]: parseInt(e.target.value) || 0})}
+                      onChange={(e) => setFormData({...formData, [stat.key]: e.target.value})}
                       className="w-full bg-transparent text-center font-bold text-xl outline-none"
                     />
                   </div>
@@ -392,20 +396,20 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted text-left">What We Do (Services)</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted text-left">What We Do (Core Focus / Paragraphs)</label>
                   <button 
-                    onClick={() => setFormData({...formData, whatWeDo: [...formData.whatWeDo, '']})}
+                    onClick={() => setFormData({...formData, whatWeDo: [...(formData.whatWeDo || []), '']})}
                     className="text-xs font-bold text-brand-primary hover:underline"
                   >
-                    + Add Service
+                    + Add What We Do
                   </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Array.isArray(formData.whatWeDo) && formData.whatWeDo.map((service, idx) => (
+                <div className="space-y-3">
+                  {Array.isArray(formData.whatWeDo) && formData.whatWeDo.map((item, idx) => (
                     <div key={idx} className="flex gap-2">
                       <input
                         type="text"
-                        value={service}
+                        value={item}
                         onChange={(e) => {
                           const currentList = Array.isArray(formData.whatWeDo) ? [...formData.whatWeDo] : [];
                           const newList = [...currentList];
@@ -413,11 +417,47 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                           setFormData({...formData, whatWeDo: newList});
                         }}
                         className="flex-1 bg-brand-surface/50 border border-brand-accent/10 rounded-xl px-4 py-3 text-sm outline-none text-left"
-                        placeholder="e.g. Concept Development"
+                        placeholder="e.g. Creating visually stunning CGI animations with industry-standard render farms."
                       />
                       <button onClick={() => {
                         const newList = formData.whatWeDo.filter((_, i) => i !== idx);
                         setFormData({...formData, whatWeDo: newList});
+                      }} className="p-3 text-red-500 hover:bg-red-50 rounded-xl">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted text-left">Services (Tags / Small Words)</label>
+                  <button 
+                    onClick={() => setFormData({...formData, services: [...(formData.services || []), '']})}
+                    className="text-xs font-bold text-brand-primary hover:underline"
+                  >
+                    + Add Service
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Array.isArray(formData.services) && formData.services.map((service, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={service}
+                        onChange={(e) => {
+                          const currentList = Array.isArray(formData.services) ? [...formData.services] : [];
+                          const newList = [...currentList];
+                          newList[idx] = e.target.value;
+                          setFormData({...formData, services: newList});
+                        }}
+                        className="flex-1 bg-brand-surface/50 border border-brand-accent/10 rounded-xl px-4 py-3 text-sm outline-none text-left"
+                        placeholder="e.g. Programming"
+                      />
+                      <button onClick={() => {
+                        const newList = formData.services.filter((_, i) => i !== idx);
+                        setFormData({...formData, services: newList});
                       }} className="p-3 text-red-500 hover:bg-red-50 rounded-xl">
                         <Trash2 size={16} />
                       </button>
@@ -480,8 +520,82 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                 </div>
               </div>
 
+              {/* Studio Shorts / Extra Videos */}
+              <div className="space-y-6 border-t border-gray-50 pt-8">
+                <div className="flex items-center justify-between">
+                  <div className="text-left">
+                    <h3 className="text-xl font-bold text-brand-primary">Studio Shorts / Extra Videos</h3>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-0.5">
+                      Add small videos that show up alongside the main showreel
+                    </p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData, 
+                      extraVideos: [...(formData.extraVideos || []), { title: '', url: '' }]
+                    })}
+                    className="px-4 py-2 bg-brand-primary text-white rounded-xl text-xs font-bold hover:bg-brand-primary/90"
+                  >
+                    + Add Video
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {Array.isArray(formData.extraVideos) && formData.extraVideos.map((video, idx) => (
+                    <div key={idx} className="p-4 bg-brand-surface/30 rounded-2xl border border-brand-accent/10 flex flex-col md:flex-row gap-4 items-center justify-between">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 w-full">
+                        <div className="space-y-1 text-left">
+                          <label className="text-[9px] font-bold uppercase tracking-widest text-text-muted">Video Title</label>
+                          <input
+                            type="text"
+                            value={video.title || ''}
+                            onChange={(e) => {
+                              const newList = [...(formData.extraVideos || [])];
+                              newList[idx] = { ...newList[idx], title: e.target.value };
+                              setFormData({...formData, extraVideos: newList});
+                            }}
+                            placeholder="e.g. Cyber City 2099"
+                            className="w-full bg-white border border-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1 text-left">
+                          <label className="text-[9px] font-bold uppercase tracking-widest text-text-muted">Video URL</label>
+                          <input
+                            type="text"
+                            value={video.url || ''}
+                            onChange={(e) => {
+                              const newList = [...(formData.extraVideos || [])];
+                              newList[idx] = { ...newList[idx], url: e.target.value };
+                              setFormData({...formData, extraVideos: newList});
+                            }}
+                            placeholder="https://youtube.com/watch?v=..."
+                            className="w-full bg-white border border-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none"
+                          />
+                        </div>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newList = formData.extraVideos.filter((_, i) => i !== idx);
+                          setFormData({...formData, extraVideos: newList});
+                        }} 
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-xl shrink-0 mt-4 md:mt-0"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  ))}
+                  {(!formData.extraVideos || formData.extraVideos.length === 0) && (
+                    <div className="text-center py-6 border border-dashed border-brand-accent/20 rounded-2xl text-xs text-text-muted">
+                      No extra videos added yet. Click "+ Add Video" to add your shorts.
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Projects Section */}
-              <div className="space-y-6">
+              <div className="space-y-6 border-t border-gray-50 pt-8">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-bold text-brand-primary text-left">Our Projects</h3>
                   <button 
@@ -510,7 +624,7 @@ const ManageStudioProfileModal = ({ onClose }: { onClose: () => void }) => {
                             if (file) setProjectThumbnailFiles({...projectThumbnailFiles, [idx]: file});
                           }} />
                           <label htmlFor={`project-thumb-${idx}`} className="text-[10px] font-bold text-brand-primary hover:underline cursor-pointer">
-                            Change Image
+                            {(projectThumbnailFiles[idx] || project.thumbnail) ? 'Change Image' : 'Add Image'}
                           </label>
                         </div>
                         <button onClick={() => {
