@@ -254,14 +254,18 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
   const filteredRequests = requestRows.filter(row => {
     const professional = row.professional;
     const name = (professional?.fullName || professional?.user?.email || '').toLowerCase();
-    return name.includes(searchTerm.toLowerCase()) && row.status === 'pending';
+    const position = (professional?.position || 'Artist').replace('_', ' ').toLowerCase();
+    const search = searchTerm.toLowerCase();
+    return (name.includes(search) || position.includes(search)) && row.status === 'pending';
   });
 
   // Filter applications for pipeline tabs
   const filteredApplications = applications.filter(app => {
     const professional = app.professional;
     const name = (professional?.fullName || professional?.user?.email || '').toLowerCase();
-    if (!name.includes(searchTerm.toLowerCase())) return false;
+    const position = (professional?.currentRole || app.verifiedResponse?.position || 'Artist').replace('_', ' ').toLowerCase();
+    const search = searchTerm.toLowerCase();
+    if (!name.includes(search) && !position.includes(search)) return false;
     if (activeTab === 'shortlisting') return app.status === 'shortlisted' || (app.status === 'applied' && app.studioRequestId);
     return app.status === activeTab;
   });

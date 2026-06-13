@@ -28,6 +28,27 @@ const EditInstituteModal: React.FC<EditInstituteModalProps> = ({ isOpen, onClose
     industryExposure: profile?.industryExposure || 'never',
   });
 
+  React.useEffect(() => {
+    if (isOpen && profile) {
+      setFormData({
+        instituteName: profile.instituteName || '',
+        contactPerson: profile.contactPerson || '',
+        email: profile.email || '',
+        website: profile.website || '',
+        location: profile.location || '',
+        description: profile.description || '',
+        establishedYear: profile.establishedYear || '',
+        avatarUrl: profile.avatarUrl || '',
+        bannerUrl: profile.bannerUrl || '',
+        studentCount: profile.studentCount || 0,
+        branchCount: profile.branchCount || 0,
+        coursesOffered: profile.coursesOffered || '',
+        conductsWorkshops: profile.conductsWorkshops || false,
+        industryExposure: profile.industryExposure || 'never',
+      });
+    }
+  }, [isOpen, profile]);
+
   const [loading, setLoading] = React.useState(false);
 
   if (!isOpen) return null;
