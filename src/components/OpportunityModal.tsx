@@ -113,37 +113,37 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
             className="bg-white rounded-[3rem] w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl"
           >
             {/* Header */}
-            <div className="p-8 bg-[#0a0a0a] text-white flex items-center justify-between">
-              <div className="flex items-center gap-6">
+            <div className="p-6 md:p-8 bg-[#0a0a0a] text-white flex flex-col md:flex-row md:items-center justify-between gap-6 relative">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-6 pr-12 md:pr-0">
                 <div className="space-y-1">
-                  <h2 className="text-3xl font-black tracking-tight">Send Opportunity</h2>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">PROFESSIONAL STUDIO OUTREACH</p>
+                  <h2 className="text-2xl md:text-3xl font-black tracking-tight">Send Opportunity</h2>
+                  <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">PROFESSIONAL STUDIO OUTREACH</p>
                 </div>
-                <div className="h-12 w-[1px] bg-gray-800 mx-2" />
+                <div className="hidden sm:block h-12 w-[1px] bg-gray-800 mx-2" />
                 <div className="flex items-center gap-3">
                   <TalentAvatar
                     talentCode={artist.talentCode || ''}
                     initialAvatarUrl={artist.avatar}
-                    className="w-12 h-12 rounded-xl object-cover"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-xl object-cover"
                     iconSize={20}
                     placeholderClassName="bg-white/5 text-gray-400 border border-white/10"
                   />
                   <div className="space-y-0.5">
-                    <div className="text-sm font-black text-white">{artist.name}</div>
+                    <div className="text-sm font-black text-white leading-tight">{artist.name}</div>
                     <div className="text-[9px] font-black uppercase tracking-widest text-gray-500">{artist.role}</div>
                   </div>
                 </div>
               </div>
               <button 
                 onClick={onClose}
-                className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="absolute top-6 right-6 md:relative md:top-0 md:right-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors shrink-0"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-10 space-y-12 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 md:space-y-12 custom-scrollbar">
               
               {/* Role Context */}
               <section className="space-y-8">
@@ -154,7 +154,7 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                   <h3 className="text-xs font-black uppercase tracking-[0.25em] text-gray-900">ROLE CONTEXT</h3>
                 </div>
 
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">ROLE TITLE</label>
                     <input 
@@ -209,8 +209,8 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
               </section>
 
               {/* Overview & Requirements */}
-              <div className="grid grid-cols-2 gap-10">
-                <section className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                <section className="space-y-4 md:space-y-8">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                       <Sparkles size={16} />
@@ -218,12 +218,14 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                     <h3 className="text-xs font-black uppercase tracking-[0.25em] text-gray-900">OPPORTUNITY OVERVIEW</h3>
                   </div>
                   <textarea 
+                    value={formData.opportunityOverview}
+                    onChange={(e) => setFormData({...formData, opportunityOverview: e.target.value})}
                     placeholder="Describe the project, team, and what makes this opportunity interesting to a top-tier artist."
-                    className="w-full min-h-[160px] p-6 bg-white border border-gray-100 rounded-[2rem] text-xs font-medium text-gray-900 outline-none focus:border-emerald-600 transition-colors resize-none leading-relaxed"
+                    className="w-full min-h-[120px] md:min-h-[160px] p-6 bg-white border border-gray-100 rounded-[2rem] text-xs font-medium text-gray-900 outline-none focus:border-emerald-600 transition-colors resize-none leading-relaxed"
                   />
                 </section>
 
-                <section className="space-y-8">
+                <section className="space-y-4 md:space-y-8">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
                       <User size={16} />
@@ -231,8 +233,10 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                     <h3 className="text-xs font-black uppercase tracking-[0.25em] text-gray-900">ROLE REQUIREMENTS</h3>
                   </div>
                   <textarea 
+                    value={formData.roleRequirements}
+                    onChange={(e) => setFormData({...formData, roleRequirements: e.target.value})}
                     placeholder="Explain the specific requirements, tools, experience, and skills needed for this role."
-                    className="w-full min-h-[160px] p-6 bg-white border border-gray-100 rounded-[2rem] text-xs font-medium text-gray-900 outline-none focus:border-orange-500 transition-colors resize-none leading-relaxed"
+                    className="w-full min-h-[120px] md:min-h-[160px] p-6 bg-white border border-gray-100 rounded-[2rem] text-xs font-medium text-gray-900 outline-none focus:border-orange-500 transition-colors resize-none leading-relaxed"
                   />
                 </section>
               </div>
@@ -240,7 +244,7 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
               <div className="h-[1px] bg-gray-50 w-full" />
 
               {/* Timeline & Work Setup */}
-              <div className="grid grid-cols-2 gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                 <section className="space-y-8">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
@@ -255,7 +259,7 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                         <button
                           key={avail}
                           onClick={() => setFormData({...formData, startAvailability: avail})}
-                          className={`flex-1 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                          className={`flex-1 rounded-xl text-[8px] sm:text-[9px] font-black uppercase tracking-wider sm:tracking-widest transition-all ${
                             formData.startAvailability === avail ? 'bg-black text-white shadow-lg' : 'text-gray-300 hover:text-gray-500'
                           }`}
                         >
@@ -273,7 +277,7 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                     </div>
                     <h3 className="text-xs font-black uppercase tracking-[0.25em] text-gray-900">WORK SETUP</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">WORK MODE</label>
                       <select 
@@ -373,7 +377,7 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="p-5 bg-gray-50/50 border border-gray-100 rounded-2xl opacity-60 flex justify-between items-start">
                     <div className="space-y-1">
                       <h4 className="text-[10px] font-black text-gray-400">Talent ID</h4>
@@ -431,10 +435,10 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
             </div>
 
             {/* Footer */}
-            <div className="p-8 border-t border-gray-50 bg-gray-50/30 flex items-center justify-between">
+            <div className="p-6 md:p-8 border-t border-gray-50 bg-gray-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
               <button
                 onClick={onClose}
-                className="h-16 px-12 bg-white border border-gray-100 text-[#1a1f28] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-50 transition-all"
+                className="w-full sm:w-auto h-16 px-12 bg-white border border-gray-100 text-[#1a1f28] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-gray-50 transition-all flex items-center justify-center"
               >
                 CANCEL
               </button>
@@ -449,7 +453,7 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                   };
                   onSend(dataToSend);
                 }}
-                className="h-16 px-16 bg-[#0a0a0a] disabled:opacity-50 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-black/20 hover:bg-black/90 transition-all active:scale-[0.98]"
+                className="w-full sm:w-auto h-16 px-16 bg-[#0a0a0a] disabled:opacity-50 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl shadow-black/20 hover:bg-black/90 transition-all active:scale-[0.98]"
               >
                 {loading ? 'SENDING...' : 'SEND OPPORTUNITY'}
                 {!loading && <ArrowUpRight size={18} />}

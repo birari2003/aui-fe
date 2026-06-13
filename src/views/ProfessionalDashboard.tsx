@@ -111,8 +111,8 @@ const VerificationSheetModal = ({
         relocationPreference: '',
         aboutMe: profile.bio || '',
         showreelLinks: [
-          publicProfile?.showreel?.url || ''
-        ].filter((l: string) => l),
+          publicProfile?.showreel?.url || publicProfile?.showreelUrl || publicProfile?.showreel_url || profile?.showreelUrl || profile?.showreel_url || ''
+        ],
         workLedger: ledger
       });
     }
@@ -638,22 +638,30 @@ const OpportunityDetailsModal = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-6 border-y border-gray-100">
+          <div className={`grid grid-cols-2 ${opportunity.professionalId ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-8 py-6 border-y border-gray-100`}>
             <div className="space-y-1">
               <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Timeline</p>
-              <p className="font-bold text-brand-primary">{opportunity.startDate || 'Immediate'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Experience</p>
               <p className="font-bold text-brand-primary">
-                {opportunity.experienceRequired || opportunity.experience_required || opportunity.experienceLevel || opportunity.experience_level || 'N/A'}
+                {opportunity.startAvailability || opportunity.start_availability || opportunity.startDate || 'Immediate'}
               </p>
             </div>
+            {!opportunity.professionalId && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Experience</p>
+                <p className="font-bold text-brand-primary">
+                  {opportunity.experienceRequired || opportunity.experience_required || opportunity.experienceLevel || opportunity.experience_level || 'N/A'}
+                </p>
+              </div>
+            )}
             <div className="space-y-1">
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Engagement</p>
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                {opportunity.professionalId ? 'Location' : 'Engagement'}
+              </p>
               <p className="font-bold text-brand-primary">
-                {opportunity.engagementType || opportunity.engagement_type || opportunity.projectTimeline || opportunity.project_timeline || 'N/A'}
-                {opportunity.contractDuration && ` (${opportunity.contractDuration})`}
+                {opportunity.professionalId
+                  ? (opportunity.location || 'N/A')
+                  : (opportunity.engagementType || opportunity.engagement_type || opportunity.projectTimeline || opportunity.project_timeline || 'N/A')}
+                {!opportunity.professionalId && opportunity.contractDuration && ` (${opportunity.contractDuration})`}
               </p>
             </div>
             <div className="space-y-1">
@@ -1555,7 +1563,8 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                               hired: { label: 'HIRED', progress: 5, color: 'bg-brand-primary' },
                               rejected: { label: 'REJECTED', progress: 0, color: 'bg-red-500' },
                             };
-                            const currentStatus = statusMap[app.status] || { label: app.status.toUpperCase(), progress: 1, color: 'bg-gray-500' };
+                            const displayStatus = app.status === 'applied' && app.studioRequestId ? 'shortlisted' : app.status;
+                            const currentStatus = statusMap[displayStatus] || { label: displayStatus.toUpperCase(), progress: 1, color: 'bg-gray-500' };
 
                             return (
                               <tr key={app.id} className="hover:bg-gray-50/30 transition-colors">

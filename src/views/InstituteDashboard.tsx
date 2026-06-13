@@ -538,7 +538,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       <div className="space-y-8">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-500 ${selectedModel === model.id ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/20' : 'bg-gray-50 text-brand-primary/40 group-hover:bg-brand-purple/10 group-hover:text-brand-purple'
                           }`}>
-                          <model.icon size={28} isSelected={selectedModel === model.id} />
+                          <model.icon size={28} />
                         </div>
 
                         <div className="space-y-3">

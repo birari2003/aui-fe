@@ -11,9 +11,12 @@ import { searchProfessionals } from '../services/searchServices';
 import {
   addTalentToBench,
   createStudioRequestProfessional,
+  finalizeAgreement,
+  getJobApplications,
   getStudioRequestProfessionals,
   getTalentBench,
   removeTalentFromBench,
+  updateApplicationStatus,
   updateStudioRequestProfessional,
 } from '../services/studioServices';
 import { getMyStudioPublicProfile } from '../services/studioProfileService';
@@ -176,6 +179,7 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
 
   const [benchRows, setBenchRows] = React.useState<BenchRow[]>([]);
   const [requestRows, setRequestRows] = React.useState<StudioRequestRow[]>([]);
+  const [applications, setApplications] = React.useState<any[]>([]);
 
   const [opportunityModalOpen, setOpportunityModalOpen] = React.useState(false);
   const [selectedProfessional, setSelectedProfessional] = React.useState<ProfessionalRow | null>(null);
@@ -235,9 +239,10 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     if (!token) return;
 
     try {
-      const [benchRes, requestRes] = await Promise.all([
+      const [benchRes, requestRes, appsRes] = await Promise.all([
         getTalentBench(token),
         getStudioRequestProfessionals(token),
+        getJobApplications(token),
       ]);
 
       if (benchRes.ok) {
@@ -248,6 +253,22 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
       if (requestRes.ok) {
         const requestPayload = await requestRes.json();
         setRequestRows(Array.isArray(requestPayload?.data) ? requestPayload.data : []);
+      }
+
+      if (appsRes.ok) {
+        const appsPayload = await appsRes.json();
+        const parsedApps = (appsPayload.data || []).map((app: any) => {
+          let verified = app.verifiedResponse;
+          if (typeof verified === 'string') {
+            try { verified = JSON.parse(verified); } catch (e) { verified = {}; }
+          }
+          let agreement = app.agreementDetails;
+          if (typeof agreement === 'string') {
+            try { agreement = JSON.parse(agreement); } catch (e) { agreement = {}; }
+          }
+          return { ...app, verifiedResponse: verified, agreementDetails: agreement };
+        });
+        setApplications(parsedApps);
       }
     } catch (err) {
       console.error('Failed to fetch studio data:', err);
@@ -603,6 +624,45 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
     }
     return 0;
   });
+
+  const handleUpdateApplicationStatus = async (appId: number, status: string) => {
+    if (!token) return;
+    try {
+      const res = await updateApplicationStatus(token, appId, { status });
+      if (res.ok) {
+        toast.success(`Status updated to ${status}`);
+        await fetchStudioData();
+      }
+    } catch (err) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleFinalizeAgreement = async (appId: number, agreementDetails: any) => {
+    if (!token) return;
+    try {
+      const res = await finalizeAgreement(token, appId, agreementDetails);
+      if (res.ok) {
+        toast.success('Agreement sent to artist');
+        await fetchStudioData();
+      }
+    } catch (err) {
+      toast.error('Failed to send agreement');
+    }
+  };
+
+  const handleToggleContactInfo = async (appId: number, currentVal: boolean) => {
+    if (!token) return;
+    try {
+      const res = await updateApplicationStatus(token, appId, { contactInfoShared: !currentVal });
+      if (res.ok) {
+        toast.success(currentVal ? 'Contact info hidden' : 'Contact info shared');
+        await fetchStudioData();
+      }
+    } catch (err) {
+      toast.error('Failed to update contact visibility');
+    }
+  };
 
   const statusClass: Record<string, string> = {
     pending: 'bg-gray-100 text-gray-600 border-gray-200',
@@ -1113,6 +1173,10 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
             getFileUrl={getFileUrl}
             statusClass={statusClass}
             openUpdateAgreement={openUpdateAgreement}
+            applications={applications}
+            onUpdateStatus={handleUpdateApplicationStatus}
+            onFinalizeAgreement={handleFinalizeAgreement}
+            onToggleContactInfo={handleToggleContactInfo}
           />
         )}
 
