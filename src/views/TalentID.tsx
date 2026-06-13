@@ -42,7 +42,7 @@ import QRCode from 'react-qr-code';
 import { getPublicProfileByCode } from '../services/publicProfileServices';
 import { getMe } from '../services/userServices';
 import { addTalentToBench, removeTalentFromBench, getTalentBench, createStudioRequestProfessional } from '../services/studioServices';
-import EngagementModal from '../components/EngagementModal';
+import OpportunityModal from '../components/OpportunityModal';
 import { View, UserRole } from '../types';
 import { BASE_URL } from '../utils/urls';
 
@@ -1003,11 +1003,16 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           </div>
         </div>
 
-        <EngagementModal
+        <OpportunityModal
           isOpen={isEngagementModalOpen}
           onClose={() => setIsEngagementModalOpen(false)}
-          onSubmit={handleRequestEngagement}
-          professionalName={displayName}
+          onSend={handleRequestEngagement}
+          artist={{
+            name: displayName,
+            role: professional?.primarySkill || '',
+            avatar: avatarUrl,
+            talentCode: talentId?.talentCode || '',
+          }}
           loading={isSubmittingEngagement}
         />
       </main>

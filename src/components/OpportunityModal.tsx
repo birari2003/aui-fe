@@ -25,9 +25,10 @@ interface OpportunityModalProps {
     talentCode?: string;
   } | null;
   onSend: (data: any) => void;
+  loading?: boolean;
 }
 
-const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, artist, onSend }) => {
+const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, artist, onSend, loading }) => {
   const [countries, setCountries] = useState<[string, string][]>([]);
   
   const TIME_ZONES = [
@@ -65,7 +66,8 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
     roleRequirements: '',
     startAvailability: 'IMMEDIATE',
     workMode: 'Hybrid',
-    location: 'Remote / London',
+    location: 'Worldwide',
+    customLocation: '',
     timeZonePreference: 'No Preference',
     customTimeZone: '',
     customProductionType: '',
@@ -274,12 +276,15 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">WORK MODE</label>
-                      <input 
-                        type="text" 
+                      <select 
                         value={formData.workMode}
                         onChange={(e) => setFormData({...formData, workMode: e.target.value})}
-                        className="w-full h-14 px-6 bg-white border border-gray-100 rounded-2xl text-xs font-black text-gray-900 outline-none focus:border-pink-500 transition-colors"
-                      />
+                        className="w-full h-14 px-6 bg-white border border-gray-100 rounded-2xl text-xs font-black text-gray-900 outline-none focus:border-pink-500 transition-colors appearance-none"
+                      >
+                        <option value="Hybrid">Hybrid</option>
+                        <option value="Remote">Remote</option>
+                        <option value="On-site">On-site</option>
+                      </select>
                     </div>
                     <div className="space-y-3">
                       <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">LOCATION</label>
@@ -289,12 +294,26 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                         className="w-full h-14 px-6 bg-white border border-gray-100 rounded-2xl text-xs font-black text-gray-900 outline-none focus:border-pink-500 transition-colors appearance-none"
                       >
                         <option value="Worldwide">Worldwide</option>
-                        {countries.map(([code, name]) => (
-                          <option key={code} value={name}>{name}</option>
-                        ))}
+                        <option value="Other">Other</option>
                       </select>
                     </div>
                   </div>
+                  {formData.location === 'Other' && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-2"
+                    >
+                      <input
+                        type="text"
+                        value={formData.customLocation}
+                        onChange={(e) => setFormData({...formData, customLocation: e.target.value})}
+                        placeholder="Specify location name..."
+                        required
+                        className="w-full h-12 px-6 bg-white border border-gray-100 rounded-2xl text-xs font-black text-gray-900 outline-none focus:border-pink-500 transition-colors"
+                      />
+                    </motion.div>
+                  )}
                   <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">TIME ZONE PREFERENCE</label>
                     <select 
@@ -420,18 +439,20 @@ const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onClose, ar
                 CANCEL
               </button>
               <button
+                disabled={loading}
                 onClick={() => {
                   const dataToSend = {
                     ...formData,
                     projectFormat: formData.projectFormat === 'OTHER' ? formData.customProjectFormat : formData.projectFormat,
                     timeZonePreference: formData.timeZonePreference === 'Other' ? formData.customTimeZone : formData.timeZonePreference,
+                    location: formData.location === 'Other' ? formData.customLocation : formData.location,
                   };
                   onSend(dataToSend);
                 }}
-                className="h-16 px-16 bg-[#0a0a0a] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-black/20 hover:bg-black/90 transition-all active:scale-[0.98]"
+                className="h-16 px-16 bg-[#0a0a0a] disabled:opacity-50 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl shadow-black/20 hover:bg-black/90 transition-all active:scale-[0.98]"
               >
-                SEND OPPORTUNITY
-                <ArrowUpRight size={18} />
+                {loading ? 'SENDING...' : 'SEND OPPORTUNITY'}
+                {!loading && <ArrowUpRight size={18} />}
               </button>
             </div>
           </motion.div>

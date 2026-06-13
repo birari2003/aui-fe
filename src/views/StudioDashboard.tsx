@@ -22,6 +22,7 @@ import { View } from '../types';
 import HiringByStudio from '../components/hiringByStudio';
 import OpportunityModal from '../components/OpportunityModal';
 import TalentAvatar from '../components/TalentAvatar';
+import StudioEngagements from '../components/StudioEngagements';
 
 type ProfessionalRow = {
   id: number;
@@ -1107,86 +1108,12 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
         )}
 
         {activeTab === 'engagements' && (
-          <section className="space-y-8">
-            <div className="space-y-2">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#05060b]">Engagements</h2>
-              <p className="text-base md:text-lg text-[#6f7782]">Track your active and completed work allocations.</p>
-            </div>
-
-            {requestRows.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center">
-                <p className="text-2xl font-bold text-[#0a0f1a]">No engagement requests yet</p>
-                <p className="mt-2 text-[#6f7782]">Send your first request from Bench to start tracking status here.</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {requestRows.map((row, index) => {
-                  const professional = row.professional;
-                  const image = professional?.avatarUrl ? getFileUrl(professional.avatarUrl) : '';
-                  const name = professional?.fullName || professional?.user?.email?.split('@')[0] || 'Unknown Professional';
-
-                  return (
-                    <Card key={row.id} className="rounded-2xl border border-gray-200 bg-white shadow-sm p-8">
-                      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr_0.7fr] gap-6 items-center">
-                        <div className="flex items-center gap-5 min-w-0">
-                          <TalentAvatar
-                            talentCode={professional?.user?.talentId?.talentCode || ''}
-                            initialAvatarUrl={image}
-                            className="h-24 w-24 rounded-xl object-cover"
-                            iconSize={32}
-                          />
-                          <div>
-                            <h4 className="text-xl md:text-2xl font-bold text-brand-primary">{name}</h4>
-                            <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#b2b6bc]">
-                              {(professional?.position || 'Artist').replace('_', ' ')}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc]">Project</p>
-                          <p className="text-lg md:text-xl font-bold text-brand-primary mt-1 line-clamp-1">{row.engagementBrief}</p>
-                        </div>
-
-                        <div className="justify-self-start xl:justify-self-end">
-                          {row.status === 'accepted' ? (
-                            <div className="flex flex-col items-end gap-2">
-                              <span className={`inline-block px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${statusClass.accepted}`}>
-                                Agreement Shared
-                              </span>
-                              <button
-                                onClick={() => openUpdateAgreement(row)}
-                                className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary hover:text-brand-primary/80 transition-colors"
-                              >
-                                Update Agreement
-                              </button>
-                            </div>
-                          ) : row.status === 'in_progress' || row.status === 'completed' ? (
-                            <div className="flex flex-col items-end gap-2">
-                              <span className={`inline-block px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${statusClass[row.status]}`}>
-                                {row.status === 'in_progress' ? 'Hired' : 'Completed'}
-                              </span>
-                              <div className="text-right">
-                                <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc]">Hired Amount</p>
-                                <p className="text-xl font-black text-emerald-600">{row.proposedBudget || 'N/A'}</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#b2b6bc] mb-2">Status</p>
-                              <span className={`inline-block px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-[0.18em] ${statusClass[row.status] || statusClass.pending}`}>
-                                {row.status.replace('_', ' ')}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+          <StudioEngagements
+            requestRows={requestRows}
+            getFileUrl={getFileUrl}
+            statusClass={statusClass}
+            openUpdateAgreement={openUpdateAgreement}
+          />
         )}
 
         {activeTab === 'open_roles' && (
