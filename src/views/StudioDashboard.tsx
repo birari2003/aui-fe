@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, BadgeCheck, Bookmark, Briefcase, Calendar, Check, Clock, FileText, RotateCcw, ShieldCheck, Star, Users, X, ExternalLink, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { toast } from 'react-toastify';
 import Button from '../components/Button';
@@ -162,6 +162,7 @@ const positionLabels: Record<ProfessionalRow['position'], string> = {
 
 const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [professionals, setProfessionals] = React.useState<ProfessionalRow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -186,6 +187,12 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const [submittingOpportunity, setSubmittingOpportunity] = React.useState(false);
 
   const [activeTab, setActiveTab] = React.useState<'discover' | 'bench' | 'engagements' | 'open_roles'>('discover');
+
+  React.useEffect(() => {
+    if (location.state && (location.state as any).activeTab) {
+      setActiveTab((location.state as any).activeTab);
+    }
+  }, [location.state]);
   const [inviteMode, setInviteMode] = React.useState(false);
   const [selectedJob, setSelectedJob] = React.useState<any>(null);
   const [selectedTalentIds, setSelectedTalentIds] = React.useState<Set<number>>(new Set());
@@ -635,6 +642,22 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
       }
     } catch (err) {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleWithdrawRequest = async (requestId: number) => {
+    if (!token) return;
+    try {
+      const res = await updateStudioRequestProfessional(token, requestId, { status: 'rejected' });
+      if (res.ok) {
+        toast.success('Opportunity offer withdrawn successfully');
+        await fetchStudioData();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body?.message || 'Failed to withdraw offer');
+      }
+    } catch (err) {
+      toast.error('Failed to withdraw offer');
     }
   };
 
@@ -1177,6 +1200,7 @@ const StudioDashboard = ({ setView }: { setView: (v: View) => void }) => {
             onUpdateStatus={handleUpdateApplicationStatus}
             onFinalizeAgreement={handleFinalizeAgreement}
             onToggleContactInfo={handleToggleContactInfo}
+            onWithdrawRequest={handleWithdrawRequest}
           />
         )}
 

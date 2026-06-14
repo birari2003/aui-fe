@@ -21,6 +21,7 @@ interface StudioEngagementsProps {
   onUpdateStatus: (appId: number, status: string) => Promise<void>;
   onFinalizeAgreement: (appId: number, agreementDetails: any) => Promise<void>;
   onToggleContactInfo: (appId: number, currentVal: boolean) => Promise<void>;
+  onWithdrawRequest: (requestId: number) => Promise<void>;
 }
 
 const ResponseSheet = ({ app }: { app: any }) => {
@@ -37,42 +38,42 @@ const ResponseSheet = ({ app }: { app: any }) => {
   const links = verified.showreelLinks || [];
 
   const InfoBox = ({ label, value }: { label: string, value: string }) => (
-    <div className="p-6 bg-white rounded-3xl border border-gray-100/80 shadow-sm space-y-1 text-left">
+    <div className="p-4 sm:p-6 bg-white rounded-[2rem] border border-gray-100/80 shadow-sm space-y-1 text-left">
       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">{label}</p>
       <p className="font-bold text-gray-900 text-sm truncate">{value || 'Unfilled'}</p>
     </div>
   );
 
   return (
-    <div className="p-10 space-y-12 bg-[#F9FAFB]/50 border-t border-gray-100 text-left animate-in slide-in-from-top-4 duration-500">
+    <div className="p-4 sm:p-10 space-y-8 sm:space-y-12 bg-[#F9FAFB]/50 border-t border-gray-100 text-left animate-in slide-in-from-top-4 duration-500">
       {app.contactInfoShared && (
-        <div className="p-8 bg-emerald-50 border border-emerald-100 rounded-[2.5rem] flex flex-wrap gap-10 items-center animate-in zoom-in-95 duration-300">
+        <div className="p-4 sm:p-8 bg-emerald-50 border border-emerald-100 rounded-3xl flex flex-col sm:flex-row gap-6 sm:gap-10 items-stretch sm:items-center animate-in zoom-in-95 duration-300">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
               <Phone size={20} />
             </div>
             <div>
               <p className="text-[9px] font-black text-emerald-600/50 uppercase tracking-widest leading-none mb-1">PHONE NUMBER</p>
-              <p className="font-black text-emerald-900 text-lg">{app.professional?.user?.phone || 'Not available'}</p>
+              <p className="font-black text-emerald-900 text-base sm:text-lg">{app.professional?.user?.phone || 'Not available'}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
               <Mail size={20} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-[9px] font-black text-emerald-600/50 uppercase tracking-widest leading-none mb-1">EMAIL ADDRESS</p>
-              <p className="font-black text-emerald-900 text-lg">{app.professional?.user?.email || 'Not available'}</p>
+              <p className="font-black text-emerald-900 text-base sm:text-lg truncate">{app.professional?.user?.email || 'Not available'}</p>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-3 bg-emerald-100/50 px-6 py-3 rounded-2xl border border-emerald-100">
+          <div className="sm:ml-auto flex items-center justify-center gap-3 bg-emerald-100/50 px-6 py-3 rounded-2xl border border-emerald-100 w-full sm:w-auto">
             <ShieldCheck size={16} className="text-emerald-600" />
             <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">CONTACT INFO SHARED</span>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
         <InfoBox label="TALENT ID" value={verified.talentId} />
         <InfoBox label="ARTIST NAME" value={verified.name} />
         <InfoBox label="PRIMARY SKILL" value={verified.primarySkill} />
@@ -88,14 +89,14 @@ const ResponseSheet = ({ app }: { app: any }) => {
 
       <div className="space-y-4">
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">ABOUT ME</p>
-        <div className="p-8 bg-white border border-gray-100 rounded-[2.5rem] shadow-sm italic text-gray-500 text-sm leading-relaxed">
+        <div className="p-4 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm italic text-gray-500 text-sm leading-relaxed">
           {verified.aboutMe || "The artist did not specify a bio yet."}
         </div>
       </div>
 
       <div className="space-y-4">
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">SHOWREEL LINK(S)</p>
-        <div className="p-8 bg-white border border-gray-100 rounded-[2.5rem] shadow-sm space-y-4">
+        <div className="p-4 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm space-y-4">
           {links.length > 0 ? links.map((link: string, i: number) => (
             <a
               key={i}
@@ -104,11 +105,11 @@ const ResponseSheet = ({ app }: { app: any }) => {
               rel="noopener noreferrer"
               className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:border-black/20 hover:shadow-md"
             >
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-black border border-gray-100 shadow-sm">
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-black border border-gray-100 shadow-sm shrink-0">
                 <Portfolio size={18} />
               </div>
               <span className="flex-1 font-bold text-sm text-black truncate">{link}</span>
-              <ExternalLink size={16} className="text-gray-300 group-hover:text-black transition-colors" />
+              <ExternalLink size={16} className="text-gray-300 group-hover:text-black transition-colors shrink-0" />
             </a>
           )) : (
             <p className="text-sm text-gray-400 italic">No showreel links provided</p>
@@ -181,6 +182,7 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
   onUpdateStatus,
   onFinalizeAgreement,
   onToggleContactInfo,
+  onWithdrawRequest,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -189,6 +191,39 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
   const [expandedAppId, setExpandedAppId] = useState<number | null>(null);
   const [isAgreementModalOpen, setIsAgreementModalOpen] = useState(false);
   const [selectedOutreachForDetails, setSelectedOutreachForDetails] = useState<any>(null);
+
+  const getModalStatusInfo = (outreach: any) => {
+    if (!outreach) return { text: '', colorClass: 'text-gray-500', bgClass: 'bg-gray-500' };
+
+    const matchingApp = applications.find(a =>
+      a.studioRequestId === outreach.id
+    );
+
+    if (matchingApp) {
+      const status = matchingApp.status;
+      if (status === 'applied' || status === 'shortlisted') {
+        return { text: 'SHORTLISTED', colorClass: 'text-[#10B981]', bgClass: 'bg-[#10B981]' };
+      } else if (status === 'discussion') {
+        return { text: 'IN DISCUSSION', colorClass: 'text-blue-700', bgClass: 'bg-blue-500' };
+      } else if (status === 'agreement') {
+        return { text: 'AGREEMENT', colorClass: 'text-purple-700', bgClass: 'bg-purple-500' };
+      } else if (status === 'hired') {
+        return { text: 'HIRED', colorClass: 'text-emerald-700', bgClass: 'bg-emerald-500' };
+      } else if (status === 'rejected') {
+        return { text: 'REJECTED', colorClass: 'text-rose-700', bgClass: 'bg-rose-500' };
+      }
+    }
+
+    if (outreach.status === 'pending') {
+      return { text: 'AWAITING ARTIST RESPONSE', colorClass: 'text-[#EA580C]', bgClass: 'bg-[#EA580C]' };
+    }
+
+    return { 
+      text: String(outreach.status).toUpperCase(), 
+      colorClass: 'text-emerald-700', 
+      bgClass: 'bg-emerald-500' 
+    };
+  };
 
   const getVerificationFieldsText = (fields: any) => {
     let parsedFields = fields;
@@ -294,12 +329,11 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
     const position = (professional?.position || 'Artist').replace('_', ' ');
 
     const matchingApp = applications.find(a =>
-      a.professional != null && row.professional != null &&
-      a.professional.id === row.professional.id
+      a.studioRequestId === row.id
     );
 
     let statusLabel = 'WAITING FOR RESPONSE';
-    let statusDesc = "Let's wait and see response status. Pending artist reply.";
+    let statusDesc: string | string[] = "Let's wait and see response status. Pending artist reply.";
     let statusBadgeColor = 'bg-[#FFFBEB] border-[#FCD34D]/50 text-[#D97706]';
     let statusDotColor = 'bg-[#D97706]';
     let statusIndicatorBg = 'bg-[#FFFBEB]';
@@ -310,7 +344,10 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
       const status = matchingApp.status;
       if (status === 'applied' || status === 'shortlisted') {
         statusLabel = 'SHORTLISTED';
-        statusDesc = 'Artist shortlisted and ready for review.';
+        statusDesc = [
+          'Artist has accepted and applied',
+          'Check your shortlistings'
+        ];
         statusBadgeColor = 'bg-[#ECFDF5] border-[#A7F3D0]/50 text-[#059669]';
         statusDotColor = 'bg-[#10B981]';
         statusIndicatorBg = 'bg-[#ECFDF5]';
@@ -359,7 +396,10 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
       borderStripColor = 'border-l-[6px] border-l-rose-500';
     } else if (row.status === 'accepted' || row.status === 'in_progress' || row.status === 'completed') {
       statusLabel = 'SHORTLISTED';
-      statusDesc = 'Artist shortlisted and ready for review.';
+      statusDesc = [
+        'Artist has accepted and applied',
+        'Check your shortlistings'
+      ];
       statusBadgeColor = 'bg-[#ECFDF5] border-[#A7F3D0]/50 text-[#059669]';
       statusDotColor = 'bg-[#10B981]';
       statusIndicatorBg = 'bg-[#ECFDF5]';
@@ -418,12 +458,25 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
               {position} <span className="mx-1.5">•</span> Sent on {formatDate(row.createdAt || row.startDate)}
             </p>
 
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${statusIndicatorBg} rounded-full`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor}`} />
-              <span className={`text-[10px] font-bold ${statusTextColor} leading-none`}>
-                {statusDesc}
-              </span>
-            </div>
+            {Array.isArray(statusDesc) ? (
+              <div className={`flex flex-col gap-1 px-3 py-2 ${statusIndicatorBg} rounded-[1rem] border border-emerald-100 text-left`}>
+                {statusDesc.map((desc, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className={`w-1 h-1 rounded-full ${statusDotColor} shrink-0`} />
+                    <span className={`text-[10px] font-bold ${statusTextColor} leading-tight`}>
+                      {desc}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${statusIndicatorBg} rounded-full`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor}`} />
+                <span className={`text-[10px] font-bold ${statusTextColor} leading-none`}>
+                  {statusDesc}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -439,7 +492,14 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
             <FileText size={12} />
             OFFER DETAILS
           </button>
-          <button className="px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
+          <button 
+            onClick={async () => {
+              if (window.confirm("Are you sure you want to withdraw this opportunity offer?")) {
+                await onWithdrawRequest(row.id);
+              }
+            }}
+            className="px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-400 hover:text-rose-600 hover:border-rose-200 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+          >
             WITHDRAW OFFER
           </button>
         </div>
@@ -458,9 +518,9 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
         }`}
         onClick={() => setSelectedApp(app)}
       >
-        <div className="p-10 flex flex-col lg:flex-row gap-10 items-start">
-          <div className="flex gap-8 items-start flex-1">
-            <div className="relative">
+        <div className="p-6 md:p-10 flex flex-col lg:flex-row gap-6 md:gap-10 items-start">
+          <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start flex-1 w-full">
+            <div className="relative shrink-0">
               <TalentAvatar
                 talentCode={app.professional?.user?.talentId?.talentCode || `AUI-${String(app.professional?.id).padStart(6, '0')}`}
                 initialAvatarUrl={app.professional?.avatarUrl ? getFileUrl(app.professional.avatarUrl) : undefined}
@@ -474,16 +534,16 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
               )}
             </div>
 
-            <div className="space-y-4 pt-2 flex-1">
-              <div className="flex items-center gap-4">
-                <h4 className="text-4xl font-black text-gray-900 tracking-tight">{app.professional?.fullName}</h4>
+            <div className="space-y-4 pt-2 flex-1 w-full text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 sm:gap-4">
+                <h4 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">{app.professional?.fullName}</h4>
                 {app.professional?.verificationStatus && (
                   <span className="flex items-center gap-2 bg-[#E9FFF6] text-[#00CE7C] text-[10px] font-black uppercase tracking-[0.15em] px-4 py-1.5 rounded-full border border-[#00CE7C]/10">
                     <CheckCircle2 size={12} fill="#00CE7C" className="text-white" /> Verified
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3 text-xs font-black text-gray-400 uppercase tracking-widest">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest">
                 <span>{app.professional?.user?.talentId?.talentCode || 'AUI-8RP-S'}</span>
                 <span className="w-1 h-1 rounded-full bg-gray-200" />
                 <span className="text-gray-900">{app.professional?.currentRole || 'Character Animator'}</span>
@@ -504,20 +564,20 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-4 pt-4">
-                <div className="p-6 bg-gray-50/50 rounded-3xl border border-gray-100 flex-1 min-w-[200px]">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
+                <div className="p-4 sm:p-6 bg-gray-50/50 rounded-3xl border border-gray-100 flex-1 min-w-[240px]">
                   <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">POSITION</p>
                   <div className="px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
                     <span className="font-bold text-gray-900 text-sm">{app.verifiedResponse?.position || app.professional?.currentRole}</span>
                   </div>
                 </div>
-                <div className="p-6 bg-gray-50/50 rounded-3xl border border-gray-100 flex-1 min-w-[200px]">
+                <div className="p-4 sm:p-6 bg-gray-50/50 rounded-3xl border border-gray-100 flex-1 min-w-[240px]">
                   <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">PRIMARY SKILL</p>
                   <div className="px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
                     <span className="font-bold text-black text-sm">{app.verifiedResponse?.primarySkill || (app.professional?.skills?.[0]) || 'Art'}</span>
                   </div>
                 </div>
-                <div className="p-6 bg-gray-50/50 rounded-3xl border border-gray-100 flex-[1.5] min-w-[300px] grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="p-4 sm:p-6 bg-gray-50/50 rounded-3xl border border-gray-100 flex-[1.5] min-w-[280px] sm:min-w-[320px] w-full grid grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-4">
                   <div className="col-span-2">
                     <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">COMP & NOTICE EVALUATION</p>
                   </div>
@@ -543,12 +603,12 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
           </div>
         </div>
 
-        <div className="px-10 pb-8 flex items-center gap-10">
+        <div className="px-6 md:px-10 pb-6 md:pb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-10">
           <div className="flex items-center gap-3">
             <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">AVAILABILITY</p>
             <div className="w-3 h-3 rounded-full bg-gray-400 shadow-sm border-2 border-white" />
           </div>
-          <div className="flex items-center gap-3 border-l border-gray-100 pl-10">
+          <div className="flex items-start gap-3 sm:border-l border-gray-100 sm:pl-10 sm:items-center">
             <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">PREFERRED LOCATION</p>
             <div className="flex items-center gap-2">
               <MapPin size={16} className="text-gray-300" />
@@ -563,23 +623,23 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
               e.stopPropagation();
               setExpandedAppId(expandedAppId === app.id ? null : app.id);
             }}
-            className={`w-full group rounded-[2rem] border transition-all p-4 px-8 flex items-center justify-between ${
+            className={`w-full group rounded-[2rem] border transition-all p-4 px-4 sm:px-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 ${
               expandedAppId === app.id ? 'bg-black border-black text-white shadow-xl shadow-black/20' : 'bg-gray-50/50 border-gray-100 text-gray-900 hover:bg-white hover:border-black/20'
             }`}
           >
-            <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 ${
                 expandedAppId === app.id ? 'bg-white/20' : 'bg-white border border-gray-100 shadow-sm text-black'
               }`}>
                 <FileText size={20} />
               </div>
-              <div className="text-left">
-                <p className={`text-[10px] font-black uppercase tracking-widest ${expandedAppId === app.id ? 'text-white' : 'text-gray-900'}`}>Verified Info Response Sheet</p>
-                <p className={`text-[8px] font-bold uppercase tracking-widest ${expandedAppId === app.id ? 'text-white/60' : 'text-gray-400'}`}>Studio-defined response equivalent (AUI Secured Checklist)</p>
+              <div className="text-left min-w-0">
+                <p className={`text-[10px] font-black uppercase tracking-widest truncate ${expandedAppId === app.id ? 'text-white' : 'text-gray-900'}`}>Verified Info Response Sheet</p>
+                <p className={`text-[8px] font-bold uppercase tracking-widest truncate ${expandedAppId === app.id ? 'text-white/60' : 'text-gray-400'}`}>Studio-defined response equivalent (AUI Secured Checklist)</p>
               </div>
             </div>
-            <div className="flex items-center gap-6">
-              <span className={`text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl ${
+            <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-6 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100/10">
+              <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 py-2 rounded-xl ${
                 expandedAppId === app.id ? 'bg-white text-black' : 'bg-[#E9EFFF] text-black'
               }`}>PASSPORT COMPLETED</span>
               {expandedAppId === app.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -600,7 +660,7 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
           )}
         </AnimatePresence>
 
-        <div className="p-10 bg-gray-50/30 border-t border-gray-100 flex items-center justify-center gap-6">
+        <div className="p-6 md:p-10 bg-gray-50/30 border-t border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 sm:gap-6">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -611,7 +671,7 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
                 toast.info("Profile code not available yet.");
               }
             }}
-            className="px-10 py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 hover:bg-gray-50 transition-all"
+            className="px-6 sm:px-10 py-4 sm:py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 hover:bg-gray-50 transition-all text-center"
           >
             View Profile
           </button>
@@ -619,7 +679,7 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
           {activeTab === 'shortlisting' && (
             <Button
               onClick={(e) => { e.stopPropagation(); onUpdateStatus(app.id, 'discussion'); }}
-              className="px-16 py-5 bg-black text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-black/20"
+              className="px-8 sm:px-16 py-4 sm:py-5 bg-black text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-black/20 text-center"
             >
               Move to Discussion
             </Button>
@@ -630,13 +690,13 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
               <Button
                 variant={app.contactInfoShared ? 'secondary' : 'primary'}
                 onClick={(e) => { e.stopPropagation(); onToggleContactInfo(app.id, app.contactInfoShared); }}
-                className="px-10 py-5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em]"
+                className="px-6 sm:px-10 py-4 sm:py-5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] text-center"
               >
                 {app.contactInfoShared ? 'Hide Contact' : 'Get Contact Info'}
               </Button>
               <Button
                 onClick={(e) => { e.stopPropagation(); setSelectedApp(app); setIsAgreementModalOpen(true); }}
-                className="px-16 py-5 bg-emerald-500 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20"
+                className="px-8 sm:px-16 py-4 sm:py-5 bg-emerald-500 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 text-center"
               >
                 Accepted (Move to Agreement)
               </Button>
@@ -647,7 +707,7 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
             <>
               <Button
                 onClick={(e) => { e.stopPropagation(); setSelectedApp(app); setIsAgreementModalOpen(true); }}
-                className="px-12 py-5 bg-[#1a1f28] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+                className="px-6 sm:px-12 py-4 sm:py-5 bg-[#1a1f28] text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl text-center"
               >
                 Update Agreement
               </Button>
@@ -662,35 +722,35 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
           )}
 
           {activeTab === 'hired' && (
-            <>
-              <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border border-emerald-200 rounded-[1.5rem]">
+            <div className="flex flex-wrap items-center justify-center gap-6 w-full sm:w-auto">
+              <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 border border-emerald-200 rounded-[1.5rem] w-full sm:w-auto">
                 <CheckCircle2 size={18} className="text-emerald-600" />
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">Artist Hired</p>
                   <p className="text-[9px] text-emerald-500">Accepted by {app.professional?.fullName || 'artist'}</p>
                 </div>
               </div>
-              <div className="text-center">
+              <div className="text-center min-w-[70px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Current Comp</p>
-                <p className="font-bold text-gray-900">{app.verifiedResponse?.currentCTC || '—'}</p>
+                <p className="font-bold text-gray-900 text-xs sm:text-sm">{app.verifiedResponse?.currentCTC || '—'}</p>
               </div>
-              <div className="text-center">
+              <div className="text-center min-w-[70px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Expected Comp</p>
-                <p className="font-bold text-gray-900">{app.verifiedResponse?.expectedCTC || '—'}</p>
+                <p className="font-bold text-gray-900 text-xs sm:text-sm">{app.verifiedResponse?.expectedCTC || '—'}</p>
               </div>
-              <div className="text-center">
+              <div className="text-center min-w-[80px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Final Settlement</p>
-                <p className="font-bold text-emerald-600">
+                <p className="font-bold text-emerald-600 text-xs sm:text-sm">
                   {app.agreementDetails?.currency || ''} {app.agreementDetails?.amount || '—'}{app.agreementDetails?.compensationType ? ` / ${app.agreementDetails.compensationType}` : ''}
                 </p>
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === 'rejected' && (
             <Button
               onClick={(e) => { e.stopPropagation(); onUpdateStatus(app.id, 'shortlisted'); }}
-              className="px-16 py-5 bg-rose-500 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-rose-500/20"
+              className="px-8 sm:px-16 py-4 sm:py-5 bg-rose-500 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-rose-500/20 text-center"
             >
               Move Back to Shortlisted
             </Button>
@@ -699,7 +759,7 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
           {activeTab !== 'rejected' && activeTab !== 'hired' && (
             <button
               onClick={(e) => { e.stopPropagation(); onUpdateStatus(app.id, 'rejected'); }}
-              className="px-10 py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-rose-500 hover:border-rose-100 transition-all"
+              className="px-6 sm:px-10 py-4 sm:py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-rose-500 hover:border-rose-100 transition-all text-center"
             >
               Try Next Time
             </button>
@@ -751,7 +811,10 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 pb-3">
+      <div 
+        className="flex items-center gap-2 border-b border-gray-100 pb-3 overflow-x-auto no-scrollbar scroll-smooth w-full snap-x"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {(['applications', 'shortlisting', 'discussion', 'agreement', 'hired', 'rejected'] as const).map((tab) => {
           const isActive = activeTab === tab;
           const count = getTabCount(tab);
@@ -759,7 +822,7 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`flex-shrink-0 snap-start flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
                 isActive
                   ? 'bg-black text-white shadow-sm'
                   : 'bg-white hover:bg-gray-50 text-gray-600 border border-gray-100'
@@ -1003,18 +1066,18 @@ const StudioEngagements: React.FC<StudioEngagementsProps> = ({
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="p-8 bg-[#F9FAFB]/50 border-t border-gray-100 flex items-center justify-between -mx-10 -mb-10">
-                <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${
-                    selectedOutreachForDetails.status === 'pending' ? 'bg-[#EA580C]' : 'bg-emerald-500'
-                  }`} />
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${
-                    selectedOutreachForDetails.status === 'pending' ? 'text-[#EA580C]' : 'text-emerald-700'
-                  }`}>
-                    {selectedOutreachForDetails.status === 'pending' ? 'AWAITING ARTIST RESPONSE' : selectedOutreachForDetails.status}
-                  </span>
-                </div>
+                {(() => {
+                  const statusInfo = getModalStatusInfo(selectedOutreachForDetails);
+                  return (
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${statusInfo.bgClass}`} />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${statusInfo.colorClass}`}>
+                        {statusInfo.text}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <button
                   onClick={() => setSelectedOutreachForDetails(null)}
                   className="h-14 px-8 bg-[#0a0a0a] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-md transition-all active:scale-[0.98]"

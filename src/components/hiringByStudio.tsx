@@ -26,7 +26,7 @@ import { toast } from 'react-toastify';
 import Button from './Button';
 import Card from './Card';
 import Badge from './Badge';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import HiringPipeline from './HiringPipeline';
 import { createStudioJobPosting, getStudioJobPostings, updateStudioJobPosting, deleteStudioJobPosting, uploadJobPostingAttachments } from '../services/studioServices';
 import { BASE_URL } from '../utils/urls';
@@ -69,6 +69,7 @@ interface HiringByStudioProps {
 
 const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSearchTalent }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,6 +173,25 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
+
+  useEffect(() => {
+    if (location.state && jobs.length > 0) {
+      const state = location.state as any;
+      if (state.selectedJobId) {
+        const targetId = Number(state.selectedJobId);
+        const matchedJob = jobs.find(j => Number(j.id) === targetId);
+        if (matchedJob) {
+          setViewingPipeline({ id: matchedJob.id, title: matchedJob.title });
+        }
+      } else if (state.selectedJobTitle) {
+        const targetTitle = String(state.selectedJobTitle).toLowerCase();
+        const matchedJob = jobs.find(j => j.title.toLowerCase() === targetTitle);
+        if (matchedJob) {
+          setViewingPipeline({ id: matchedJob.id, title: matchedJob.title });
+        }
+      }
+    }
+  }, [location.state, jobs]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

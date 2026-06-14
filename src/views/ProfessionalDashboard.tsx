@@ -1405,9 +1405,9 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                             }}
                             className="flex flex-col items-end gap-1"
                           >
-                            <Badge variant="info" className="bg-[#7c00ff] text-purple border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
+                            <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
                               Studio Request
-                            </Badge>
+                            </span>
                             <div className="flex items-center gap-1.5 mr-1">
                               <div className="w-1.5 h-1.5 rounded-full bg-[#7c00ff] animate-pulse" />
                               <span className="text-[9px] font-black text-[#7c00ff] uppercase tracking-widest"># Direct Opportunity</span>
@@ -1634,12 +1634,15 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                           <Card key={app.id} className={`p-8 space-y-6 border-2 transition-all ${!isNewOffer ? 'border-gray-100' : 'border-[#7c00ff]/20 bg-[#7c00ff]/[0.02] shadow-xl shadow-[#7c00ff]/5'}`}>
                             <div className="flex justify-between items-start">
                               <div className="flex items-center gap-3">
-                                <Badge
-                                  variant={!isNewOffer ? 'success' : 'info'}
-                                  className={`text-[10px] font-black tracking-widest ${isNewOffer ? 'bg-[#7c00ff] text-white' : 'bg-emerald-500 text-white'}`}
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-widest uppercase ${
+                                    isNewOffer 
+                                      ? 'bg-[#7c00ff] text-white' 
+                                      : 'bg-emerald-500 text-white'
+                                  }`}
                                 >
                                   {!isNewOffer ? 'ACTIVE' : 'OFFER RECEIVED'}
-                                </Badge>
+                                </span>
                                 <span className="text-xs text-text-muted font-medium">Est. Start: {eng.startDate || 'TBD'}</span>
                               </div>
                               <div className="text-right">
