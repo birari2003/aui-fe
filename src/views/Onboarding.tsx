@@ -121,6 +121,7 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
         { label: 'Studio Name', type: 'text', placeholder: 'Enter studio name' }, 
         { label: 'Official Website', type: 'url', placeholder: 'https://...' }, 
         { label: 'Email Address', type: 'email', placeholder: 'studio@example.com' },
+        { label: 'Phone Number', type: 'tel', placeholder: '+1 234 567 890' },
         { label: 'Primary Location', type: 'text', placeholder: 'City, Country' },
         { label: 'Contact Person Name', type: 'text', placeholder: 'Name' }, 
         { label: 'Personal Designation', type: 'text', placeholder: 'e.g. Head of Production' }
@@ -157,6 +158,7 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
         { label: 'Institute Name', type: 'text', placeholder: 'Enter name' }, 
         { label: 'Website', type: 'url', placeholder: 'https://...' },
         { label: 'Email Address', type: 'email', placeholder: 'institute@example.com' },
+        { label: 'Phone Number', type: 'tel', placeholder: '+1 234 567 890' },
         { label: 'Campus Location', type: 'text', placeholder: 'City, Country' },
         { label: 'Contact Person', type: 'text', placeholder: 'Full Name' }, 
         { label: 'Designation', type: 'text', placeholder: 'e.g. Director' }
@@ -216,6 +218,7 @@ const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, r
           location: formData['Primary Location'],
           contactPerson: formData['Contact Person Name'],
           designation: formData['Personal Designation'],
+          phone: formData['Phone Number'],
           teamSize: Number(formData['Number of Active Artists']),
           yearsInOperation: Number(formData['Years in Industry']),
           workType: (formData['Primary Production Type'] === 'Feature Film' ? 'film' : 

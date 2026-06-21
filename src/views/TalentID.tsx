@@ -160,6 +160,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
   const downloadCardRef = React.useRef<HTMLDivElement>(null);
   const [downloadAvatarUrl, setDownloadAvatarUrl] = useState<string>('');
+  const [vimeoThumbnailUrl, setVimeoThumbnailUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (profileData) {
@@ -181,6 +182,26 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
           }).catch(err => {
             console.error('Error pre-converting avatar image:', err);
           });
+        }
+      }
+    }
+  }, [profileData]);
+
+  useEffect(() => {
+    if (profileData) {
+      const { professional, publicProfile } = profileData;
+      const url = publicProfile?.showreel?.url || professional?.showreelUrl || professional?.showreel_url || '';
+      if (url && url.includes('vimeo.com')) {
+        const vimeoId = getVimeoId(url);
+        if (vimeoId) {
+          fetch(`https://vimeo.com/api/v2/video/${vimeoId}.json`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data[0] && data[0].thumbnail_large) {
+                setVimeoThumbnailUrl(data[0].thumbnail_large);
+              }
+            })
+            .catch(err => console.error('Failed to fetch Vimeo thumbnail:', err));
         }
       }
     }
@@ -793,6 +814,24 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                       className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
                       alt="YouTube Showreel Cover"
                     />
+                  ) : showreel.url && showreel.url.includes('vimeo.com') ? (
+                    vimeoThumbnailUrl ? (
+                      <img 
+                        src={vimeoThumbnailUrl} 
+                        className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
+                        alt="Vimeo Showreel Cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/20 via-brand-purple/20 to-brand-accent/20 animate-pulse" />
+                    )
+                  ) : showreel.url ? (
+                    <video 
+                      src={getFileUrl(showreel.url)}
+                      className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
+                      preload="metadata"
+                      muted
+                      playsInline
+                    />
                   ) : (
                     <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/20 via-brand-purple/20 to-brand-accent/20" />
                   )}
@@ -847,21 +886,34 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                       controls
                       autoPlay
                       className="w-full h-full object-contain"
-                      poster={'/assets/showreel_thumbnail_1777487470036.png'}
                     />
                   )}
                   
                   {/* External Link when playing */}
                   {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be') || showreel.url.includes('vimeo.com')) && (
-                    <a
-                      href={showreel.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
-                    >
-                      <ExternalLink size={12} className="text-white" />
-                      Watch on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
-                    </a>
+                    <>
+                      <a
+                        href={showreel.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
+                      >
+                        <ExternalLink size={12} className="text-white" />
+                        Watch on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                      </a>
+
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-xl text-[10px] md:text-[11px] font-medium flex items-center gap-2 shadow-2xl z-10 whitespace-nowrap border border-white/10">
+                        <span className="opacity-90">Having trouble playing?</span>
+                        <a
+                          href={showreel.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#818CF8] hover:text-[#A5B4FC] hover:underline font-black flex items-center gap-1 transition-colors"
+                        >
+                          Watch directly on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'} <ExternalLink size={11} className="inline" />
+                        </a>
+                      </div>
+                    </>
                   )}
                 </>
               )}

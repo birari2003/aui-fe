@@ -27,7 +27,31 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, pr
     workshopsConducted: profile?.workshopsConducted || 0,
     mentorshipSessions: profile?.mentorshipSessions || 0,
     portfolioReviews: profile?.portfolioReviews || 0,
+    phone: profile?.user?.phone || profile?.phone || '',
   });
+
+  React.useEffect(() => {
+    if (isOpen && profile) {
+      setFormData({
+        fullName: profile.fullName || '',
+        experienceYears: profile.experienceYears || 0,
+        primarySkill: profile.primarySkill || '',
+        position: profile.position || 'artist',
+        productionType: profile.productionType || 'film',
+        responsibilityScope: profile.responsibilityScope || '',
+        showreelUrl: profile.showreelUrl || '',
+        portfolioUrl: profile.portfolioUrl || '',
+        avatarUrl: profile.avatarUrl || '',
+        experienceScore: profile.experienceScore || 0,
+        reliabilityScore: profile.reliabilityScore || 0,
+        projectCount: profile.projectCount || 0,
+        workshopsConducted: profile.workshopsConducted || 0,
+        mentorshipSessions: profile.mentorshipSessions || 0,
+        portfolioReviews: profile.portfolioReviews || 0,
+        phone: profile.user?.phone || profile.phone || '',
+      });
+    }
+  }, [isOpen, profile]);
 
   const [loading, setLoading] = React.useState(false);
 
@@ -142,6 +166,16 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, pr
                 <option value="web">Web</option>
                 <option value="ads">Ads</option>
               </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Phone Number</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
+              />
             </div>
           </div>
 

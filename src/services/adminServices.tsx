@@ -36,3 +36,12 @@ export const fetchAnalytics = async () => {
   });
   return response;
 };
+
+export const sendBulkEmail = async (emails: string[], subject: string, body: string) => {
+  const response = await fetch(API_ENDPOINTS.ADMIN_EXTRA.SEND_BULK_EMAIL, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ emails, subject, body }),
+  });
+  return response;
+};

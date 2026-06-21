@@ -15,6 +15,7 @@ const EditInstituteModal: React.FC<EditInstituteModalProps> = ({ isOpen, onClose
     instituteName: profile?.instituteName || '',
     contactPerson: profile?.contactPerson || '',
     email: profile?.email || '',
+    phone: profile?.user?.phone || profile?.phone || '',
     website: profile?.website || '',
     location: profile?.location || '',
     description: profile?.description || '',
@@ -34,6 +35,7 @@ const EditInstituteModal: React.FC<EditInstituteModalProps> = ({ isOpen, onClose
         instituteName: profile.instituteName || '',
         contactPerson: profile.contactPerson || '',
         email: profile.email || '',
+        phone: profile.user?.phone || profile.phone || '',
         website: profile.website || '',
         location: profile.location || '',
         description: profile.description || '',
@@ -134,6 +136,16 @@ const EditInstituteModal: React.FC<EditInstituteModalProps> = ({ isOpen, onClose
                 onChange={handleChange}
                 className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Phone Number</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full px-5 py-3.5 bg-brand-surface rounded-2xl border border-gray-100 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/5 outline-none transition-premium text-brand-primary font-medium"
               />
             </div>
             <div className="space-y-2">

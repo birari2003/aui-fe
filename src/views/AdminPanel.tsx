@@ -1,12 +1,12 @@
 import React from 'react';
-import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight, Network } from 'lucide-react';
+import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight, Network, Mail, Send } from 'lucide-react';
 import Button from '../components/Button';
 import SEO from '../components/SEO';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
 import { View } from '../types';
-import { fetchAdminUsers, updateUserStatus, fetchAnalytics } from '../services/adminServices';
+import { fetchAdminUsers, updateUserStatus, fetchAnalytics, sendBulkEmail } from '../services/adminServices';
 import { getAllSpecialRequests, updateSpecialRequestStatus } from '../services/specialRequestServices';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as workshopServices from '../services/instituteWorkshopServices';
@@ -16,7 +16,7 @@ import * as nexusServices from '../services/nexusServices';
 
 
 const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios' | 'bulk_email'>('overview');
   const [users, setUsers] = React.useState<any[]>([]);
   const [specialRequests, setSpecialRequests] = React.useState<any[]>([]);
   const [analytics, setAnalytics] = React.useState<any>(null);
@@ -30,6 +30,18 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
   const [sharingReq, setSharingReq] = React.useState<any>(null);
   const [shareSearch, setShareSearch] = React.useState('');
+
+  // Mentor filter in Professional tab directory
+  const [mentorFilter, setMentorFilter] = React.useState<'all' | 'mentor' | 'non_mentor'>('all');
+
+  // Bulk Email State
+  const [emailSubject, setEmailSubject] = React.useState('');
+  const [emailBody, setEmailBody] = React.useState('');
+  const [bulkEmailRole, setBulkEmailRole] = React.useState<'all' | 'professional' | 'studio' | 'institute'>('all');
+  const [bulkEmailMentorFilter, setBulkEmailMentorFilter] = React.useState<'all' | 'mentor' | 'non_mentor'>('all');
+  const [selectedUserIds, setSelectedUserIds] = React.useState<Record<number, boolean>>({});
+  const [isSendingEmails, setIsSendingEmails] = React.useState(false);
+  const [emailSendStatus, setEmailSendStatus] = React.useState<{ success: boolean; message: string } | null>(null);
 
   const [facilitationRequests, setFacilitationRequests] = React.useState<any[]>([]);
   const [facilitationLoading, setFacilitationLoading] = React.useState(false);
@@ -361,6 +373,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       {renderDetailSection("Core Profile", [
         { label: "Full Name", value: data.fullName || data.full_name },
         { label: "Email", value: data.email },
+        { label: "Phone Number", value: selectedUser?.phone || data.phone },
         { label: "Experience Level", value: data.level || data.experience_level },
         { label: "Years of Experience", value: data.experienceYears || data.experience_years },
         { label: "Primary Skill", value: data.primarySkill || data.primary_skill },
@@ -421,6 +434,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       {renderDetailSection("Studio Profile", [
         { label: "Studio Name", value: data.studioName },
         { label: "Email", value: data.email },
+        { label: "Phone Number", value: selectedUser?.phone || data.phone },
         { label: "Contact Person", value: data.contactPerson },
         { label: "Designation", value: data.designation },
         { label: "Location", value: data.location },
@@ -472,6 +486,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         {renderDetailSection("Institute Profile", [
           { label: "Institute Name", value: data.instituteName },
           { label: "Email", value: data.email },
+          { label: "Phone Number", value: selectedUser?.phone || data.phone },
           { label: "Contact Person", value: data.contactPerson },
           { label: "Designation", value: data.designation },
           { label: "Location", value: data.location },
@@ -501,6 +516,76 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     );
   };
 
+  const getFilteredBulkUsers = () => {
+    return users.filter(user => {
+      // Role match
+      if (bulkEmailRole !== 'all' && user.role !== bulkEmailRole) return false;
+      // Mentor match (only applies if role is professional)
+      if (user.role === 'professional') {
+        const isMentor = user.professional?.isMentor || user.professional?.is_mentor;
+        if (bulkEmailMentorFilter === 'mentor' && !isMentor) return false;
+        if (bulkEmailMentorFilter === 'non_mentor' && isMentor) return false;
+      }
+      return true;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    const visibleUsers = getFilteredBulkUsers();
+    const newSelected = { ...selectedUserIds };
+    visibleUsers.forEach(u => {
+      newSelected[u.id] = checked;
+    });
+    setSelectedUserIds(newSelected);
+  };
+
+  const handleToggleUser = (userId: number, checked: boolean) => {
+    setSelectedUserIds(prev => ({ ...prev, [userId]: checked }));
+  };
+
+  const handleSendBulkEmails = async () => {
+    const visibleUsers = getFilteredBulkUsers();
+    const recipientEmails = visibleUsers.filter(u => selectedUserIds[u.id]).map(u => u.email);
+
+    if (recipientEmails.length === 0) {
+      setEmailSendStatus({ success: false, message: 'Please select at least one recipient.' });
+      return;
+    }
+    if (!emailSubject.trim()) {
+      setEmailSendStatus({ success: false, message: 'Please enter an email subject.' });
+      return;
+    }
+    if (!emailBody.trim()) {
+      setEmailSendStatus({ success: false, message: 'Please enter the email body content.' });
+      return;
+    }
+
+    setIsSendingEmails(true);
+    setEmailSendStatus(null);
+
+    try {
+      const res = await sendBulkEmail(recipientEmails, emailSubject, emailBody);
+      if (res.ok) {
+        const data = await res.json();
+        setEmailSendStatus({
+          success: true,
+          message: `Successfully sent to ${data.sentCount} recipients.${data.failedCount > 0 ? ` Failed to send to ${data.failedCount} recipients.` : ''}`
+        });
+        setEmailSubject('');
+        setEmailBody('');
+        setSelectedUserIds({});
+      } else {
+        const data = await res.json();
+        setEmailSendStatus({ success: false, message: data.message || 'Failed to send emails.' });
+      }
+    } catch (err: any) {
+      console.error(err);
+      setEmailSendStatus({ success: false, message: 'An error occurred while sending emails.' });
+    } finally {
+      setIsSendingEmails(false);
+    }
+  };
+
   const renderUserList = (tab: string) => {
     const roleMap: Record<string, string> = {
       'professionals': 'professional',
@@ -508,7 +593,22 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       'institutes': 'institute'
     };
     const role = roleMap[tab];
-    const filteredUsers = users.filter(u => u.role === role);
+    let filteredUsers = users.filter(u => u.role === role);
+
+    if (tab === 'professionals') {
+      if (mentorFilter === 'mentor') {
+        filteredUsers = filteredUsers.filter(u => u.professional?.isMentor || u.professional?.is_mentor);
+      } else if (mentorFilter === 'non_mentor') {
+        filteredUsers = filteredUsers.filter(u => !(u.professional?.isMentor || u.professional?.is_mentor));
+      }
+
+      // Sort: Mentors first (1, 0)
+      filteredUsers = [...filteredUsers].sort((a, b) => {
+        const isMentorA = a.professional?.isMentor || a.professional?.is_mentor ? 1 : 0;
+        const isMentorB = b.professional?.isMentor || b.professional?.is_mentor ? 1 : 0;
+        return isMentorB - isMentorA;
+      });
+    }
 
     return (
       <div className="space-y-6">
@@ -551,6 +651,20 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                 </Button>
               </div>
             )}
+            {tab === 'professionals' && (
+              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm">
+                <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Mentorship:</span>
+                <select
+                  className="bg-transparent text-xs font-bold outline-none cursor-pointer"
+                  value={mentorFilter}
+                  onChange={(e) => setMentorFilter(e.target.value as any)}
+                >
+                  <option value="all">All Professionals</option>
+                  <option value="mentor">Mentors Only</option>
+                  <option value="non_mentor">Non-Mentors Only</option>
+                </select>
+              </div>
+            )}
             <button onClick={loadData} className="text-sm font-bold text-brand-primary hover:underline">Refresh</button>
           </div>
         </div>
@@ -571,6 +685,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
               const name = profile ? (profile.fullName || profile.full_name || profile.instituteName || profile.studioName || 'N/A') : 'N/A';
               const publicUrl = profile ? (profile.portfolioUrl || profile.portfolio_url || profile.website || profile.showreelUrl || profile.showreel_url) : null;
               const talentCode = user.talentId?.talentCode;
+              const phone = user.phone || profile?.phone;
 
               return (
                 <motion.div
@@ -588,9 +703,15 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                         <div className="flex items-center gap-3 flex-wrap">
                           <h4 className="font-bold text-brand-primary text-lg truncate max-w-[200px]">{name}</h4>
                           <Badge variant={user.status === 'approved' ? 'success' : user.status === 'rejected' ? 'warning' : 'info'}>{user.status}</Badge>
+                          {user.role === 'professional' && (user.professional?.isMentor || user.professional?.is_mentor) && (
+                            <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200">Mentor</Badge>
+                          )}
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <p className="text-sm font-medium text-text-secondary truncate">{user.email}</p>
+                          {phone && (
+                            <p className="text-xs font-medium text-text-secondary truncate">Mobile: {phone}</p>
+                          )}
                           {talentCode && (
                             <p className="text-[10px] font-bold text-brand-accent uppercase tracking-wider">Internal ID: {talentCode}</p>
                           )}
@@ -750,7 +871,9 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       ? 'Pending Approvals'
       : activeTab === 'special_requests'
         ? 'Special Requests Pipeline'
-        : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Management`;
+        : activeTab === 'bulk_email'
+          ? 'Bulk Email Broadcast'
+          : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Management`;
 
   const seoDescription = `AUI Admin Panel - ${seoTitle}. Control center for managing professionals, institutes, studios, and requests.`;
 
@@ -800,6 +923,12 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           >
             <GraduationCap size={18} /> Institutes
           </button>
+          <button
+            onClick={() => setActiveTab('bulk_email')}
+            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'bulk_email' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
+          >
+            <Mail size={18} /> Bulk Email
+          </button>
 
 
 
@@ -827,6 +956,162 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                 </div>
               </div>
             </Card>
+          </div>
+        ) : activeTab === 'bulk_email' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
+            {/* Compose Email Panel */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="p-6 sm:p-8 bg-white border-gray-100 shadow-premium space-y-6">
+                <div className="space-y-1 border-b border-gray-100 pb-4">
+                  <h3 className="text-2xl font-display font-bold text-brand-primary">Compose Broadcast Email</h3>
+                  <p className="text-text-muted text-sm uppercase font-bold tracking-widest">Send custom notifications to selective recipients</p>
+                </div>
+
+                {emailSendStatus && (
+                  <div className={`p-4 rounded-xl text-sm font-semibold flex items-center gap-2 ${emailSendStatus.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-red-50 text-red-800 border border-red-100'}`}>
+                    {emailSendStatus.success ? <CheckCircle size={18} className="text-emerald-600 shrink-0" /> : <XCircle size={18} className="text-red-600 shrink-0" />}
+                    <span>{emailSendStatus.message}</span>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Email Subject</label>
+                    <input
+                      type="text"
+                      className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all"
+                      placeholder="e.g. Important Platform Update: New Features Available"
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      disabled={isSendingEmails}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Email Message</label>
+                    <textarea
+                      className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-4 outline-none transition-all min-h-[300px] font-medium"
+                      placeholder="Write your email content here. Line breaks are preserved in the final email."
+                      value={emailBody}
+                      onChange={(e) => setEmailBody(e.target.value)}
+                      disabled={isSendingEmails}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                  <p className="text-xs text-text-muted font-bold uppercase tracking-wider">
+                    Recipients Selected: <span className="text-brand-primary text-sm font-extrabold">{getFilteredBulkUsers().filter(u => selectedUserIds[u.id]).length}</span>
+                  </p>
+                  <Button
+                    className="px-8 py-3 bg-brand-primary hover:bg-brand-primary-hover flex items-center gap-2 font-bold text-xs uppercase tracking-widest"
+                    loading={isSendingEmails}
+                    onClick={handleSendBulkEmails}
+                  >
+                    <Send size={14} /> Send Broadcast
+                  </Button>
+                </div>
+              </Card>
+            </div>
+
+            {/* Recipient Selection Panel */}
+            <div className="space-y-6">
+              <Card className="p-6 bg-white border-gray-100 shadow-premium flex flex-col h-[600px]">
+                <div className="space-y-4 border-b border-gray-100 pb-4 shrink-0">
+                  <h4 className="font-bold text-brand-primary text-lg">Select Recipients</h4>
+                  
+                  {/* Filters */}
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Filter by Role</label>
+                      <select
+                        className="w-full bg-brand-surface border border-gray-100 rounded-xl text-xs p-2.5 font-bold outline-none cursor-pointer"
+                        value={bulkEmailRole}
+                        onChange={(e) => {
+                          setBulkEmailRole(e.target.value as any);
+                          setSelectedUserIds({});
+                        }}
+                        disabled={isSendingEmails}
+                      >
+                        <option value="all">All Roles</option>
+                        <option value="professional">Professionals</option>
+                        <option value="studio">Studios</option>
+                        <option value="institute">Institutes</option>
+                      </select>
+                    </div>
+
+                    {bulkEmailRole === 'professional' && (
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Filter Mentorship</label>
+                        <select
+                          className="w-full bg-brand-surface border border-gray-100 rounded-xl text-xs p-2.5 font-bold outline-none cursor-pointer"
+                          value={bulkEmailMentorFilter}
+                          onChange={(e) => {
+                            setBulkEmailMentorFilter(e.target.value as any);
+                            setSelectedUserIds({});
+                          }}
+                          disabled={isSendingEmails}
+                        >
+                          <option value="all">All Professionals</option>
+                          <option value="mentor">Mentors Only</option>
+                          <option value="non_mentor">Non-Mentors Only</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Select All Toggle */}
+                  <div className="flex items-center justify-between bg-brand-surface p-3 rounded-xl">
+                    <span className="text-xs font-bold text-brand-primary">Select All Matching</span>
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-brand-primary cursor-pointer"
+                      checked={getFilteredBulkUsers().length > 0 && getFilteredBulkUsers().every(u => selectedUserIds[u.id])}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      disabled={isSendingEmails || getFilteredBulkUsers().length === 0}
+                    />
+                  </div>
+                </div>
+
+                {/* User List checklist */}
+                <div className="flex-1 overflow-y-auto py-4 space-y-2 pr-1">
+                  {getFilteredBulkUsers().length === 0 ? (
+                    <p className="text-xs text-text-muted text-center py-8 italic">No matching users found.</p>
+                  ) : (
+                    getFilteredBulkUsers().map(user => {
+                      const profile = getProfileData(user);
+                      const name = profile ? (profile.fullName || profile.full_name || profile.instituteName || profile.studioName || user.email) : user.email;
+                      const isMentor = user.professional?.isMentor || user.professional?.is_mentor;
+
+                      return (
+                        <div
+                          key={user.id}
+                          className={`flex items-center justify-between p-3 rounded-xl border transition-all ${selectedUserIds[user.id] ? 'bg-brand-surface border-brand-accent/30' : 'bg-white border-gray-100 hover:border-gray-200'}`}
+                        >
+                          <div className="space-y-0.5 pr-2 min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="text-xs font-bold text-brand-primary truncate">{name}</p>
+                              {isMentor && (
+                                <span className="bg-purple-100 text-purple-700 text-[8px] font-extrabold px-1 py-0.5 rounded uppercase">Mentor</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-text-secondary truncate">{user.email}</p>
+                            <p className="text-[8px] font-bold text-brand-accent uppercase tracking-wider">{user.role}</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-brand-primary cursor-pointer shrink-0"
+                            checked={!!selectedUserIds[user.id]}
+                            onChange={(e) => handleToggleUser(user.id, e.target.checked)}
+                            disabled={isSendingEmails}
+                          />
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </Card>
+            </div>
           </div>
         ) : activeTab === 'special_requests' ? (
           <div className="space-y-8">
@@ -1066,6 +1351,9 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                               </div>
                               <div className="flex flex-col">
                                 <p className="text-xs text-text-muted uppercase font-bold tracking-widest">{user.role} • {new Date(user.createdAt).toLocaleDateString()}</p>
+                                {user.phone && (
+                                  <p className="text-xs font-medium text-text-secondary mt-0.5">Mobile: {user.phone}</p>
+                                )}
                                 {user.talentId?.talentCode && (
                                   <p className="text-[10px] font-bold text-brand-accent uppercase tracking-wider">{user.talentId.talentCode}</p>
                                 )}

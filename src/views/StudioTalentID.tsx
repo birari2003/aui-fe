@@ -569,15 +569,29 @@ const StudioTalentID = () => {
                       }
                     })()}
                     {(currentVideoUrl || profile.studioReelUrl) && ((currentVideoUrl || profile.studioReelUrl).includes('youtube.com') || (currentVideoUrl || profile.studioReelUrl).includes('youtu.be') || (currentVideoUrl || profile.studioReelUrl).includes('vimeo.com')) && (
-                      <a
-                        href={currentVideoUrl || profile.studioReelUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all z-20"
-                      >
-                        <ExternalLink size={12} className="text-white" />
-                        Watch on {(currentVideoUrl || profile.studioReelUrl).includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
-                      </a>
+                      <>
+                        <a
+                          href={currentVideoUrl || profile.studioReelUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all z-20"
+                        >
+                          <ExternalLink size={12} className="text-white" />
+                          Watch on {(currentVideoUrl || profile.studioReelUrl).includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                        </a>
+
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-xl text-[10px] md:text-[11px] font-medium flex items-center gap-2 shadow-2xl z-20 whitespace-nowrap border border-white/10">
+                          <span className="opacity-90">Having trouble playing?</span>
+                          <a
+                            href={currentVideoUrl || profile.studioReelUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#818CF8] hover:text-[#A5B4FC] hover:underline font-black flex items-center gap-1 transition-colors"
+                          >
+                            Watch directly on {(currentVideoUrl || profile.studioReelUrl).includes('vimeo.com') ? 'Vimeo' : 'YouTube'} <ExternalLink size={11} className="inline" />
+                          </a>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}

@@ -77,6 +77,7 @@ export const API_ENDPOINTS = {
     USERS: `${BASE_URL}/api/admin/users`,
     USER_STATUS: (userId: number) => `${BASE_URL}/api/admin/users/${userId}/status`,
     ANALYTICS: `${BASE_URL}/api/admin/analytics`,
+    SEND_BULK_EMAIL: `${BASE_URL}/api/admin/send-bulk-email`,
   },
   NEXUS: {
     BASE: `${BASE_URL}/api/nexus`,
