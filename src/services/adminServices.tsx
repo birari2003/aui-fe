@@ -37,11 +37,18 @@ export const fetchAnalytics = async () => {
   return response;
 };
 
-export const sendBulkEmail = async (emails: string[], subject: string, body: string) => {
+export const fetchEmailAccounts = async () => {
+  const response = await fetch(API_ENDPOINTS.ADMIN_EXTRA.EMAIL_ACCOUNTS, {
+    headers: getHeaders(),
+  });
+  return response;
+};
+
+export const sendBulkEmail = async (emails: string[], subject: string, body: string, fromEmail?: string) => {
   const response = await fetch(API_ENDPOINTS.ADMIN_EXTRA.SEND_BULK_EMAIL, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify({ emails, subject, body }),
+    body: JSON.stringify({ emails, subject, body, fromEmail }),
   });
   return response;
 };

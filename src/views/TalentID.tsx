@@ -34,7 +34,8 @@ import {
   Users,
   User,
   Film,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import Modal from '../components/Modal';
@@ -120,17 +121,164 @@ const convertUrlToBase64 = async (url: string): Promise<string> => {
   }
 };
 
-const getYouTubeId = (url: string) => {
-  if (!url) return 'default';
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+// --- Universal Video URL Detection ---
+
+type VideoType = 'youtube' | 'vimeo' | 'googledrive' | 'dailymotion' | 'streamable' | 'direct' | 'external';
+
+interface VideoInfo {
+  type: VideoType;
+  embedUrl: string | null;
+  originalUrl: string;
+  platformLabel: string;
+  canEmbed: boolean;
+}
+
+const getYouTubeId = (url: string): string => {
+  if (!url) return '';
+  const regExp = /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|&v=)([^#&?]{11}).*/;
   const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : 'default';
+  return (match && match[1].length === 11) ? match[1] : '';
 };
 
-const getVimeoId = (url: string) => {
+const getVimeoId = (url: string): string => {
   if (!url) return '';
-  const match = url.match(/(?:www\.|player\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/);
-  return match ? match[3] : '';
+
+  // Standard video URL: vimeo.com/123456789 or vimeo.com/video/123456789
+  // Also handles channels, groups, albums, showcases, ondemand
+  const standardMatch = url.match(
+    /(?:www\.|player\.)?vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|ondemand\/[^/]+\/|showcase\/\d+\/video\/)(\d+)(?:$|\/|\?)/
+  );
+  if (standardMatch) return standardMatch[1];
+
+  // Simple numeric video URL: vimeo.com/525485100 (no prefix like /user/)
+  const simpleMatch = url.match(/vimeo\.com\/(\d+)(?:$|\/|\?)/);
+  if (simpleMatch) return simpleMatch[1];
+
+  // NOTE: vimeo.com/user{id} is a PROFILE page — user IDs ≠ video IDs.
+  // These fall through to "external" so we don't embed the wrong ID.
+
+  return '';
+};
+
+const getGoogleDriveId = (url: string): string => {
+  if (!url) return '';
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : '';
+};
+
+const getDailymotionId = (url: string): string => {
+  if (!url) return '';
+  const match = url.match(/dailymotion\.com\/(?:video|embed\/video)\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : '';
+};
+
+const getStreamableCode = (url: string): string => {
+  if (!url) return '';
+  const match = url.match(/streamable\.com\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : '';
+};
+
+const isDirectVideoUrl = (url: string): boolean => {
+  return /\.(mp4|webm|ogg|mov|avi|mkv|m4v|flv|3gp)(\?.*)?$/i.test(url);
+};
+
+const isValidUrl = (url: string): boolean => {
+  if (!url) return false;
+  let testStr = url;
+  if (!/^https?:\/\//i.test(url)) {
+    testStr = 'https://' + url;
+  }
+  try {
+    new URL(testStr);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
+
+const detectVideoUrl = (url: string): VideoInfo => {
+  if (!url) return { type: 'external', embedUrl: null, originalUrl: url, platformLabel: 'Video', canEmbed: false };
+
+  // YouTube
+  const ytId = getYouTubeId(url);
+  if (ytId) {
+    return {
+      type: 'youtube',
+      embedUrl: `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`,
+      originalUrl: url,
+      platformLabel: 'YouTube',
+      canEmbed: true,
+    };
+  }
+
+  // Vimeo
+  const vimeoId = getVimeoId(url);
+  if (vimeoId) {
+    return {
+      type: 'vimeo',
+      embedUrl: `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0&portrait=0`,
+      originalUrl: url,
+      platformLabel: 'Vimeo',
+      canEmbed: true,
+    };
+  }
+
+  // Google Drive
+  const driveId = getGoogleDriveId(url);
+  if (url.includes('drive.google.com') && driveId) {
+    return {
+      type: 'googledrive',
+      embedUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+      originalUrl: url,
+      platformLabel: 'Google Drive',
+      canEmbed: true,
+    };
+  }
+
+  // Dailymotion
+  const dmId = getDailymotionId(url);
+  if (dmId) {
+    return {
+      type: 'dailymotion',
+      embedUrl: `https://www.dailymotion.com/embed/video/${dmId}?autoplay=1`,
+      originalUrl: url,
+      platformLabel: 'Dailymotion',
+      canEmbed: true,
+    };
+  }
+
+  // Streamable
+  const streamCode = getStreamableCode(url);
+  if (streamCode) {
+    return {
+      type: 'streamable',
+      embedUrl: `https://streamable.com/e/${streamCode}?autoplay=1`,
+      originalUrl: url,
+      platformLabel: 'Streamable',
+      canEmbed: true,
+    };
+  }
+
+  // Direct video file
+  if (isDirectVideoUrl(url)) {
+    return {
+      type: 'direct',
+      embedUrl: null,
+      originalUrl: url,
+      platformLabel: 'Video',
+      canEmbed: false,
+    };
+  }
+
+  // Any other URL — cannot be reliably embedded (most sites block iframe via X-Frame-Options).
+  // Show a clean "Watch Video" card that always works.
+  return {
+    type: 'external',
+    embedUrl: null,
+    originalUrl: url,
+    platformLabel: 'Video',
+    canEmbed: false,
+  };
 };
 
 const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
@@ -799,99 +947,81 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             <h3 className="font-bold text-lg">Showreel</h3>
           </div>
 
-          {showreel ? (
-            <div
-              className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium"
-            >
-              {!isPlaying ? (
-                <div 
-                  className="w-full h-full relative cursor-pointer flex items-center justify-center bg-brand-surface"
-                  onClick={() => setIsPlaying(true)}
-                >
-                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
-                    <img 
-                      src={`https://img.youtube.com/vi/${getYouTubeId(showreel.url)}/hqdefault.jpg`} 
-                      className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
-                      alt="YouTube Showreel Cover"
-                    />
-                  ) : showreel.url && showreel.url.includes('vimeo.com') ? (
-                    vimeoThumbnailUrl ? (
-                      <img 
-                        src={vimeoThumbnailUrl} 
-                        className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
-                        alt="Vimeo Showreel Cover"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/20 via-brand-purple/20 to-brand-accent/20 animate-pulse" />
-                    )
-                  ) : showreel.url ? (
-                    <video 
-                      src={getFileUrl(showreel.url)}
-                      className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
-                      preload="metadata"
-                      muted
-                      playsInline
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/20 via-brand-purple/20 to-brand-accent/20" />
-                  )}
-                  {/* Play Button Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-white transition-all duration-500">
-                      <Play size={24} className="fill-[#4F46E5] text-[#4F46E5] ml-1" />
-                    </div>
-                  </div>
-                  
-                  {/* Top Bar on Cover */}
-                  <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
-                    {showreel.duration && <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>}
-                  </div>
-                  
-                  {/* External Link on Cover */}
-                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be') || showreel.url.includes('vimeo.com')) && (
-                    <a
-                      href={showreel.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
-                      onClick={(e) => e.stopPropagation()}
+          {showreel ? (() => {
+            const videoInfo = detectVideoUrl(showreel.url);
+
+            // For platforms that can be embedded (YouTube, Vimeo, GDrive, Dailymotion, Streamable)
+            if (videoInfo.canEmbed) {
+              return (
+                <div className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium">
+                  {!isPlaying ? (
+                    <div
+                      className="w-full h-full relative cursor-pointer flex items-center justify-center bg-[#0a0a0a]"
+                      onClick={() => setIsPlaying(true)}
                     >
-                      <ExternalLink size={12} className="text-white" />
-                      Watch on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be')) ? (
-                    <iframe
-                      src={`https://www.youtube.com/embed/${getYouTubeId(showreel.url)}?autoplay=1`}
-                      title={showreel.title}
-                      className="w-full h-full border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  ) : showreel.url && showreel.url.includes('vimeo.com') ? (
-                    <iframe
-                      src={`https://player.vimeo.com/video/${getVimeoId(showreel.url)}?autoplay=1`}
-                      title={showreel.title}
-                      className="w-full h-full border-0"
-                      allow="autoplay; fullscreen; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
+                      {/* Thumbnail background */}
+                      {videoInfo.type === 'youtube' && getYouTubeId(showreel.url) ? (
+                        <img
+                          src={`https://img.youtube.com/vi/${getYouTubeId(showreel.url)}/hqdefault.jpg`}
+                          className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
+                          alt="Showreel Cover"
+                        />
+                      ) : videoInfo.type === 'vimeo' && vimeoThumbnailUrl ? (
+                        <img
+                          src={vimeoThumbnailUrl}
+                          className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
+                          alt="Showreel Cover"
+                        />
+                      ) : videoInfo.type === 'googledrive' && getGoogleDriveId(showreel.url) ? (
+                        <img
+                          src={`https://drive.google.com/thumbnail?id=${getGoogleDriveId(showreel.url)}&sz=w1000`}
+                          className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
+                          alt="Showreel Cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#1e1b4b] animate-pulse" />
+                      )}
+
+                      {/* Dark overlay for text readability */}
+                      <div className="absolute inset-0 bg-black/30" />
+
+                      {/* Play Button */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-white transition-all duration-500">
+                          <Play size={24} className="fill-[#4F46E5] text-[#4F46E5] ml-1" />
+                        </div>
+                      </div>
+
+                      {/* Title badge */}
+                      <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+                        <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
+                        {showreel.duration && <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>}
+                      </div>
+
+                      {/* External link */}
+                      <a
+                        href={showreel.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink size={12} className="text-white" />
+                        Watch on {videoInfo.platformLabel}
+                      </a>
+                    </div>
                   ) : (
-                    <video
-                      src={getFileUrl(showreel.url)}
-                      controls
-                      autoPlay
-                      className="w-full h-full object-contain"
-                    />
-                  )}
-                  
-                  {/* External Link when playing */}
-                  {showreel.url && (showreel.url.includes('youtube.com') || showreel.url.includes('youtu.be') || showreel.url.includes('vimeo.com')) && (
                     <>
+                      <iframe
+                        src={videoInfo.embedUrl!}
+                        title={showreel.title}
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowFullScreen
+                        referrerPolicy="strict-origin-when-cross-origin"
+                      ></iframe>
+
+                      {/* Always-visible external link + fallback bar */}
                       <a
                         href={showreel.url}
                         target="_blank"
@@ -899,7 +1029,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                         className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
                       >
                         <ExternalLink size={12} className="text-white" />
-                        Watch on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'}
+                        Watch on {videoInfo.platformLabel}
                       </a>
 
                       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-xl text-[10px] md:text-[11px] font-medium flex items-center gap-2 shadow-2xl z-10 whitespace-nowrap border border-white/10">
@@ -910,15 +1040,99 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                           rel="noopener noreferrer"
                           className="text-[#818CF8] hover:text-[#A5B4FC] hover:underline font-black flex items-center gap-1 transition-colors"
                         >
-                          Watch directly on {showreel.url.includes('vimeo.com') ? 'Vimeo' : 'YouTube'} <ExternalLink size={11} className="inline" />
+                          Watch directly on {videoInfo.platformLabel} <ExternalLink size={11} className="inline" />
                         </a>
                       </div>
                     </>
                   )}
-                </>
-              )}
-            </div>
-          ) : (
+                </div>
+              );
+            }
+
+            // For direct video files (.mp4, .webm, etc.)
+            if (videoInfo.type === 'direct') {
+              return (
+                <div className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium">
+                  <video
+                    src={getFileUrl(showreel.url)}
+                    controls
+                    className="w-full h-full object-contain"
+                    preload="metadata"
+                    playsInline
+                  />
+                </div>
+              );
+            }
+
+            // For any other URL (portfolio sites, custom hosts blocked by X-Frame-Options, etc.)
+            // We check if it is a valid URL first.
+            const isValid = isValidUrl(showreel.url);
+            const formattedUrl = showreel.url.startsWith('http') ? showreel.url : `https://${showreel.url}`;
+
+            if (!isValid) {
+              return (
+                <div className="relative rounded-[20px] overflow-hidden bg-gradient-to-br from-[#241212] via-[#3b1818] to-[#1c0c0c] flex flex-col items-center justify-center gap-5 py-12 px-6 group border border-red-900/50 shadow-lg">
+                  {/* Decorative blobs */}
+                  <div className="absolute top-0 left-0 w-40 h-40 bg-red-600/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 w-40 h-40 bg-orange-600/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
+
+                  {/* Icon */}
+                  <div className="w-16 h-16 bg-red-500/10 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl border border-red-500/20 group-hover:scale-105 transition-all duration-500">
+                    <AlertTriangle size={28} className="text-red-400" />
+                  </div>
+
+                  {/* Text */}
+                  <div className="text-center space-y-1 px-6 z-10 font-sans">
+                    <p className="text-red-200 font-bold text-sm">Invalid Link Provided</p>
+                    <p className="text-red-300/70 text-xs">The provided link is not a valid URL.</p>
+                  </div>
+
+                  {/* Disabled CTA Button */}
+                  <button
+                    disabled
+                    className="z-10 bg-white/5 text-white/40 cursor-not-allowed font-bold text-sm px-7 py-3 rounded-2xl flex items-center gap-2.5 border border-white/10"
+                  >
+                    <ExternalLink size={16} />
+                    Invalid Link
+                  </button>
+                </div>
+              );
+            }
+
+            // It is a valid URL but not a recognized video platform (generic URL)
+            return (
+              <div className="relative rounded-[20px] overflow-hidden bg-gradient-to-br from-[#0a192f] via-[#0d2b45] to-[#020c1b] flex flex-col items-center justify-center gap-5 py-12 px-6 group border border-blue-900/30 shadow-lg">
+                {/* Decorative blobs */}
+                <div className="absolute top-0 left-0 w-40 h-40 bg-[#00b4d8]/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-40 h-40 bg-[#48cae4]/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
+
+                {/* Icon */}
+                <div className="w-16 h-16 bg-blue-500/10 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl border border-blue-500/20 group-hover:scale-105 transition-all duration-500">
+                  <LinkIcon size={26} className="text-blue-400" />
+                </div>
+
+                {/* Text */}
+                <div className="text-center space-y-1 px-6 z-10 font-sans">
+                  <p className="text-white font-bold text-sm">{showreel.title || 'Professional Showreel'}</p>
+                  <p className="text-blue-200/70 text-xs">This is not a direct video link. Clicking below will open the webpage.</p>
+                </div>
+
+                {/* CTA Button */}
+                <a
+                  href={formattedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="z-10 bg-white hover:bg-gray-100 active:scale-95 text-[#0a192f] font-bold text-sm px-7 py-3 rounded-2xl flex items-center gap-2.5 transition-all duration-200 shadow-[0_8px_24px_rgba(255,255,255,0.1)]"
+                >
+                  <ExternalLink size={16} />
+                  Open Website / Portfolio
+                </a>
+
+                {/* URL hint */}
+                <p className="text-white/20 text-[10px] max-w-xs text-center truncate px-6 z-10">{showreel.url}</p>
+              </div>
+            );
+          })() : (
             <div className="flex items-center justify-center rounded-[20px] bg-[#F9FAFB] border border-dashed border-[#E5E7EB] py-12">
               <p className="text-[#9CA3AF] text-sm italic">No showreel added yet.</p>
             </div>

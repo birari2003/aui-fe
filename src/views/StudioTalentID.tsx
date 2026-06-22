@@ -542,6 +542,7 @@ const StudioTalentID = () => {
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                             allowFullScreen
                             title="Studio Reel"
+                            referrerPolicy="strict-origin-when-cross-origin"
                           />
                         );
                       } else if (videoUrl.includes('vimeo.com')) {
@@ -554,6 +555,7 @@ const StudioTalentID = () => {
                             allow="autoplay; fullscreen; picture-in-picture" 
                             allowFullScreen
                             title="Studio Reel"
+                            referrerPolicy="strict-origin-when-cross-origin"
                           />
                         );
                       } else {

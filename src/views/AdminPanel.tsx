@@ -6,7 +6,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
 import { View } from '../types';
-import { fetchAdminUsers, updateUserStatus, fetchAnalytics, sendBulkEmail } from '../services/adminServices';
+import { fetchAdminUsers, updateUserStatus, fetchAnalytics, sendBulkEmail, fetchEmailAccounts } from '../services/adminServices';
 import { getAllSpecialRequests, updateSpecialRequestStatus } from '../services/specialRequestServices';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as workshopServices from '../services/instituteWorkshopServices';
@@ -42,6 +42,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
   const [selectedUserIds, setSelectedUserIds] = React.useState<Record<number, boolean>>({});
   const [isSendingEmails, setIsSendingEmails] = React.useState(false);
   const [emailSendStatus, setEmailSendStatus] = React.useState<{ success: boolean; message: string } | null>(null);
+  const [fromEmail, setFromEmail] = React.useState<string>('');
+  const [emailAccounts, setEmailAccounts] = React.useState<{ email: string; label: string }[]>([]);
 
   const [facilitationRequests, setFacilitationRequests] = React.useState<any[]>([]);
   const [facilitationLoading, setFacilitationLoading] = React.useState(false);
@@ -115,6 +117,25 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
   React.useEffect(() => {
     loadData();
   }, [filters]);
+
+  // Load available sender email accounts once on mount
+  React.useEffect(() => {
+    const loadEmailAccounts = async () => {
+      try {
+        const res = await fetchEmailAccounts();
+        if (res.ok) {
+          const data = await res.json();
+          setEmailAccounts(data.data || []);
+          if (data.data && data.data.length > 0) {
+            setFromEmail(data.data[0].email);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load email accounts:', err);
+      }
+    };
+    loadEmailAccounts();
+  }, []);
 
   const handleStatusUpdate = async (userId: number, newStatus: 'approved' | 'rejected') => {
     setActionLoading(`${userId}-${newStatus}`);
@@ -564,7 +585,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     setEmailSendStatus(null);
 
     try {
-      const res = await sendBulkEmail(recipientEmails, emailSubject, emailBody);
+      const res = await sendBulkEmail(recipientEmails, emailSubject, emailBody, fromEmail || undefined);
       if (res.ok) {
         const data = await res.json();
         setEmailSendStatus({
@@ -975,6 +996,28 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                 )}
 
                 <div className="space-y-4">
+                  {/* From Email Selector */}
+                  {emailAccounts.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">From Email</label>
+                      <div className="relative">
+                        <select
+                          className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all appearance-none pr-10 cursor-pointer"
+                          value={fromEmail}
+                          onChange={(e) => setFromEmail(e.target.value)}
+                          disabled={isSendingEmails}
+                        >
+                          {emailAccounts.map((acc) => (
+                            <option key={acc.email} value={acc.email}>{acc.label}</option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                          <Mail size={15} className="text-brand-primary" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Email Subject</label>
                     <input

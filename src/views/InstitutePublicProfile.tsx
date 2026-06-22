@@ -69,6 +69,11 @@ const InstitutePublicProfile = () => {
       const match = url.match(regExp);
       return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}?autoplay=1` : url;
     }
+    if (url.includes('vimeo.com')) {
+      const match = url.match(/(?:www\.|player\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/);
+      const vimeoId = match ? match[3] : '';
+      return vimeoId ? `https://player.vimeo.com/video/${vimeoId}?autoplay=1` : url;
+    }
     return url;
   };
 
@@ -317,6 +322,7 @@ const InstitutePublicProfile = () => {
                   src={getEmbedUrl(profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4')} 
                   className="w-full h-full border-0" 
                   allow="autoplay; fullscreen" 
+                  referrerPolicy="strict-origin-when-cross-origin"
                 />
                 {(profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4') && ((profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4').includes('youtube.com') || (profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4').includes('youtu.be') || (profile.showcaseVideoUrl || 'https://www.youtube.com/watch?v=ScMzIvxBSi4').includes('vimeo.com')) && (
                   <>

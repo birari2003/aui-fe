@@ -11,6 +11,25 @@ interface ManagePublicProfileModalProps {
   profile?: any;
 }
 
+const isProperVideoLink = (url: string): boolean => {
+  if (!url) return true;
+  // Check YouTube
+  if (/^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|&v=)([^#&?]{11}).*/.test(url)) return true;
+  // Check Vimeo
+  if (/(?:www\.|player\.)?vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|ondemand\/[^/]+\/|showcase\/\d+\/video\/|(\d+))/.test(url)) return true;
+  if (/vimeo\.com\/(\d+)/.test(url)) return true;
+  // Check Google Drive
+  if (url.includes('drive.google.com') && /\/d\/([a-zA-Z0-9_-]+)/.test(url)) return true;
+  // Check Dailymotion
+  if (/dailymotion\.com\/(?:video|embed\/video)\/([a-zA-Z0-9]+)/.test(url)) return true;
+  // Check Streamable
+  if (/streamable\.com\/([a-zA-Z0-9]+)/.test(url)) return true;
+  // Check direct video extension
+  if (/\.(mp4|webm|ogg|mov|avi|mkv|m4v|flv|3gp)(\?.*)?$/i.test(url)) return true;
+
+  return false;
+};
+
 const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isOpen, onClose, onUpdate, profile }) => {
   const [activeTab, setActiveTab] = useState<'insight' | 'timeline' | 'showreel' | 'workLedger'>('insight');
   const [loading, setLoading] = useState(false);
@@ -492,7 +511,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
 
                 {formData.showreel.type === 'youtube' ? (
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Youtube URL</label>
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Youtube URL / Video URL</label>
                     <input
                       type="text"
                       placeholder="https://youtube.com/watch?v=..."
@@ -500,6 +519,21 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                       onChange={(e) => setFormData({ ...formData, showreel: { ...formData.showreel, url: e.target.value } })}
                       className="w-full px-5 py-3.5 bg-white rounded-2xl border border-gray-100 focus:border-brand-accent outline-none font-bold"
                     />
+                    {formData.showreel.url && !isProperVideoLink(formData.showreel.url) && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 mt-2">
+                        <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <p className="text-amber-800 text-[11px] font-bold">Non-Video / External Portfolio Link Detected</p>
+                          <p className="text-amber-700/80 text-[10px] leading-relaxed font-medium">
+                            This URL does not point to a recognized video platform (YouTube, Vimeo, Google Drive, Streamable, or direct video file). 
+                            On your public profile, this will be displayed as a <strong>Portfolio / Website Link</strong> instead of an interactive video player.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-text-muted mt-1.5 leading-relaxed">
+                      💡 <strong>Note:</strong> Make sure your YouTube or Vimeo video is set to <strong>Public</strong> or <strong>Unlisted</strong>, has <strong>Allow embedding</strong> enabled, and is not age-restricted/password-protected, so it can play inline on your AUI profile.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
