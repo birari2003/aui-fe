@@ -1,21 +1,9 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
-import ReelCard from './ReelCard';
 import ReelModal from './ReelModal';
-import { REELS_DATA } from '../data/mockData';
 import { View } from '../types';
 
 const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
   const [selectedReel, setSelectedReel] = React.useState<any>(null);
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollTo = direction === 'left' ? scrollLeft - clientWidth : scrollLeft + clientWidth;
-      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
-    }
-  };
 
   return (
     <section className="py-32 space-y-16">
@@ -30,20 +18,6 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
         <div className="space-y-4">
           <h2 className="text-5xl md:text-6xl font-display font-bold tracking-tight text-brand-primary">Featured Professionals, Institutes & Studios</h2>
           <p className="text-text-secondary text-xl max-w-xl">See how professionals teach, institutes train, and studios create in real production environments.</p>
-        </div>
-        <div className="hidden md:flex gap-4">
-          <button 
-            onClick={() => scroll('left')}
-            className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-text-muted hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-premium"
-          >
-            <ChevronRight size={20} className="rotate-180" />
-          </button>
-          <button 
-            onClick={() => scroll('right')}
-            className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-text-muted hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-premium"
-          >
-            <ChevronRight size={20} />
-          </button>
         </div>
       </div>
 

@@ -9,11 +9,43 @@ import { View, UserRole } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import SEO from '../components/SEO';
+import { fetchPlatformStats } from '../services/platformServices';
+
+type PlatformStats = {
+  professionals: number | null;
+  studios: number | null;
+  institutes: number | null;
+};
 
 const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRole: UserRole | null }) => {
   const navigate = useNavigate();
   const [isRestrictedModalOpen, setIsRestrictedModalOpen] = React.useState(false);
   const [restrictedMessage, setRestrictedMessage] = React.useState('');
+  const [platformStats, setPlatformStats] = React.useState<PlatformStats>({
+    professionals: null,
+    studios: null,
+    institutes: null,
+  });
+
+  React.useEffect(() => {
+    const loadPlatformStats = async () => {
+      try {
+        const res = await fetchPlatformStats();
+        if (!res.ok) return;
+
+        const payload = await res.json();
+        setPlatformStats({
+          professionals: Number(payload.data?.professionals || 0),
+          studios: Number(payload.data?.studios || 0),
+          institutes: Number(payload.data?.institutes || 0),
+        });
+      } catch (err) {
+        console.error('Failed to load platform stats:', err);
+      }
+    };
+
+    loadPlatformStats();
+  }, []);
 
   const handleAction = (v: View) => {
     if (!userRole) {
@@ -120,12 +152,14 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
           {/* Metrics */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-12 border-y border-gray-100 py-20">
             {[
-              { label: 'Verified Professionals', value: '500+' },
-              { label: 'Partner Studios', value: '40+' },
-              { label: 'Workshops Delivered', value: '120+' },
+              { label: 'Professionals', value: platformStats.professionals },
+              { label: 'Studios', value: platformStats.studios },
+              { label: 'Institutes', value: platformStats.institutes },
             ].map(metric => (
               <div key={metric.label} className="text-center space-y-2">
-                <h2 className="text-6xl font-display font-bold text-brand-primary tracking-tight">{metric.value}</h2>
+                <h2 className="text-6xl font-display font-bold text-brand-primary tracking-tight">
+                  {typeof metric.value === 'number' ? metric.value.toLocaleString() : '...'}
+                </h2>
                 <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">{metric.label}</p>
               </div>
             ))}

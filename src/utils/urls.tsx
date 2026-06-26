@@ -82,6 +82,8 @@ export const API_ENDPOINTS = {
   },
   NEXUS: {
     BASE: `${BASE_URL}/api/nexus`,
+  },
+  PLATFORM: {
+    STATS: `${BASE_URL}/api/platform/stats`,
   }
 };
-

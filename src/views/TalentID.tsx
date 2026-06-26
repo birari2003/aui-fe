@@ -522,6 +522,13 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const levelStyle = levelStyles[userLevel] || levelStyles.junior;
   const highlight = levelHighlightStyles[userLevel] || levelHighlightStyles.junior;
   const displayName = professional?.fullName || 'Professional';
+  const displayInitials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((name: string) => name[0])
+    .join('')
+    .toUpperCase() || 'AUI';
   const hasAvatar = !!(publicProfile?.profileImage || professional?.avatarUrl);
   const avatarUrl = publicProfile?.profileImage ? getFileUrl(publicProfile.profileImage) : (professional?.avatarUrl || '');
   const displayTalentId = talentId?.talentCode || 'AUI-000000';
@@ -773,11 +780,11 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         </div>
       </header>
 
-      <main className="max-w-[1100px] mx-auto px-6 pt-5 space-y-5">
+      <main className="max-w-[1100px] mx-auto px-4 sm:px-6 pt-4 sm:pt-5 space-y-4 sm:space-y-5">
         {/* Profile Card Section */}
-        <div ref={cardRef} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col md:flex-row min-h-[400px]">
+        <div ref={cardRef} className="bg-white rounded-[24px] shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col md:flex-row md:min-h-[400px]">
           {/* Left Column: Vertical Image */}
-          <div className="w-full md:w-[320px] relative shrink-0">
+          <div className="w-full h-[300px] sm:h-[360px] md:h-auto md:w-[320px] relative shrink-0">
             {hasAvatar ? (
               <img
                 src={avatarUrl}
@@ -785,15 +792,21 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-[#f0f0f5]">
-                <User size={80} className="text-[#c0c4cc]" />
+              <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#EEF2FF] via-white to-[#E0F2FE]">
+                <div className="w-28 h-28 rounded-full bg-white border border-[#DBEAFE] shadow-sm flex items-center justify-center">
+                  <span className="text-4xl font-black tracking-tight text-[#2563EB]">{displayInitials}</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-white/85 border border-[#E5E7EB] px-4 py-2 text-[#64748B] shadow-sm">
+                  <User size={16} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Verified Profile</span>
+                </div>
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20"></div>
           </div>
 
           {/* Right Column: Info */}
-          <div className="flex-1 p-6 flex flex-col space-y-4">
+          <div className="flex-1 p-4 sm:p-6 flex flex-col space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-[#2563EB] font-bold text-[10px] uppercase tracking-widest">
@@ -801,7 +814,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                   AUI Verified Talent
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-3xl font-bold tracking-tight text-[#111827]">{displayName}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111827] leading-tight">{displayName}</h1>
                   <CheckCircle2 size={20} className="text-[#2563EB] shrink-0" />
                 </div>
               </div>
@@ -813,27 +826,27 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
             <div className="space-y-1">
               <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-[0.2em]">Talent ID</div>
-              <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-2xl p-3 flex items-center justify-center">
-                <span className="text-2xl sm:text-3xl font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[#0F172A] font-mono uppercase">{displayTalentId}</span>
+              <div className="bg-[#F8FAFC] border border-[#F1F5F9] rounded-2xl p-3 flex items-center justify-center overflow-hidden">
+                <span className="text-xl min-[380px]:text-2xl sm:text-3xl font-bold tracking-[0.12em] sm:tracking-[0.3em] text-[#0F172A] font-mono uppercase break-all text-center">{displayTalentId}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-6 py-2 border-b border-[#F1F5F9]">
-              <div className="space-y-0.5">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 sm:gap-6 py-2 border-b border-[#F1F5F9]">
+              <div className="space-y-0.5 rounded-2xl bg-[#F8FAFC] min-[420px]:bg-transparent p-3 min-[420px]:p-0">
                 <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider sm:tracking-widest">
                   <Star size={10} className="shrink-0" />
                   <span className="truncate">Experience</span>
                 </div>
                 <div className="text-xs sm:text-sm font-bold">{professional?.experienceYears || '0'}+ Years</div>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 rounded-2xl bg-[#F8FAFC] min-[420px]:bg-transparent p-3 min-[420px]:p-0">
                 <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider sm:tracking-widest">
                   <Briefcase size={10} className="shrink-0" />
                   <span className="truncate">Production</span>
                 </div>
                 <div className="text-xs sm:text-sm font-bold truncate">{professional?.productionType || 'Feature Film'}</div>
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 rounded-2xl bg-[#F8FAFC] min-[420px]:bg-transparent p-3 min-[420px]:p-0">
                 <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider sm:tracking-widest">
                   <Award size={10} className="shrink-0 text-text-muted" />
                   <span className="truncate">Primary Skill</span>
@@ -851,7 +864,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2 text-[9px] font-bold text-[#94A3B8] uppercase tracking-widest">
               <div className="flex items-center gap-1.5"><ShieldCheck size={14} /> Identity Verified</div>
               <div className="flex items-center gap-1.5"><Briefcase size={14} /> Work Verified</div>
               <div className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Trusted by AUI</div>
@@ -939,7 +952,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         </div>
 
         {/* Showreel Section */}
-        <div className="bg-white p-5 rounded-[24px] border border-[#E5E7EB] space-y-3 shadow-sm">
+        <div className="bg-white p-4 sm:p-5 rounded-[24px] border border-[#E5E7EB] space-y-3 shadow-sm">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#2563EB] rounded-full flex items-center justify-center text-white">
               <Play size={16} fill="white" />
@@ -953,7 +966,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             // For platforms that can be embedded (YouTube, Vimeo, GDrive, Dailymotion, Streamable)
             if (videoInfo.canEmbed) {
               return (
-                <div className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium">
+                <div className="relative rounded-[20px] overflow-hidden aspect-video md:aspect-[21/7] bg-black group shadow-premium">
                   {!isPlaying ? (
                     <div
                       className="w-full h-full relative cursor-pointer flex items-center justify-center bg-[#0a0a0a]"
@@ -987,28 +1000,29 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
                       {/* Play Button */}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-white transition-all duration-500">
-                          <Play size={24} className="fill-[#4F46E5] text-[#4F46E5] ml-1" />
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-white transition-all duration-500">
+                          <Play size={22} className="fill-[#4F46E5] text-[#4F46E5] ml-1" />
                         </div>
                       </div>
 
                       {/* Title badge */}
-                      <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
-                        <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.title}</span>
+                      <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 z-10">
+                        <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold max-w-[180px] sm:max-w-none truncate">{showreel.title}</span>
                         {showreel.duration && <span className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold">{showreel.duration}</span>}
+                        </div>
+                        <a
+                          href={showreel.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-black/60 hover:bg-black/80 backdrop-blur-md text-white p-2 sm:px-3 sm:py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Watch on ${videoInfo.platformLabel}`}
+                        >
+                          <ExternalLink size={12} className="text-white" />
+                          <span className="hidden sm:inline">Watch on {videoInfo.platformLabel}</span>
+                        </a>
                       </div>
-
-                      {/* External link */}
-                      <a
-                        href={showreel.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink size={12} className="text-white" />
-                        Watch on {videoInfo.platformLabel}
-                      </a>
                     </div>
                   ) : (
                     <>
@@ -1026,13 +1040,14 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                         href={showreel.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
+                        className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white p-2 sm:px-3 sm:py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all shadow-md z-10"
+                        aria-label={`Watch on ${videoInfo.platformLabel}`}
                       >
                         <ExternalLink size={12} className="text-white" />
-                        Watch on {videoInfo.platformLabel}
+                        <span className="hidden sm:inline">Watch on {videoInfo.platformLabel}</span>
                       </a>
 
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-xl text-[10px] md:text-[11px] font-medium flex items-center gap-2 shadow-2xl z-10 whitespace-nowrap border border-white/10">
+                      <div className="absolute bottom-3 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 bg-black/80 backdrop-blur-md text-white px-3 sm:px-4 py-2 rounded-xl text-[10px] md:text-[11px] font-medium flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 shadow-2xl z-10 border border-white/10 text-center">
                         <span className="opacity-90">Having trouble playing?</span>
                         <a
                           href={showreel.url}
@@ -1052,7 +1067,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
             // For direct video files (.mp4, .webm, etc.)
             if (videoInfo.type === 'direct') {
               return (
-                <div className="relative rounded-[20px] overflow-hidden aspect-[21/7] bg-black group shadow-premium">
+                <div className="relative rounded-[20px] overflow-hidden aspect-video md:aspect-[21/7] bg-black group shadow-premium">
                   <video
                     src={getFileUrl(showreel.url)}
                     controls
@@ -1071,7 +1086,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
             if (!isValid) {
               return (
-                <div className="relative rounded-[20px] overflow-hidden bg-gradient-to-br from-[#241212] via-[#3b1818] to-[#1c0c0c] flex flex-col items-center justify-center gap-5 py-12 px-6 group border border-red-900/50 shadow-lg">
+                <div className="relative rounded-[20px] overflow-hidden bg-gradient-to-br from-[#241212] via-[#3b1818] to-[#1c0c0c] flex flex-col items-center justify-center gap-5 min-h-[260px] py-12 px-5 sm:px-6 group border border-red-900/50 shadow-lg">
                   {/* Decorative blobs */}
                   <div className="absolute top-0 left-0 w-40 h-40 bg-red-600/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
                   <div className="absolute bottom-0 right-0 w-40 h-40 bg-orange-600/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
@@ -1101,7 +1116,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 
             // It is a valid URL but not a recognized video platform (generic URL)
             return (
-              <div className="relative rounded-[20px] overflow-hidden bg-gradient-to-br from-[#0a192f] via-[#0d2b45] to-[#020c1b] flex flex-col items-center justify-center gap-5 py-12 px-6 group border border-blue-900/30 shadow-lg">
+              <div className="relative rounded-[20px] overflow-hidden bg-gradient-to-br from-[#0a192f] via-[#0d2b45] to-[#020c1b] flex flex-col items-center justify-center gap-5 min-h-[280px] py-12 px-5 sm:px-6 group border border-blue-900/30 shadow-lg">
                 {/* Decorative blobs */}
                 <div className="absolute top-0 left-0 w-40 h-40 bg-[#00b4d8]/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
                 <div className="absolute bottom-0 right-0 w-40 h-40 bg-[#48cae4]/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 pointer-events-none" />
@@ -1133,7 +1148,10 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             );
           })() : (
-            <div className="flex items-center justify-center rounded-[20px] bg-[#F9FAFB] border border-dashed border-[#E5E7EB] py-12">
+            <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] bg-[#F9FAFB] border border-dashed border-[#E5E7EB] min-h-[220px] py-12 px-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-white border border-[#E5E7EB] flex items-center justify-center text-[#94A3B8] shadow-sm">
+                <Film size={24} />
+              </div>
               <p className="text-[#9CA3AF] text-sm italic">No showreel added yet.</p>
             </div>
           )}
@@ -1499,7 +1517,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                   </div>
 
                   {/* Experience Level, Production Types & QR Code in one row */}
-                  <div className="grid grid-cols-[1fr_1.1fr_1.1fr_auto] gap-4 items-center border-t border-[#e5e7eb] pt-3 min-h-[56px]">
+                  <div className="grid grid-cols-[1fr_1.1fr_1.1fr_auto] gap-4 items-center border-t border-[#e5e7eb] pt-3 min-h-[76px]">
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#9aa0a8]">
                         <User size={11} /> Exp Level
@@ -1528,8 +1546,8 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                     </div>
 
                     <div className="border-l border-[#e5e7eb] pl-4 flex justify-end">
-                      <div className="w-12 h-12 bg-white p-1 rounded-lg border border-[#E5E7EB] flex shrink-0 items-center justify-center shadow-sm">
-                        <QRCode value={`${window.location.origin}/talent/${displayTalentId}`} size={40} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
+                      <div className="w-[72px] h-[72px] bg-white p-1.5 rounded-xl border border-[#E5E7EB] flex shrink-0 items-center justify-center shadow-sm">
+                        <QRCode value={`${window.location.origin}/talent/${displayTalentId}`} size={60} style={{ height: "auto", maxWidth: "100%", width: "100%" }} />
                       </div>
                     </div>
                   </div>
@@ -1562,6 +1580,3 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
 };
 
 export default TalentIDPage;
-
-
-
