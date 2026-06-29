@@ -71,7 +71,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
 
   const isAuthPage = ['/login', '/register', '/onboarding'].includes(path);
   const isDashboard = path.startsWith('/dashboard');
-  const isShowcase = path.startsWith('/studio/') || path.startsWith('/institute/') || path.startsWith('/talent/');
+  const isShowcase = path.startsWith('/studio/') || path.startsWith('/institute/') || path.startsWith('/talent/') || path.startsWith('/showcase/');
 
   if (isShowcase) return null;
 

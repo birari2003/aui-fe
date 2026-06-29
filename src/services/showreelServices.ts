@@ -5,6 +5,11 @@ export const fetchShowreels = async () => {
   return response;
 };
 
+export const fetchShowreelById = async (id: string) => {
+  const response = await fetch(`${API_ENDPOINTS.SHOWREELS.BASE}/${id}`);
+  return response;
+};
+
 export const createShowreel = async (token: string, formData: FormData) => {
   const response = await fetch(`${API_ENDPOINTS.SHOWREELS.BASE}`, {
     method: 'POST',

@@ -1,13 +1,13 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import ReelModal from './ReelModal';
+import { useNavigate } from 'react-router-dom';
 import ReelCard from './ReelCard';
 import { View } from '../types';
 import { fetchShowreels } from '../services/showreelServices';
 import { BASE_URL } from '../utils/urls';
 
 const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
-  const [selectedReel, setSelectedReel] = React.useState<any>(null);
+  const navigate = useNavigate();
   const [reels, setReels] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -53,12 +53,6 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
 
   return (
     <section className="py-32 space-y-16">
-      <ReelModal 
-        isOpen={!!selectedReel} 
-        onClose={() => setSelectedReel(null)} 
-        reel={selectedReel}
-        onAction={onAction}
-      />
       
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row md:items-end justify-between gap-8 text-left">
         <div className="space-y-4">
@@ -104,7 +98,7 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
               <ReelCard 
                 key={reel.id} 
                 reel={reel} 
-                onClick={() => setSelectedReel(reel)}
+                onClick={() => navigate(`/showcase/${reel.id}`)}
                 onAction={onAction}
               />
             ))}

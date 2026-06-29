@@ -3,10 +3,11 @@ import { motion } from 'motion/react';
 import { Play, ExternalLink } from 'lucide-react';
 import Button from './Button';
 import { View } from '../types';
-import { isDirectVideoUrl } from '../utils/videoUtils';
+import { isDirectVideoUrl, getYouTubeId, getVimeoId } from '../utils/videoUtils';
 
 const ReelCard = ({ reel, onClick, onAction }: { reel: any, onClick: () => void, onAction: (v: View) => void, key?: string }) => {
   const [isHovered, setIsHovered] = React.useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = React.useState<string | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const isDirect = React.useMemo(() => {
@@ -20,9 +21,36 @@ const ReelCard = ({ reel, onClick, onAction }: { reel: any, onClick: () => void,
     }
   }, [isDirect]);
 
+  React.useEffect(() => {
+    if (!reel.videoUrl) return;
+
+    if (reel.thumbnail) {
+      setThumbnailUrl(reel.thumbnail);
+      return;
+    }
+
+    const ytId = getYouTubeId(reel.videoUrl);
+    if (ytId) {
+      setThumbnailUrl(`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
+      return;
+    }
+
+    const vimeoId = getVimeoId(reel.videoUrl);
+    if (vimeoId) {
+      fetch(`https://vimeo.com/api/v2/video/${vimeoId}.json`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data[0] && data[0].thumbnail_large) {
+            setThumbnailUrl(data[0].thumbnail_large);
+          }
+        })
+        .catch(err => console.error('Failed to fetch Vimeo thumbnail:', err));
+    }
+  }, [reel.videoUrl, reel.thumbnail]);
+
   return (
     <motion.div 
-      className="min-w-[320px] md:min-w-[380px] group relative"
+      className="w-[320px] md:w-[380px] shrink-0 group relative"
       whileHover={{ y: -12, scale: 1.02 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       onMouseEnter={() => setIsHovered(true)}
@@ -44,10 +72,10 @@ const ReelCard = ({ reel, onClick, onAction }: { reel: any, onClick: () => void,
               playsInline
               className="absolute inset-0 w-full h-full object-cover"
             />
-          ) : reel.thumbnail ? (
+          ) : thumbnailUrl ? (
             <img 
-              src={reel.thumbnail} 
-              className="w-full h-full object-cover" 
+              src={thumbnailUrl} 
+              className="absolute inset-0 w-full h-full object-cover" 
               alt="" 
             />
           ) : (

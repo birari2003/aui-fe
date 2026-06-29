@@ -24,6 +24,7 @@ import TermsPage from '../views/Terms';
 import PrivacyPage from '../views/Privacy';
 import ContactPage from '../views/Contact';
 import SitemapPage from '../views/Sitemap';
+import ShowcasePage from '../views/ShowcasePage';
 import { useParams } from 'react-router-dom';
 
 interface AppRoutesProps {
@@ -133,6 +134,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ setView, userRole, setUserRole, s
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/sitemap" element={<SitemapPage />} />
+      <Route path="/showcase/:id" element={<ShowcasePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
