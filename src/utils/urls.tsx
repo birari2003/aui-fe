@@ -1,4 +1,4 @@
-const ENV: string = 'local';
+const ENV: string = 'production';
 
 export const BASE_URL = ENV === 'production'
   ? 'https://api.auitalent.com'
