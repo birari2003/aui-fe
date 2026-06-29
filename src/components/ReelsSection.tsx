@@ -59,24 +59,6 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
           <h2 className="text-5xl md:text-6xl font-display font-bold tracking-tight text-brand-primary">Featured Professionals, Institutes & Studios</h2>
           <p className="text-text-secondary text-xl max-w-xl">See how professionals teach, institutes train, and studios create in real production environments.</p>
         </div>
-        
-        {/* Carousel Navigation Arrows */}
-        <div className="flex gap-4 md:self-end">
-          <button 
-            onClick={() => handleScroll('left')}
-            className="p-4 rounded-full border border-brand-primary/10 hover:border-brand-primary/20 bg-white shadow-sm hover:shadow transition-all text-brand-primary active:scale-95"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button 
-            onClick={() => handleScroll('right')}
-            className="p-4 rounded-full border border-brand-primary/10 hover:border-brand-primary/20 bg-white shadow-sm hover:shadow transition-all text-brand-primary active:scale-95"
-            aria-label="Next slide"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
       </div>
 
       {loading ? (
@@ -106,6 +88,27 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
           
           <div className="absolute top-0 left-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent pointer-events-none hidden xl:block" />
           <div className="absolute top-0 right-0 bottom-0 w-32 bg-gradient-to-l from-white to-transparent pointer-events-none hidden xl:block" />
+
+          {/* Carousel Navigation Arrows below the reel list */}
+          <div className={`justify-center gap-4 pt-6
+            ${reels.length > 3 ? 'md:flex' : 'md:hidden'}
+            ${reels.length > 1 ? 'flex' : 'hidden'}
+          `}>
+            <button 
+              onClick={() => handleScroll('left')}
+              className="p-4 rounded-full border border-brand-primary/10 hover:border-brand-primary/20 bg-white shadow-sm hover:shadow transition-all text-brand-primary active:scale-95 flex items-center justify-center text-left"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button 
+              onClick={() => handleScroll('right')}
+              className="p-4 rounded-full border border-brand-primary/10 hover:border-brand-primary/20 bg-white shadow-sm hover:shadow transition-all text-brand-primary active:scale-95 flex items-center justify-center text-left"
+              aria-label="Next slide"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       )}
     </section>
