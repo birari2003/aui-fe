@@ -5,7 +5,7 @@ import { ArrowLeft, Share2, ExternalLink, Play, User, Film, Tag, Facebook, Twitt
 import SEO from '../components/SEO';
 import Badge from '../components/Badge';
 import { fetchShowreelById } from '../services/showreelServices';
-import { detectVideoUrl } from '../utils/videoUtils';
+import { detectVideoUrl, getYouTubeId, getVimeoId } from '../utils/videoUtils';
 import { BASE_URL } from '../utils/urls';
 
 const ShowcasePage = () => {
@@ -17,6 +17,7 @@ const ShowcasePage = () => {
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const [platformToast, setPlatformToast] = React.useState('');
+  const [thumbnailUrl, setThumbnailUrl] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const loadReel = async () => {
@@ -43,6 +44,33 @@ const ShowcasePage = () => {
     };
     loadReel();
   }, [id]);
+
+  React.useEffect(() => {
+    if (!reel?.videoUrl) return;
+
+    if (reel.thumbnail) {
+      setThumbnailUrl(reel.thumbnail);
+      return;
+    }
+
+    const ytId = getYouTubeId(reel.videoUrl);
+    if (ytId) {
+      setThumbnailUrl(`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
+      return;
+    }
+
+    const vimeoId = getVimeoId(reel.videoUrl);
+    if (vimeoId) {
+      fetch(`https://vimeo.com/api/v2/video/${vimeoId}.json`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data[0] && data[0].thumbnail_large) {
+            setThumbnailUrl(data[0].thumbnail_large);
+          }
+        })
+        .catch(err => console.error('Failed to fetch Vimeo thumbnail:', err));
+    }
+  }, [reel]);
 
   if (loading) {
     return (
@@ -76,7 +104,9 @@ const ShowcasePage = () => {
   }
 
   const videoInfo = detectVideoUrl(reel.videoUrl);
-  const shareUrl = `${window.location.origin}/showcase/${id}`;
+  const shareUrl = reel?.slug 
+    ? `${window.location.origin}/showcase/${reel.slug}` 
+    : `${window.location.origin}/showcase/${id}`;
   const displayName = reel.title || reel.name || 'Featured Showcase';
 
   const handleShare = async () => {
@@ -123,8 +153,13 @@ const ShowcasePage = () => {
     <div className="h-screen w-screen bg-brand-primary text-white overflow-hidden relative">
       <SEO 
         title={displayName}
-        description={reel.description || `Watch ${reel.artistName}'s showcase on AUI - Animation Industry Network`}
-        keywords={`${reel.artistName}, ${reel.category}, animation, showcase, showreel, AUI`}
+        description={reel.description || `Watch ${reel.artistName || 'creator'}'s showcase on AUI - Animation Industry Network`}
+        keywords={`${reel.artistName || ''}, ${reel.category || ''}, animation, showcase, showreel, AUI`}
+        ogTitle={displayName}
+        ogDescription={reel.description || `Watch ${reel.artistName || 'creator'}'s showcase on AUI - Animation Industry Network`}
+        ogImage={thumbnailUrl || undefined}
+        ogUrl={shareUrl}
+        ogType="video.other"
       />
 
       {/* Floating Action Button (Go Back only) */}

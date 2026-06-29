@@ -6,6 +6,20 @@ import { View } from '../types';
 import { fetchShowreels } from '../services/showreelServices';
 import { BASE_URL } from '../utils/urls';
 
+const slugify = (text: string) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+};
+
+
 const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
   const navigate = useNavigate();
   const [reels, setReels] = React.useState<any[]>([]);
@@ -76,14 +90,17 @@ const ReelsSection = ({ onAction }: { onAction: (v: View) => void }) => {
             ref={scrollRef}
             className="flex gap-8 overflow-x-auto no-scrollbar px-6 md:px-[calc((100vw-1280px)/2+24px)] pb-12"
           >
-            {reels.map(reel => (
-              <ReelCard 
-                key={reel.id} 
-                reel={reel} 
-                onClick={() => navigate(`/showcase/${reel.id}`)}
-                onAction={onAction}
-              />
-            ))}
+            {reels.map(reel => {
+              const slug = reel.slug || slugify(reel.title || reel.artistName || '');
+              return (
+                <ReelCard 
+                  key={reel.id} 
+                  reel={reel} 
+                  onClick={() => navigate(`/showcase/${slug}`)}
+                  onAction={onAction}
+                />
+              );
+            })}
           </div>
           
           <div className="absolute top-0 left-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent pointer-events-none hidden xl:block" />
