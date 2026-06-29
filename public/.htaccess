@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Route showcase requests to showcase.php
+  RewriteRule ^showcase/([a-zA-Z0-9_-]+)/?$ showcase.php?id=$1 [L,QSA]
+
+  # 2. SPA fallback: if requested file/directory doesn't exist, route to index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
