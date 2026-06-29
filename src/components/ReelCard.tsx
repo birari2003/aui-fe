@@ -1,23 +1,24 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Play } from 'lucide-react';
+import { Play, ExternalLink } from 'lucide-react';
 import Button from './Button';
 import { View } from '../types';
+import { isDirectVideoUrl } from '../utils/videoUtils';
 
 const ReelCard = ({ reel, onClick, onAction }: { reel: any, onClick: () => void, onAction: (v: View) => void, key?: string }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
+  const isDirect = React.useMemo(() => {
+    if (!reel.videoUrl) return false;
+    return isDirectVideoUrl(reel.videoUrl);
+  }, [reel.videoUrl]);
+
   React.useEffect(() => {
-    if (videoRef.current) {
-      if (isHovered) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
+    if (videoRef.current && isDirect) {
+      videoRef.current.play().catch(() => {});
     }
-  }, [isHovered]);
+  }, [isDirect]);
 
   return (
     <motion.div 
@@ -32,20 +33,36 @@ const ReelCard = ({ reel, onClick, onAction }: { reel: any, onClick: () => void,
         onClick={onClick}
       >
         {/* Video Preview Area */}
-        <div className="aspect-[4/5] relative overflow-hidden">
-          <img 
-            src={reel.thumbnail} 
-            className={`w-full h-full object-cover transition-opacity duration-700 ${isHovered ? 'opacity-0' : 'opacity-100'}`} 
-            alt="" 
-          />
-          <video 
-            ref={videoRef}
-            src={reel.videoUrl}
-            muted
-            loop
-            playsInline
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-          />
+        <div className="aspect-[9/14] relative overflow-hidden">
+          {isDirect ? (
+            <video 
+              ref={videoRef}
+              src={reel.videoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : reel.thumbnail ? (
+            <img 
+              src={reel.thumbnail} 
+              className="w-full h-full object-cover" 
+              alt="" 
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-brand-primary via-indigo-950 to-brand-primary flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-white/80 border border-white/20 mb-4 group-hover:scale-110 transition-transform">
+                <Play size={24} fill="currentColor" />
+              </div>
+              <h5 className="font-bold text-white text-lg line-clamp-2">{reel.title || reel.name}</h5>
+              {(reel.topic || reel.role) && (
+                <p className="text-[10px] text-brand-accent uppercase tracking-widest mt-1 font-black">
+                  {reel.topic || reel.role}
+                </p>
+              )}
+            </div>
+          )}
           
           {isHovered && (
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
@@ -61,90 +78,32 @@ const ReelCard = ({ reel, onClick, onAction }: { reel: any, onClick: () => void,
           )}
           
           {/* Content Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-brand-primary via-brand-primary/40 to-transparent text-white text-left">
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <h4 className="text-2xl font-bold tracking-tight">{reel.name}</h4>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-accent">{reel.role}</p>
+          <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-brand-primary via-brand-primary/45 to-transparent text-white text-left">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {reel.category && (
+                  <span className="text-[9px] font-extrabold uppercase tracking-widest bg-brand-accent/20 text-white px-2 py-0.5 rounded backdrop-blur-sm border border-brand-accent/10 capitalize">
+                    {reel.category}
+                  </span>
+                )}
+                {(reel.topic || reel.role) && (
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/90">
+                    {reel.topic || reel.role}
+                  </p>
+                )}
               </div>
-              <p className="text-sm line-clamp-2 text-white/70 leading-relaxed font-medium">{reel.description}</p>
+              <h4 className="text-2xl font-bold tracking-tight line-clamp-2">
+                {reel.title || reel.name || 'Featured Reel'}
+              </h4>
+              {reel.artistName && (
+                <p className="text-xs text-white/70 font-semibold">
+                  By {reel.artistName}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="p-8 grid grid-cols-2 gap-4 bg-brand-primary/80 backdrop-blur-xl border-t border-white/5">
-          {reel.type === 'mentor' ? (
-            <>
-              <Button 
-                variant="secondary"
-                className="text-[10px] py-4 px-0 border-none font-bold"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onAction('experts');
-                }}
-              >
-                Book Session
-              </Button>
-              <Button 
-                variant="outline" 
-                className="text-[10px] py-4 px-0 border-white/20 text-white hover:bg-white/10 font-bold"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onAction('talent_id');
-                }}
-              >
-                View Profile
-              </Button>
-            </>
-          ) : reel.type === 'institute' ? (
-            <>
-              <Button 
-                variant="secondary"
-                className="text-[10px] py-4 px-0 border-none font-bold"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onAction('showcase_institute');
-                }}
-              >
-                View Institute
-              </Button>
-              <Button 
-                variant="outline" 
-                className="text-[10px] py-4 px-0 border-white/20 text-white hover:bg-white/10 font-bold"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onAction('showcase_institute');
-                }}
-              >
-                View Workshops
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button 
-                variant="secondary"
-                className="text-[10px] py-4 px-0 border-none font-bold"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onAction('showcase_studio');
-                }}
-              >
-                View Studio
-              </Button>
-              <Button 
-                variant="outline" 
-                className="text-[10px] py-4 px-0 border-white/20 text-white hover:bg-white/10 font-bold"
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onAction('dashboard_studio');
-                }}
-              >
-                Explore Opportunities
-              </Button>
-            </>
-          )}
-        </div>
       </div>
     </motion.div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight, Network, Mail, Send } from 'lucide-react';
+import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight, Network, Mail, Send, Film, Play } from 'lucide-react';
 import Button from '../components/Button';
 import SEO from '../components/SEO';
 import Card from '../components/Card';
@@ -12,11 +12,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as workshopServices from '../services/instituteWorkshopServices';
 import * as workshopRequestServices from '../services/workshopRequestServices';
 import * as nexusServices from '../services/nexusServices';
+import * as showreelServices from '../services/showreelServices';
+import { BASE_URL } from '../utils/urls';
 
 
 
 const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios' | 'bulk_email'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios' | 'bulk_email' | 'showreels'>('overview');
   const [users, setUsers] = React.useState<any[]>([]);
   const [specialRequests, setSpecialRequests] = React.useState<any[]>([]);
   const [analytics, setAnalytics] = React.useState<any>(null);
@@ -81,6 +83,197 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     description: ''
   });
 
+  // Showreel Management State
+  const [showreels, setShowreels] = React.useState<any[]>([]);
+  const [showreelsLoading, setShowreelsLoading] = React.useState(false);
+  const [isShowreelModalOpen, setIsShowreelModalOpen] = React.useState(false);
+  const [isShowreelFormSubmitting, setIsShowreelFormSubmitting] = React.useState(false);
+  const [editingShowreelId, setEditingShowreelId] = React.useState<number | null>(null);
+  const [showreelForm, setShowreelForm] = React.useState({
+    category: '' as 'professional' | 'studio' | 'institute' | '',
+    selectedUserId: null as number | null,
+    artistName: '',
+    description: '',
+    publicUrl: '',
+    videoType: 'link' as 'link' | 'file',
+    videoUrl: '',
+    videoFile: null as File | null,
+    longMovieUrl: '',
+    title: '',
+    topic: ''
+  });
+  const [playingVideoId, setPlayingVideoId] = React.useState<number | null>(null);
+  const [userSearchQuery, setUserSearchQuery] = React.useState('');
+  const [allUsers, setAllUsers] = React.useState<any[]>([]);
+  const [allUsersLoading, setAllUsersLoading] = React.useState(false);
+
+  const getUserName = (user: any) => {
+    const profile = user.professional || user.studio || user.institute;
+    if (!profile) return user.email;
+    return profile.fullName || profile.full_name || profile.instituteName || profile.studioName || user.email;
+  };
+
+  const loadAllUsers = async () => {
+    try {
+      setAllUsersLoading(true);
+      const res = await fetchAdminUsers({ role: 'all', status: 'all' });
+      const data = await res.json();
+      if (res.ok && data.data) {
+        setAllUsers(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching all users for showreels:', err);
+    } finally {
+      setAllUsersLoading(false);
+    }
+  };
+
+  const loadShowreels = async () => {
+    try {
+      setShowreelsLoading(true);
+      const res = await showreelServices.fetchShowreels();
+      const data = await res.json();
+      if (data.success) {
+        setShowreels(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching showreels:', err);
+    } finally {
+      setShowreelsLoading(false);
+    }
+  };
+
+  const handleSaveShowreel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!showreelForm.category) {
+      alert('Please select a Category');
+      return;
+    }
+    if (!showreelForm.artistName.trim()) {
+      alert('Artist/Studio/Professional Name is required');
+      return;
+    }
+    if (showreelForm.videoType === 'link' && !showreelForm.videoUrl.trim()) {
+      alert('Video Link is required');
+      return;
+    }
+    if (showreelForm.videoType === 'file' && !showreelForm.videoFile && editingShowreelId === null) {
+      alert('Video File is required');
+      return;
+    }
+
+    setIsShowreelFormSubmitting(true);
+    const token = localStorage.getItem('token') || '';
+
+    try {
+      const formData = new FormData();
+      formData.append('artistName', showreelForm.artistName);
+      formData.append('description', showreelForm.description);
+      formData.append('publicUrl', showreelForm.publicUrl);
+      formData.append('category', showreelForm.category);
+      formData.append('longMovieUrl', showreelForm.longMovieUrl);
+      formData.append('title', showreelForm.title);
+      formData.append('topic', showreelForm.topic);
+      
+      if (showreelForm.videoType === 'file') {
+        if (showreelForm.videoFile) {
+          formData.append('videoFile', showreelForm.videoFile);
+        } else {
+          formData.append('videoUrl', showreelForm.videoUrl); // keep existing path
+        }
+      } else {
+        formData.append('videoUrl', showreelForm.videoUrl);
+      }
+
+      let res;
+      if (editingShowreelId !== null) {
+        res = await showreelServices.updateShowreel(token, editingShowreelId, formData);
+      } else {
+        res = await showreelServices.createShowreel(token, formData);
+      }
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsShowreelModalOpen(false);
+        setEditingShowreelId(null);
+        setShowreelForm({
+          category: '',
+          selectedUserId: null,
+          artistName: '',
+          description: '',
+          publicUrl: '',
+          videoType: 'link',
+          videoUrl: '',
+          videoFile: null,
+          longMovieUrl: '',
+          title: '',
+          topic: ''
+        });
+        await loadShowreels();
+      } else {
+        alert(data.message || 'Failed to save showreel');
+      }
+    } catch (err) {
+      console.error('Failed to save showreel:', err);
+      alert('An error occurred while saving the showreel.');
+    } finally {
+      setIsShowreelFormSubmitting(false);
+    }
+  };
+
+  const handleEditShowreelClick = (reel: any) => {
+    const isDirect = isDirectVideoUrl(reel.videoUrl);
+    setEditingShowreelId(reel.id);
+
+    // Attempt to match the user in allUsers
+    let matchedUserId: number | null = null;
+    if (reel.publicUrl) {
+      const codeMatch = reel.publicUrl.match(/\/talent\/([A-Z0-9-]+)/i);
+      if (codeMatch && codeMatch[1]) {
+        const found = allUsers.find(u => u.talentId?.talentCode === codeMatch[1]);
+        if (found) matchedUserId = found.id;
+      }
+    }
+    if (!matchedUserId && allUsers.length > 0) {
+      const found = allUsers.find(u => {
+        const name = getUserName(u);
+        return name && name.toLowerCase() === reel.artistName.toLowerCase();
+      });
+      if (found) matchedUserId = found.id;
+    }
+
+    setShowreelForm({
+      category: reel.category || '',
+      selectedUserId: matchedUserId,
+      artistName: reel.artistName,
+      description: reel.description || '',
+      publicUrl: reel.publicUrl || '',
+      videoType: isDirect ? 'file' : 'link',
+      videoUrl: reel.videoUrl, // store path / link
+      videoFile: null,
+      longMovieUrl: reel.longMovieUrl || '',
+      title: reel.title || '',
+      topic: reel.topic || ''
+    });
+    setIsShowreelModalOpen(true);
+  };
+
+  const handleDeleteShowreel = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this showreel?')) return;
+    const token = localStorage.getItem('token') || '';
+    try {
+      const res = await showreelServices.deleteShowreel(token, id);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await loadShowreels();
+      } else {
+        alert(data.message || 'Failed to delete showreel');
+      }
+    } catch (err) {
+      console.error('Failed to delete showreel:', err);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -119,6 +312,14 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
   }, [filters]);
 
   // Load available sender email accounts once on mount
+  React.useEffect(() => {
+    setUserSearchQuery('');
+    if (activeTab === 'showreels') {
+      loadShowreels();
+      loadAllUsers();
+    }
+  }, [activeTab]);
+
   React.useEffect(() => {
     const loadEmailAccounts = async () => {
       try {
@@ -631,12 +832,33 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       });
     }
 
+    if (userSearchQuery.trim()) {
+      const q = userSearchQuery.toLowerCase();
+      filteredUsers = filteredUsers.filter(u => {
+        const profile = getProfileData(u);
+        const name = profile ? (profile.fullName || profile.full_name || profile.instituteName || profile.studioName || '') : '';
+        const email = u.email || '';
+        const phone = String(u.phone || profile?.phone || '');
+        const talentCode = (u.talentId?.talentCode || '');
+
+        return name.toLowerCase().includes(q) ||
+               email.toLowerCase().includes(q) ||
+               phone.toLowerCase().includes(q) ||
+               talentCode.toLowerCase().includes(q);
+      });
+    }
+
     return (
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <h3 className="text-2xl font-display font-bold text-brand-primary capitalize">{tab} Directory</h3>
-            <p className="text-text-muted text-sm uppercase font-bold tracking-widest">Manage and view registered {tab}</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder={`Search ${tab === 'professionals' ? 'professionals' : tab === 'studios' ? 'studios' : 'institutes'} by name, email, ID...`}
+              className="w-full bg-white border border-gray-200 focus:border-brand-primary rounded-xl text-xs p-2.5 font-semibold outline-none transition-all shadow-sm"
+              value={userSearchQuery}
+              onChange={(e) => setUserSearchQuery(e.target.value)}
+            />
           </div>
           <div className="flex items-center gap-4">
             {tab === 'institutes' && (
@@ -798,6 +1020,186 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       </div>
     );
   };
+  const renderShowreelsTab = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-2xl font-display font-bold text-brand-primary">Showreel Showcase</h3>
+            <p className="text-text-muted text-sm font-medium">Manage featured videos of artists, professionals, and studios</p>
+          </div>
+          <Button
+            onClick={() => setIsShowreelModalOpen(true)}
+            className="flex items-center gap-2 bg-brand-primary text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:shadow-lg transition-all"
+          >
+            <Plus size={16} /> Add Showreel
+          </Button>
+        </div>
+
+        {showreelsLoading ? (
+          <div className="py-20 text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-text-muted font-bold uppercase tracking-widest text-xs">Loading Showreels...</p>
+          </div>
+        ) : showreels.length === 0 ? (
+          <div className="py-20 text-center bg-brand-surface rounded-3xl border-2 border-dashed border-gray-200">
+            <p className="text-text-secondary font-medium">No showreels added yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {showreels.map((reel) => {
+              const videoInfo = detectVideoUrl(reel.videoUrl);
+              const isPlaying = playingVideoId === reel.id;
+
+              return (
+                <Card key={reel.id} className="bg-white border-gray-100 shadow-premium overflow-hidden flex flex-col hover:shadow-premium-hover transition-premium rounded-[24px]">
+                  {/* Video Playback Container */}
+                  <div className="relative aspect-video bg-black shrink-0 overflow-hidden">
+                    {videoInfo.canEmbed ? (
+                      !isPlaying ? (
+                        <div
+                          className="w-full h-full relative cursor-pointer flex items-center justify-center bg-[#0a0a0a]"
+                          onClick={() => setPlayingVideoId(reel.id)}
+                        >
+                          {/* Thumbnail backgrounds */}
+                          {videoInfo.type === 'youtube' && getYouTubeId(reel.videoUrl) ? (
+                            <img
+                              src={`https://img.youtube.com/vi/${getYouTubeId(reel.videoUrl)}/hqdefault.jpg`}
+                              className="absolute inset-0 w-full h-full object-cover opacity-80"
+                              alt="Showreel Cover"
+                            />
+                          ) : videoInfo.type === 'googledrive' && getGoogleDriveId(reel.videoUrl) ? (
+                            <img
+                              src={`https://drive.google.com/thumbnail?id=${getGoogleDriveId(reel.videoUrl)}&sz=w500`}
+                              className="absolute inset-0 w-full h-full object-cover opacity-80"
+                              alt="Showreel Cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#1e1b4b]" />
+                          )}
+                          <div className="absolute inset-0 bg-black/20" />
+                          <div className="w-12 h-12 bg-white/95 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110">
+                            <Play size={18} className="fill-[#4F46E5] text-[#4F46E5] ml-0.5" />
+                          </div>
+                          <span className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-0.5 rounded text-[10px] font-bold">
+                            {videoInfo.platformLabel}
+                          </span>
+                        </div>
+                      ) : (
+                        <iframe
+                          src={videoInfo.embedUrl!}
+                          title={reel.artistName}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                          allowFullScreen
+                        />
+                      )
+                    ) : videoInfo.type === 'direct' ? (
+                      <video
+                        src={getFileUrl(reel.videoUrl)}
+                        controls
+                        className="w-full h-full object-contain"
+                        preload="metadata"
+                        playsInline
+                      />
+                    ) : (
+                      // Invalid or un-embeddable URL card
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#0a192f] to-[#020c1b] p-4 text-center">
+                        <span className="text-white text-xs font-bold mb-2 truncate max-w-full">{reel.videoUrl}</span>
+                        <a
+                          href={reel.videoUrl.startsWith('http') ? reel.videoUrl : `https://${reel.videoUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-white text-[#0a192f] font-bold text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-gray-100"
+                        >
+                          <ExternalLink size={10} /> Open Link
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Body details */}
+                  <div className="p-5 flex-1 flex flex-col space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        {reel.category && (
+                          <span className="inline-block bg-brand-surface text-brand-primary border border-brand-primary/10 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                            {reel.category}
+                          </span>
+                        )}
+                        {reel.topic && (
+                          <span className="inline-block bg-[#F3F4F6] text-[#4B5563] border border-gray-200 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                            {reel.topic}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-brand-primary text-base line-clamp-1 mt-1">
+                        {reel.title || 'Untitled Showreel'}
+                      </h4>
+                      <p className="text-xs text-text-muted font-bold block">
+                        By {reel.artistName}
+                      </p>
+                      <p className="text-xs text-text-muted mt-1 min-h-[40px] line-clamp-3 leading-relaxed font-medium">
+                        {reel.description || 'No description provided.'}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 flex flex-col gap-2 mt-auto">
+                      <div className="flex gap-2">
+                        {reel.publicUrl ? (
+                          <a
+                            href={reel.publicUrl.startsWith('/') ? reel.publicUrl : (reel.publicUrl.startsWith('http') ? reel.publicUrl : `https://${reel.publicUrl}`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center bg-brand-primary hover:bg-brand-primary/95 text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all shadow-sm"
+                          >
+                            View Profile <ArrowRight size={12} />
+                          </a>
+                        ) : (
+                          <span className="flex-1 text-center text-text-muted text-[10px] italic py-2">No profile link</span>
+                        )}
+                        {reel.longMovieUrl && (
+                          <a
+                            href={reel.longMovieUrl.startsWith('http') ? reel.longMovieUrl : `https://${reel.longMovieUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1F2937] py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all border border-gray-200"
+                          >
+                            Watch Full Movie <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2">
+                        <span className="text-[10px] text-text-muted">ID: {reel.id}</span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditShowreelClick(reel)}
+                            className="p-1.5 text-brand-primary hover:bg-brand-surface rounded-lg transition-colors"
+                            title="Edit Showreel"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteShowreel(reel.id)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Showreel"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderNexusHub = () => {
     return (
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -894,70 +1296,84 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         ? 'Special Requests Pipeline'
         : activeTab === 'bulk_email'
           ? 'Bulk Email Broadcast'
-          : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Management`;
+          : activeTab === 'showreels'
+            ? 'Showreel Showcase'
+            : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Management`;
 
   const seoDescription = `AUI Admin Panel - ${seoTitle}. Control center for managing professionals, institutes, studios, and requests.`;
 
+  const navItems = [
+    { id: 'overview' as const, label: 'Overview', icon: LayoutDashboard, badge: 0 },
+    { 
+      id: 'applications' as const, 
+      label: 'Applications', 
+      icon: FileText, 
+      badge: users.filter(u => u.status === 'pending').length,
+      badgeColor: 'bg-red-500'
+    },
+    { 
+      id: 'special_requests' as const, 
+      label: 'Special Requests', 
+      icon: Users, 
+      badge: specialRequests.filter(r => r.status === 'pending').length,
+      badgeColor: 'bg-orange-500'
+    },
+    { id: 'professionals' as const, label: 'Professionals', icon: Briefcase, badge: 0 },
+    { id: 'studios' as const, label: 'Studios', icon: Users, badge: 0 },
+    { id: 'institutes' as const, label: 'Institutes', icon: GraduationCap, badge: 0 },
+    { id: 'showreels' as const, label: 'Showreels', icon: Film, badge: 0 },
+    { id: 'bulk_email' as const, label: 'Bulk Email', icon: Mail, badge: 0 },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12 space-y-8 sm:space-y-12 text-left">
+    <div className="w-full text-left">
       <SEO 
         title={seoTitle} 
         description={seoDescription} 
         keywords="admin panel, control center, aui admin, manage users, approvals" 
       />
-      <div className="space-y-4">
-        <h2 className="text-3xl sm:text-4xl font-display font-bold text-brand-primary tracking-tight leading-tight">Admin Control Center</h2>
-        <div className="flex flex-wrap gap-3 sm:gap-4">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'overview' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
-          >
-            <LayoutDashboard size={18} /> Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('applications')}
-            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'applications' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
-          >
-            <FileText size={18} /> Applications {users.filter(u => u.status === 'pending').length > 0 && <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{users.filter(u => u.status === 'pending').length}</span>}
-          </button>
-          <button
-            onClick={() => setActiveTab('special_requests')}
-            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'special_requests' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
-          >
-            <Users size={18} /> Special Requests {specialRequests.filter(r => r.status === 'pending').length > 0 && <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{specialRequests.filter(r => r.status === 'pending').length}</span>}
-          </button>
-          <button
-            onClick={() => setActiveTab('professionals')}
-            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'professionals' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
-          >
-            <Briefcase size={18} /> Professionals
-          </button>
-          <button
-            onClick={() => setActiveTab('studios')}
-            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'studios' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
-          >
-            <Users size={18} /> Studios
-          </button>
-          <button
-            onClick={() => setActiveTab('institutes')}
-            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'institutes' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
-          >
-            <GraduationCap size={18} /> Institutes
-          </button>
-          <button
-            onClick={() => setActiveTab('bulk_email')}
-            className={`px-4 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-sm transition-premium flex items-center gap-2 whitespace-nowrap ${activeTab === 'bulk_email' ? 'bg-brand-primary text-white shadow-lg' : 'bg-brand-surface text-text-secondary hover:bg-gray-200'}`}
-          >
-            <Mail size={18} /> Bulk Email
-          </button>
+      
+      <div className="flex flex-col lg:flex-row items-stretch">
+        {/* Left Side Navigation Sidebar */}
+        <aside className="w-full lg:w-80 shrink-0 lg:border-r lg:border-gray-100 pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-16 lg:pr-8 pt-3 sm:pt-4 pb-6 lg:pb-10 lg:sticky lg:top-0 lg:h-[calc(100vh-80px)] lg:overflow-y-auto no-scrollbar">
+          <nav className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0 no-scrollbar">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 whitespace-nowrap select-none group w-auto lg:w-full shrink-0
+                    ${isActive 
+                      ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/10' 
+                      : 'bg-transparent text-text-secondary hover:bg-brand-surface hover:text-brand-primary'
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon size={18} className={`transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-white' : 'text-text-muted group-hover:text-brand-primary'}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge > 0 && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ml-2 transition-all duration-200
+                      ${isActive 
+                        ? 'bg-white text-brand-primary shadow-sm shadow-brand-primary/5' 
+                        : `${item.badgeColor || 'bg-brand-accent'} text-white`
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-
-
-        </div>
-      </div>
-
-      {
-        activeTab === 'overview' ? (
+        {/* Right Side Main Content Area */}
+        <div className="flex-1 min-w-0 w-full pl-6 pr-6 sm:pl-12 sm:pr-12 lg:pl-12 lg:pr-16 pt-3 sm:pt-4 pb-12">
+          {
+            activeTab === 'overview' ? (
           <div className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <SummaryCard title="Total Users" value={analytics?.users} icon={Users} colorClass="bg-blue-50 text-blue-600" />
@@ -1159,10 +1575,6 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         ) : activeTab === 'special_requests' ? (
           <div className="space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div className="space-y-1">
-                <h3 className="text-2xl font-display font-bold text-brand-primary">Collaboration Requests Pipeline</h3>
-                <p className="text-text-muted text-sm uppercase font-bold tracking-widest">Manage specialized connection requests</p>
-              </div>
               <div className="flex items-center gap-2 bg-brand-surface p-1.5 rounded-2xl border border-gray-100 shadow-sm">
                 <button
                   onClick={() => setSpecialRequestSubTab('institute')}
@@ -1327,11 +1739,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
               )}
             </div>
           </div>
-        ) : (
-          <>
-            {['professionals', 'studios', 'institutes'].includes(activeTab) && renderUserList(activeTab)}
-            {activeTab === 'applications' && (
-              <>
+        ) : activeTab === 'applications' ? (
+          <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
                   <div className="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -1438,12 +1847,14 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                     ))
                   )}
                 </div>
-              </>
-            )}
-
-          </>
-        )
-      }
+              </div>
+        ) : activeTab === 'showreels' ? (
+          renderShowreelsTab()
+        ) : (
+          ['professionals', 'studios', 'institutes'].includes(activeTab) && renderUserList(activeTab)
+        )}
+        </div>
+      </div>
 
 
       {/* User Details Modal */}
@@ -1964,9 +2375,476 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           </div>
         }
       />
+
+      {/* Showreel Form Modal */}
+      <Modal
+        isOpen={isShowreelModalOpen}
+        onClose={() => {
+          setIsShowreelModalOpen(false);
+          setEditingShowreelId(null);
+          setUserSearchQuery('');
+          setShowreelForm({
+            category: '',
+            selectedUserId: null,
+            artistName: '',
+            description: '',
+            publicUrl: '',
+            videoType: 'link',
+            videoUrl: '',
+            videoFile: null,
+            longMovieUrl: '',
+            title: '',
+            topic: ''
+          });
+        }}
+        title={editingShowreelId !== null ? "Update Showreel" : "Add New Showreel"}
+        size="lg"
+        showFooter={false}
+        message={
+          <form onSubmit={handleSaveShowreel} className="space-y-6 text-left py-2">
+            {/* Category selection */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Category</label>
+              <select
+                className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                value={showreelForm.category}
+                onChange={(e) => {
+                  const newCategory = e.target.value as any;
+                  setShowreelForm(prev => ({
+                    ...prev,
+                    category: newCategory,
+                    selectedUserId: null,
+                    artistName: '',
+                    publicUrl: ''
+                  }));
+                }}
+                disabled={showreelForm.selectedUserId !== null}
+                required
+              >
+                <option value="">-- Select Category --</option>
+                <option value="professional">Professional</option>
+                <option value="studio">Studio</option>
+                <option value="institute">Institute</option>
+              </select>
+            </div>
+
+            {/* Search & Select User */}
+            {showreelForm.category && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">User Association</label>
+                
+                {showreelForm.selectedUserId ? (
+                  <div className="flex items-center justify-between p-3.5 bg-brand-primary/5 border border-brand-primary/10 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-brand-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {showreelForm.artistName ? showreelForm.artistName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '?'}
+                      </div>
+                      <div>
+                        <span className="block text-sm font-bold text-brand-primary">{showreelForm.artistName}</span>
+                        <span className="block text-[10px] text-text-muted font-medium">Selected User</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowreelForm(prev => ({
+                          ...prev,
+                          selectedUserId: null,
+                          artistName: '',
+                          publicUrl: ''
+                        }));
+                        setUserSearchQuery('');
+                      }}
+                      className="text-xs bg-white hover:bg-gray-50 border border-gray-200 text-brand-primary px-3 py-1.5 rounded-xl font-bold transition-all shadow-sm cursor-pointer"
+                    >
+                      Change User
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
+                        <Users size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder={`Search by name, email or ID...`}
+                        className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm pl-10 pr-3 py-3 font-semibold outline-none transition-all"
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto border border-gray-100 rounded-2xl bg-brand-surface p-1.5 space-y-1.5 shadow-inner">
+                      {(() => {
+                        const filtered = allUsers.filter(u => {
+                          if (u.role !== showreelForm.category) return false;
+                          const name = getUserName(u).toLowerCase();
+                          const email = (u.email || '').toLowerCase();
+                          const code = (u.talentId?.talentCode || '').toLowerCase();
+                          const query = userSearchQuery.toLowerCase();
+                          return name.includes(query) || email.includes(query) || code.includes(query);
+                        });
+
+                        if (filtered.length === 0) {
+                          return <div className="text-xs text-text-muted p-4 text-center">No matching {showreelForm.category}s found</div>;
+                        }
+
+                        return filtered.map(u => {
+                          const name = getUserName(u);
+                          const isSelected = showreelForm.selectedUserId === u.id;
+                          const initials = name ? name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '?';
+                          
+                          return (
+                            <button
+                              key={u.id}
+                              type="button"
+                              onClick={() => {
+                                setShowreelForm(prev => ({
+                                  ...prev,
+                                  selectedUserId: u.id,
+                                  artistName: name,
+                                  publicUrl: u.talentId?.talentCode ? `/talent/${u.talentId.talentCode}` : ''
+                                }));
+                              }}
+                              className={`w-full text-left p-3 rounded-xl text-xs font-semibold flex items-center gap-3 transition-all duration-200 border ${
+                                isSelected 
+                                  ? 'bg-brand-primary text-white border-brand-primary shadow-md' 
+                                  : 'hover:bg-brand-surface hover:border-gray-300 text-brand-primary border-transparent'
+                              }`}
+                            >
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                isSelected ? 'bg-white/20 text-white' : 'bg-brand-surface text-brand-primary border border-brand-primary/10'
+                              }`}>
+                                {initials}
+                              </div>
+                              
+                              <div className="flex-1 min-w-0">
+                                <span className="block truncate text-sm font-bold">{name}</span>
+                                <span className={`block truncate text-[10px] mt-0.5 ${isSelected ? 'text-white/80' : 'text-text-muted font-medium'}`}>
+                                  {u.email} {u.talentId?.talentCode ? ` • ID: ${u.talentId.talentCode}` : ''}
+                                </span>
+                              </div>
+
+                              {isSelected && (
+                                <span className="bg-white/20 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider shrink-0 text-white">
+                                  Selected
+                                </span>
+                              )}
+                            </button>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Video Title & Topic */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Video Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Showreel 2026, Action Reel"
+                  className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all"
+                  value={showreelForm.title}
+                  onChange={(e) => setShowreelForm(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Topic / Specialization</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Acting, Cinematography, VFX"
+                  className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all"
+                  value={showreelForm.topic}
+                  onChange={(e) => setShowreelForm(prev => ({ ...prev, topic: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Artist Details (Auto-filled on Select, remains editable) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Artist / Studio / Professional Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. John Doe, AUI Studios"
+                  className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all"
+                  value={showreelForm.artistName}
+                  onChange={(e) => setShowreelForm(prev => ({ ...prev, artistName: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Public URL (Portfolio or Profile Link)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. /talent/AUI-PRO-12345"
+                  className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all"
+                  value={showreelForm.publicUrl}
+                  onChange={(e) => setShowreelForm(prev => ({ ...prev, publicUrl: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Description</label>
+              <textarea
+                placeholder="Write a short description about this showreel..."
+                rows={3}
+                className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all resize-none"
+                value={showreelForm.description}
+                onChange={(e) => setShowreelForm(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Video Source</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-brand-primary">
+                  <input
+                    type="radio"
+                    name="videoType"
+                    checked={showreelForm.videoType === 'link'}
+                    onChange={() => setShowreelForm(prev => ({ ...prev, videoType: 'link' }))}
+                  />
+                  Video Link (YouTube, Vimeo, etc.)
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-brand-primary">
+                  <input
+                    type="radio"
+                    name="videoType"
+                    checked={showreelForm.videoType === 'file'}
+                    onChange={() => setShowreelForm(prev => ({ ...prev, videoType: 'file' }))}
+                  />
+                  File Upload (MP4, MOV, etc.)
+                </label>
+              </div>
+            </div>
+
+            {showreelForm.videoType === 'link' ? (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Video Link URL</label>
+                <input
+                  type="text"
+                  placeholder="e.g. https://www.youtube.com/watch?v=..."
+                  className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all"
+                  value={showreelForm.videoUrl}
+                  onChange={(e) => setShowreelForm(prev => ({ ...prev, videoUrl: e.target.value }))}
+                  required={showreelForm.videoType === 'link'}
+                />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">
+                  {editingShowreelId !== null ? "Upload Video File (leave blank to keep current)" : "Upload Video File"}
+                </label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all cursor-pointer"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      setShowreelForm(prev => ({ ...prev, videoFile: files[0] }));
+                    }
+                  }}
+                  required={showreelForm.videoType === 'file' && editingShowreelId === null}
+                />
+              </div>
+            )}
+
+            {/* Long Movie / External Platform Link */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Long Movie / External Video Link (Optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. https://www.netflix.com/title/..."
+                className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all"
+                value={showreelForm.longMovieUrl}
+                onChange={(e) => setShowreelForm(prev => ({ ...prev, longMovieUrl: e.target.value }))}
+              />
+              <span className="text-[10px] text-text-muted block mt-0.5">Link to the full movie or project on other platforms (Netflix, Prime Video, YouTube, etc.)</span>
+            </div>
+
+            <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+              <Button
+                variant="ghost"
+                type="button"
+                className="px-4 py-2 text-xs"
+                onClick={() => {
+                  setIsShowreelModalOpen(false);
+                  setEditingShowreelId(null);
+                  setUserSearchQuery('');
+                  setShowreelForm({
+                    category: '',
+                    selectedUserId: null,
+                    artistName: '',
+                    description: '',
+                    publicUrl: '',
+                    videoType: 'link',
+                    videoUrl: '',
+                    videoFile: null,
+                    longMovieUrl: '',
+                    title: '',
+                    topic: ''
+                  });
+                }}
+                disabled={isShowreelFormSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="px-5 py-2 text-xs bg-brand-primary text-white"
+                loading={isShowreelFormSubmitting}
+              >
+                {editingShowreelId !== null ? "Update Showreel" : "Save Showreel"}
+              </Button>
+            </div>
+          </form>
+        }
+      />
     </div >
   );
 
+};
+
+// --- Showreel Video Helpers ---
+
+const isDirectVideoUrl = (url: string): boolean => {
+  return /\.(mp4|webm|ogg|mov|avi|mkv|m4v|flv|3gp)(\?.*)?$/i.test(url);
+};
+
+const getYouTubeId = (url: string): string => {
+  if (!url) return '';
+  const regExp = /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|&v=)([^#&?]{11}).*/;
+  const match = url.match(regExp);
+  return (match && match[1].length === 11) ? match[1] : '';
+};
+
+const getVimeoId = (url: string): string => {
+  if (!url) return '';
+  const standardMatch = url.match(
+    /(?:www\.|player\.)?vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|ondemand\/[^/]+\/|showcase\/\d+\/video\/)(\d+)(?:$|\/|\?)/
+  );
+  if (standardMatch) return standardMatch[1];
+  const simpleMatch = url.match(/vimeo\.com\/(\d+)(?:$|\/|\?)/);
+  if (simpleMatch) return simpleMatch[1];
+  return '';
+};
+
+const getGoogleDriveId = (url: string): string => {
+  if (!url) return '';
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : '';
+};
+
+const getDailymotionId = (url: string): string => {
+  if (!url) return '';
+  const match = url.match(/dailymotion\.com\/(?:video|embed\/video)\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : '';
+};
+
+const getStreamableCode = (url: string): string => {
+  if (!url) return '';
+  const match = url.match(/streamable\.com\/([a-zA-Z0-9]+)/);
+  return match ? match[1] : '';
+};
+
+const detectVideoUrl = (url: string): any => {
+  if (!url) return { type: 'external', embedUrl: null, originalUrl: url, platformLabel: 'Video', canEmbed: false };
+
+  // YouTube
+  const ytId = getYouTubeId(url);
+  if (ytId) {
+    return {
+      type: 'youtube',
+      embedUrl: `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`,
+      originalUrl: url,
+      platformLabel: 'YouTube',
+      canEmbed: true,
+    };
+  }
+
+  // Vimeo
+  const vimeoId = getVimeoId(url);
+  if (vimeoId) {
+    return {
+      type: 'vimeo',
+      embedUrl: `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0&portrait=0`,
+      originalUrl: url,
+      platformLabel: 'Vimeo',
+      canEmbed: true,
+    };
+  }
+
+  // Google Drive
+  const driveId = getGoogleDriveId(url);
+  if (url.includes('drive.google.com') && driveId) {
+    return {
+      type: 'googledrive',
+      embedUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+      originalUrl: url,
+      platformLabel: 'Google Drive',
+      canEmbed: true,
+    };
+  }
+
+  // Dailymotion
+  const dmId = getDailymotionId(url);
+  if (dmId) {
+    return {
+      type: 'dailymotion',
+      embedUrl: `https://www.dailymotion.com/embed/video/${dmId}?autoplay=1`,
+      originalUrl: url,
+      platformLabel: 'Dailymotion',
+      canEmbed: true,
+    };
+  }
+
+  // Streamable
+  const streamableCode = getStreamableCode(url);
+  if (streamableCode) {
+    return {
+      type: 'streamable',
+      embedUrl: `https://streamable.com/e/${streamableCode}?autoplay=1`,
+      originalUrl: url,
+      platformLabel: 'Streamable',
+      canEmbed: true,
+    };
+  }
+
+  // Direct video
+  if (isDirectVideoUrl(url)) {
+    return {
+      type: 'direct',
+      embedUrl: null,
+      originalUrl: url,
+      platformLabel: 'Direct Video',
+      canEmbed: false,
+    };
+  }
+
+  // External / invalid
+  return {
+    type: 'external',
+    embedUrl: null,
+    originalUrl: url,
+    platformLabel: 'External Website',
+    canEmbed: false,
+  };
+};
+
+const getFileUrl = (path: string) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${BASE_URL}/${path.replace(/\\/g, '/')}`;
 };
 
 export default AdminPanel;

@@ -85,5 +85,9 @@ export const API_ENDPOINTS = {
   },
   PLATFORM: {
     STATS: `${BASE_URL}/api/platform/stats`,
+  },
+  SHOWREELS: {
+    BASE: `${BASE_URL}/api/showreels`,
+    DELETE: (id: number) => `${BASE_URL}/api/showreels/${id}`,
   }
 };

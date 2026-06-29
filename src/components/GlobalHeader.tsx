@@ -78,7 +78,7 @@ const GlobalHeader = ({ setView, isLoggedIn, userRole, onLogout }: {
   return (
     <>
       <header className="h-20 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+        <div className={`mx-auto h-full flex items-center justify-between ${userRole === 'admin' ? 'w-full px-6 sm:px-12 lg:px-16' : 'max-w-7xl w-full px-6'}`}>
           <div className="flex items-center gap-12">
             <Link to="/" className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
               <img
