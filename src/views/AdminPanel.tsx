@@ -100,7 +100,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     videoFile: null as File | null,
     longMovieUrl: '',
     title: '',
-    topic: ''
+    topic: '',
+    thumbnailFile: null as File | null
   });
   const [playingVideoId, setPlayingVideoId] = React.useState<number | null>(null);
   const [userSearchQuery, setUserSearchQuery] = React.useState('');
@@ -185,6 +186,10 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         formData.append('videoUrl', showreelForm.videoUrl);
       }
 
+      if (showreelForm.thumbnailFile) {
+        formData.append('thumbnailFile', showreelForm.thumbnailFile);
+      }
+
       let res;
       if (editingShowreelId !== null) {
         res = await showreelServices.updateShowreel(token, editingShowreelId, formData);
@@ -207,7 +212,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           videoFile: null,
           longMovieUrl: '',
           title: '',
-          topic: ''
+          topic: '',
+          thumbnailFile: null
         });
         await loadShowreels();
       } else {
@@ -253,7 +259,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       videoFile: null,
       longMovieUrl: reel.longMovieUrl || '',
       title: reel.title || '',
-      topic: reel.topic || ''
+      topic: reel.topic || '',
+      thumbnailFile: null
     });
     setIsShowreelModalOpen(true);
   };
@@ -2394,7 +2401,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
             videoFile: null,
             longMovieUrl: '',
             title: '',
-            topic: ''
+            topic: '',
+            thumbnailFile: null
           });
         }}
         title={editingShowreelId !== null ? "Update Showreel" : "Add New Showreel"}
@@ -2659,6 +2667,24 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             )}
 
+            {/* Thumbnail Image upload */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">
+                {editingShowreelId !== null ? "Custom Thumbnail Image (Optional, leave blank to keep current)" : "Custom Thumbnail Image (Optional)"}
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full bg-brand-surface border border-gray-200 focus:border-brand-accent rounded-xl text-sm p-3 font-semibold outline-none transition-all cursor-pointer"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files && files.length > 0) {
+                    setShowreelForm(prev => ({ ...prev, thumbnailFile: files[0] }));
+                  }
+                }}
+              />
+            </div>
+
             {/* Long Movie / External Platform Link */}
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block">Long Movie / External Video Link (Optional)</label>
@@ -2692,7 +2718,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                     videoFile: null,
                     longMovieUrl: '',
                     title: '',
-                    topic: ''
+                    topic: '',
+                    thumbnailFile: null
                   });
                 }}
                 disabled={isShowreelFormSubmitting}

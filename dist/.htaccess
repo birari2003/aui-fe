@@ -2,12 +2,13 @@
   RewriteEngine On
   RewriteBase /
 
-  # Don't rewrite existing files or directories
-  RewriteCond %{REQUEST_FILENAME} !-f
+  # Don't rewrite existing files (except index.html — let index.php handle it)
+  # Don't rewrite existing directories
+  RewriteCond %{REQUEST_FILENAME} !-f [OR]
+  RewriteCond %{REQUEST_URI} ^/index\.html$
   RewriteCond %{REQUEST_FILENAME} !-d
-
-  # Route all non-file requests to index.php (PHP SPA router)
-  # index.php handles OG tag injection for /showcase/ routes
-  # and serves index.html as-is for all other SPA routes
   RewriteRule . /index.php [L]
 </IfModule>
+
+# Force index.php as the default directory index (before index.html)
+DirectoryIndex index.php index.html

@@ -49,7 +49,10 @@ const ShowcasePage = () => {
     if (!reel?.videoUrl) return;
 
     if (reel.thumbnail) {
-      setThumbnailUrl(reel.thumbnail);
+      const fullUrl = reel.thumbnail.startsWith('http') || reel.thumbnail.startsWith('data:')
+        ? reel.thumbnail
+        : `${BASE_URL}/${reel.thumbnail.replace(/^\//, "").replace(/\\/g, "/")}`;
+      setThumbnailUrl(fullUrl);
       return;
     }
 
