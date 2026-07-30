@@ -54,13 +54,40 @@ interface JobPosting {
   hiringDeadline?: string;
   internalNotes?: string;
   contractDuration?: string;
+  role?: string;
+  price?: string;
   filledCount?: number;
   customProductionType?: string;
   customProjectFormat?: string;
   customTimeZone?: string;
+  customRole?: string;
   verificationFields?: Record<string, boolean>;
   attachments?: string[];
 }
+
+const FREELANCER_ROLES = [
+  'Motion Design',
+  'Animator',
+  '3D Artist',
+  'Concept Artist',
+  'Compositor',
+  'Rigging Artist',
+  'VFX Artist',
+  'Storyboard Artist',
+  'Sound Designer',
+  'Video Editor',
+  'UI/UX Designer',
+  'Graphic Designer',
+  'Illustrator',
+  'Character Designer',
+  'Lighting Artist',
+  'Texture Artist',
+  'Matte Painter',
+  'Modeling Artist',
+  'FX Artist',
+  'Technical Director',
+  'Other'
+];
 
 interface HiringByStudioProps {
   onInviteFromBench?: (job: any) => void;
@@ -135,6 +162,9 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
     customProductionType: '',
     customProjectFormat: '',
     contractDuration: '',
+    role: '',
+    customRole: '',
+    price: '',
     customTimeZone: '',
     verificationFields: {
       name: true,
@@ -242,7 +272,9 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
         artistCount: formData.positionsCount,
         startDate: formData.hiringDeadline,
         internalNotes: formData.internalNotes,
-        contractDuration: formData.engagementType === 'Short Term/Contract' ? formData.contractDuration : null,
+        contractDuration: (formData.engagementType === 'Short Term/Contract' || formData.engagementType === 'Freelancer') ? formData.contractDuration : null,
+        role: formData.engagementType === 'Freelancer' ? (formData.role === 'Other' ? formData.customRole : formData.role) : null,
+        price: formData.engagementType === 'Freelancer' ? formData.price : null,
         verificationFields: formData.verificationFields,
         status: 'open',
       });
@@ -287,6 +319,9 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
           customProductionType: '',
           customProjectFormat: '',
           contractDuration: '',
+          role: '',
+          customRole: '',
+          price: '',
           customTimeZone: '',
           verificationFields: {
             name: true,
@@ -342,6 +377,8 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
       hiringDeadline: job.hiringDeadline || job.hiring_deadline || job.startDate || job.start_date,
       internalNotes: job.internalNotes || job.internal_notes,
       contractDuration: job.contractDuration || job.contract_duration,
+      role: job.role,
+      price: job.price,
       verificationFields: job.verificationFields || job.verification_fields || {
         name: true, primarySkill: true, position: true, experience: true,
         currentCompany: true, currentCTC: true, expectedCTC: true, noticePeriod: true,
@@ -361,6 +398,8 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
             : [])
     };
 
+    const isPredefinedRole = FREELANCER_ROLES.includes(normalizedJob.role || '');
+
     setEditingJob({
       ...normalizedJob,
       productionType: predefinedProductionTypes.includes(normalizedJob.productionType || '') ? normalizedJob.productionType : (normalizedJob.productionType ? 'Other' : ''),
@@ -369,6 +408,9 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
       customProjectFormat: predefinedProjectFormats.includes(normalizedJob.projectFormat || '') ? '' : (normalizedJob.projectFormat || ''),
       timeZonePreference: TIME_ZONES.includes(normalizedJob.timeZonePreference || '') ? normalizedJob.timeZonePreference : (normalizedJob.timeZonePreference ? 'Other' : 'No Preference'),
       customTimeZone: TIME_ZONES.includes(normalizedJob.timeZonePreference || '') ? '' : (normalizedJob.timeZonePreference || ''),
+      role: isPredefinedRole ? normalizedJob.role : (normalizedJob.role ? 'Other' : ''),
+      customRole: isPredefinedRole ? '' : (normalizedJob.role || ''),
+      price: normalizedJob.price || '',
       softwareTools: Array.isArray(normalizedJob.softwareTools) ? normalizedJob.softwareTools.join(', ') : normalizedJob.softwareTools || '',
     });
     setIsEditModalOpen(true);
@@ -409,6 +451,9 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
           : editingJob.softwareTools,
         experienceRequired: editingJob.experienceLevel,
         requiredExperience: editingJob.requiredExperience,
+        role: editingJob.engagementType === 'Freelancer' ? (editingJob.role === 'Other' ? editingJob.customRole : editingJob.role) : null,
+        price: editingJob.engagementType === 'Freelancer' ? editingJob.price : null,
+        contractDuration: (editingJob.engagementType === 'Short Term/Contract' || editingJob.engagementType === 'Freelancer') ? editingJob.contractDuration : null,
       };
 
       const response = await updateStudioJobPosting(token, editingJob.id, dataToUpdate);
@@ -523,12 +568,13 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
 
               <div className="space-y-3">
                 <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Engagement Type *</label>
-                <div className="flex gap-2">
-                  {['Full Time (Employee)', 'Short Term/Contract'].map(type => (
+                <div className="flex flex-wrap gap-2">
+                  {['Full Time (Employee)', 'Short Term/Contract', 'Freelancer'].map(type => (
                     <button
                       key={type}
+                      type="button"
                       onClick={() => handleSelectOption('engagementType', type)}
-                      className={`flex-1 py-4 rounded-2xl text-xs font-bold transition-all border ${formData.engagementType === type
+                      className={`flex-1 min-w-[140px] py-4 rounded-2xl text-xs font-bold transition-all border ${formData.engagementType === type
                         ? 'bg-black text-white border-black shadow-lg shadow-black/10'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                         }`}
@@ -538,7 +584,8 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                   ))}
                 </div>
               </div>
-              {formData.engagementType === 'Short Term/Contract' && (
+
+              {(formData.engagementType === 'Short Term/Contract' || formData.engagementType === 'Freelancer') && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -550,10 +597,65 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                     name="contractDuration"
                     value={formData.contractDuration}
                     onChange={handleInputChange}
-                    placeholder="e.g. 3 Months, 6 Months"
+                    placeholder="e.g. 3 Months, 2 Weeks, 10 Days"
                     className="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-black/5 transition-all font-medium"
                   />
                 </motion.div>
+              )}
+
+              {formData.engagementType === 'Freelancer' && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-3"
+                  >
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Price / Budget *</label>
+                    <input
+                      type="text"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="e.g. $500, ₹25,000 / project, $50/hr"
+                      className="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-black/5 transition-all font-medium"
+                    />
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-3"
+                  >
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Freelancer Role *</label>
+                    <div className="flex flex-wrap gap-2">
+                      {FREELANCER_ROLES.map(r => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => handleSelectOption('role', r)}
+                          className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all border ${formData.role === r
+                            ? 'bg-black text-white border-black shadow-lg shadow-black/10'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                    {formData.role === 'Other' && (
+                      <div className="mt-3">
+                        <input
+                          type="text"
+                          name="customRole"
+                          value={formData.customRole}
+                          onChange={handleInputChange}
+                          placeholder="Specify custom role (e.g. Stop Motion Specialist)..."
+                          className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-black/5 transition-all font-medium"
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                </>
               )}
             </div>
           </div>
@@ -1158,20 +1260,21 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                       <div className="space-y-3">
                         <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">ENGAGEMENT TYPE *</label>
                         <div className="flex bg-gray-50/50 p-1.5 rounded-2xl">
-                          {['Full Time (Employee)', 'Short Term/Contract'].map(type => (
+                          {['Full Time (Employee)', 'Short Term/Contract', 'Freelancer'].map(type => (
                             <button
                               key={type}
+                              type="button"
                               onClick={() => setEditingJob({ ...editingJob, engagementType: type })}
                               className={`flex-1 h-10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${editingJob.engagementType === type ? 'bg-black text-white shadow-lg' : 'text-gray-300'
                                 }`}
                             >
-                              {type.split(' ')[0]}
+                              {type === 'Full Time (Employee)' ? 'Full Time' : type === 'Short Term/Contract' ? 'Short Term' : 'Freelancer'}
                             </button>
                           ))}
                         </div>
                       </div>
                     </div>
-                    {editingJob.engagementType === 'Short Term/Contract' && (
+                    {(editingJob.engagementType === 'Short Term/Contract' || editingJob.engagementType === 'Freelancer') && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
@@ -1182,10 +1285,63 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                           type="text"
                           value={editingJob.contractDuration || ''}
                           onChange={(e) => setEditingJob({ ...editingJob, contractDuration: e.target.value })}
-                          placeholder="e.g. 3 Months, 6 Months"
+                          placeholder="e.g. 3 Months, 2 Weeks, 10 Days"
                           className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-medium text-sm"
                         />
                       </motion.div>
+                    )}
+
+                    {editingJob.engagementType === 'Freelancer' && (
+                      <>
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="space-y-3"
+                        >
+                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">PRICE / BUDGET *</label>
+                          <input
+                            type="text"
+                            value={editingJob.price || ''}
+                            onChange={(e) => setEditingJob({ ...editingJob, price: e.target.value })}
+                            placeholder="e.g. $500, ₹25,000 / project, $50/hr"
+                            className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-medium text-sm"
+                          />
+                        </motion.div>
+
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="space-y-3"
+                        >
+                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">FREELANCER ROLE *</label>
+                          <div className="flex flex-wrap gap-2">
+                            {FREELANCER_ROLES.map(r => (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => setEditingJob({ ...editingJob, role: r })}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${editingJob.role === r
+                                  ? 'bg-black text-white border-black shadow-md'
+                                  : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                                  }`}
+                              >
+                                {r}
+                              </button>
+                            ))}
+                          </div>
+                          {editingJob.role === 'Other' && (
+                            <div className="mt-3">
+                              <input
+                                type="text"
+                                value={editingJob.customRole || ''}
+                                onChange={(e) => setEditingJob({ ...editingJob, customRole: e.target.value })}
+                                placeholder="Specify custom role..."
+                                className="w-full h-14 px-6 bg-gray-50/50 rounded-2xl border border-transparent outline-none focus:bg-white focus:border-[#7c00ff]/20 transition-all font-medium text-sm"
+                              />
+                            </div>
+                          )}
+                        </motion.div>
+                      </>
                     )}
 
                     <div className="space-y-3">

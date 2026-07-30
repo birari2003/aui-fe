@@ -607,6 +607,8 @@ const OpportunityDetailsModal = ({
 }) => {
   if (!isOpen || !opportunity) return null;
 
+  const isFreelancer = (opportunity.engagementType || opportunity.engagement_type) === 'Freelancer';
+
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
       <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -614,19 +616,25 @@ const OpportunityDetailsModal = ({
           <div className="flex justify-between items-start">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <Badge variant="info" className="bg-brand-primary/5 text-brand-primary border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-                  Incoming Request
-                </Badge>
+                {isFreelancer ? (
+                  <span className="bg-[#7c00ff] text-white border-none text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-xl shadow-lg shadow-[#7c00ff]/20">
+                    Freelancer
+                  </span>
+                ) : (
+                  <Badge variant="info" className="bg-brand-primary/5 text-brand-primary border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest">
+                    Incoming Request
+                  </Badge>
+                )}
                 <span className="text-xs text-text-muted flex items-center gap-1.5 font-medium">
                   <Clock size={14} /> Just now
                 </span>
               </div>
               <div>
                 <h2 className="text-4xl font-display font-black text-brand-primary tracking-tight">
-                  {opportunity.engagementBrief}
+                  {opportunity.role || opportunity.title || opportunity.engagementBrief || opportunity.roleTitle || 'Creative Role'}
                 </h2>
                 <p className="text-lg text-text-secondary font-medium mt-1">
-                  {opportunity.studio?.studioName} <span className="mx-2 text-gray-300">•</span> {opportunity.productionType}
+                  {opportunity.studio?.studioName || 'Studio'} <span className="mx-2 text-gray-300">•</span> {opportunity.productionType || opportunity.projectType || 'Freelance'}
                 </p>
               </div>
             </div>
@@ -638,32 +646,35 @@ const OpportunityDetailsModal = ({
             </button>
           </div>
 
-          <div className={`grid grid-cols-2 ${opportunity.professionalId ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-8 py-6 border-y border-gray-100`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6 border-y border-gray-100 text-left">
             <div className="space-y-1">
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Timeline</p>
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Starts / Timeline</p>
               <p className="font-bold text-brand-primary">
                 {opportunity.startAvailability || opportunity.start_availability || opportunity.startDate || 'Immediate'}
               </p>
             </div>
-            {!opportunity.professionalId && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Engagement</p>
+              <p className="font-bold text-brand-primary">
+                {opportunity.engagementType || opportunity.engagement_type || 'N/A'}
+              </p>
+            </div>
+            {(opportunity.contractDuration || opportunity.contract_duration) && (
               <div className="space-y-1">
-                <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Experience</p>
+                <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Duration</p>
                 <p className="font-bold text-brand-primary">
-                  {opportunity.experienceRequired || opportunity.experience_required || opportunity.experienceLevel || opportunity.experience_level || 'N/A'}
+                  {opportunity.contractDuration || opportunity.contract_duration}
                 </p>
               </div>
             )}
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">
-                {opportunity.professionalId ? 'Location' : 'Engagement'}
-              </p>
-              <p className="font-bold text-brand-primary">
-                {opportunity.professionalId
-                  ? (opportunity.location || 'N/A')
-                  : (opportunity.engagementType || opportunity.engagement_type || opportunity.projectTimeline || opportunity.project_timeline || 'N/A')}
-                {!opportunity.professionalId && opportunity.contractDuration && ` (${opportunity.contractDuration})`}
-              </p>
-            </div>
+            {opportunity.price && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Price / Budget</p>
+                <p className="font-bold text-emerald-600">
+                  {opportunity.price}
+                </p>
+              </div>
+            )}
             <div className="space-y-1">
               <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Work Mode</p>
               <p className={`font-bold flex items-center gap-1.5 ${
@@ -680,7 +691,7 @@ const OpportunityDetailsModal = ({
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-primary shadow-sm border border-gray-100">
               <Sparkles size={18} />
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Project Format</p>
               <p className="font-bold text-brand-primary">{opportunity.projectFormat || opportunity.project_format || 'N/A'}</p>
             </div>
@@ -692,7 +703,7 @@ const OpportunityDetailsModal = ({
               <h4 className="text-xs font-black uppercase tracking-widest">Opportunity Overview</h4>
             </div>
             <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 text-text-secondary font-medium leading-relaxed">
-              "{opportunity.opportunityOverview || opportunity.engagementBrief || 'You have received a direct interest request for this role.'}"
+              "{opportunity.opportunityOverview || opportunity.engagementBrief || opportunity.description || 'You have received an interest request for this role.'}"
             </div>
           </div>
 
@@ -726,6 +737,30 @@ const OpportunityDetailsModal = ({
     </div>
   );
 };
+
+const FREELANCER_ROLES = [
+  'Motion Design',
+  'Animator',
+  '3D Artist',
+  'Concept Artist',
+  'Compositor',
+  'Rigging Artist',
+  'VFX Artist',
+  'Storyboard Artist',
+  'Sound Designer',
+  'Video Editor',
+  'UI/UX Designer',
+  'Graphic Designer',
+  'Illustrator',
+  'Character Designer',
+  'Lighting Artist',
+  'Texture Artist',
+  'Matte Painter',
+  'Modeling Artist',
+  'FX Artist',
+  'Technical Director',
+  'Other'
+];
 
 const LogoIconHiringOS = ({ size = 16, className = "" }: { size?: number; className?: string }) => {
   const isMuted = className.includes('text-text-muted');
@@ -762,6 +797,12 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
   const [hiringOSTab, setHiringOSTab] = React.useState<'opportunities' | 'applications' | 'engagements' | 'activity'>('opportunities');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [visibleActivitiesCount, setVisibleActivitiesCount] = React.useState(5);
+
+  const [selectedEngagementFilter, setSelectedEngagementFilter] = React.useState<string>('All');
+  const [selectedWorkModeFilter, setSelectedWorkModeFilter] = React.useState<string>('All');
+  const [selectedProductionTypeFilter, setSelectedProductionTypeFilter] = React.useState<string>('All');
+  const [selectedFreelancerRoleFilter, setSelectedFreelancerRoleFilter] = React.useState<string>('All');
+  const [isFilterOpen, setIsFilterOpen] = React.useState<boolean>(false);
 
   const getRelativeTime = (dateString: string) => {
     if (!dateString) return '';
@@ -873,6 +914,157 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
 
     return uniqueItems;
   }, [studioRequests, jobApplications, notifications]);
+
+  const activeFilterCount = React.useMemo(() => {
+    return [
+      selectedEngagementFilter !== 'All',
+      selectedWorkModeFilter !== 'All',
+      selectedProductionTypeFilter !== 'All',
+      selectedFreelancerRoleFilter !== 'All',
+    ].filter(Boolean).length;
+  }, [selectedEngagementFilter, selectedWorkModeFilter, selectedProductionTypeFilter, selectedFreelancerRoleFilter]);
+
+  const resetFilters = () => {
+    setSelectedEngagementFilter('All');
+    setSelectedWorkModeFilter('All');
+    setSelectedProductionTypeFilter('All');
+    setSelectedFreelancerRoleFilter('All');
+    setSearchQuery('');
+  };
+
+  const filteredStudioRequests = React.useMemo(() => {
+    return studioRequests.filter((item) => {
+      const engagementType = item.engagementType || item.engagement_type || '';
+      const workMode = item.workMode || item.work_mode || '';
+      const productionType = item.productionType || item.production_type || '';
+      const role = item.role || item.roleTitle || item.title || '';
+      const studioName = item.studio?.studioName || '';
+      const overview = item.opportunityOverview || item.engagementBrief || item.description || '';
+
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          role.toLowerCase().includes(q) ||
+          studioName.toLowerCase().includes(q) ||
+          productionType.toLowerCase().includes(q) ||
+          engagementType.toLowerCase().includes(q) ||
+          workMode.toLowerCase().includes(q) ||
+          overview.toLowerCase().includes(q) ||
+          (item.contractDuration || item.contract_duration || '').toLowerCase().includes(q) ||
+          (item.price || item.proposedBudget || '').toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+
+      if (selectedEngagementFilter !== 'All' && engagementType !== selectedEngagementFilter) {
+        return false;
+      }
+
+      if (selectedWorkModeFilter !== 'All' && workMode !== selectedWorkModeFilter) {
+        return false;
+      }
+
+      if (selectedProductionTypeFilter !== 'All') {
+        if (selectedProductionTypeFilter === 'Other') {
+          const standardTypes = ['Feature Film', 'TV Series / OTT', 'Short Film', 'VFX', 'Commercial'];
+          if (standardTypes.includes(productionType)) return false;
+        } else if (productionType !== selectedProductionTypeFilter) {
+          return false;
+        }
+      }
+
+      if (selectedFreelancerRoleFilter !== 'All') {
+        if (selectedFreelancerRoleFilter === 'Other') {
+          const isStandard = FREELANCER_ROLES.filter(r => r !== 'Other').some(r => role.toLowerCase() === r.toLowerCase());
+          if (isStandard) return false;
+        } else {
+          if (!role.toLowerCase().includes(selectedFreelancerRoleFilter.toLowerCase())) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [studioRequests, searchQuery, selectedEngagementFilter, selectedWorkModeFilter, selectedProductionTypeFilter, selectedFreelancerRoleFilter]);
+
+  const filteredStudioJobPostings = React.useMemo(() => {
+    return studioJobPostings.filter((job) => {
+      const engagementType = job.engagementType || job.engagement_type || '';
+      const workMode = job.workMode || job.work_mode || '';
+      const productionType = job.productionType || job.production_type || job.projectType || '';
+      const role = job.role || job.title || '';
+      const studioName = job.studio?.studioName || '';
+      const overview = job.opportunityOverview || job.description || '';
+
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          role.toLowerCase().includes(q) ||
+          studioName.toLowerCase().includes(q) ||
+          productionType.toLowerCase().includes(q) ||
+          engagementType.toLowerCase().includes(q) ||
+          workMode.toLowerCase().includes(q) ||
+          overview.toLowerCase().includes(q) ||
+          (job.contractDuration || job.contract_duration || '').toLowerCase().includes(q) ||
+          (job.price || '').toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+
+      if (selectedEngagementFilter !== 'All' && engagementType !== selectedEngagementFilter) {
+        return false;
+      }
+
+      if (selectedWorkModeFilter !== 'All' && workMode !== selectedWorkModeFilter) {
+        return false;
+      }
+
+      if (selectedProductionTypeFilter !== 'All') {
+        if (selectedProductionTypeFilter === 'Other') {
+          const standardTypes = ['Feature Film', 'TV Series / OTT', 'Short Film', 'VFX', 'Commercial'];
+          if (standardTypes.includes(productionType)) return false;
+        } else if (productionType !== selectedProductionTypeFilter) {
+          return false;
+        }
+      }
+
+      if (selectedFreelancerRoleFilter !== 'All') {
+        if (selectedFreelancerRoleFilter === 'Other') {
+          const isStandard = FREELANCER_ROLES.filter(r => r !== 'Other').some(r => role.toLowerCase() === r.toLowerCase());
+          if (isStandard) return false;
+        } else {
+          if (!role.toLowerCase().includes(selectedFreelancerRoleFilter.toLowerCase())) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [studioJobPostings, searchQuery, selectedEngagementFilter, selectedWorkModeFilter, selectedProductionTypeFilter, selectedFreelancerRoleFilter]);
+
+  const filteredApplications = React.useMemo(() => {
+    return jobApplications.filter((app) => {
+      if (searchQuery.trim() === '') return true;
+      const q = searchQuery.toLowerCase();
+      const studioName = app.studio?.studioName || '';
+      const jobTitle = app.jobPosting?.title || app.jobPosting?.role || '';
+      const status = app.status || '';
+      return studioName.toLowerCase().includes(q) || jobTitle.toLowerCase().includes(q) || status.toLowerCase().includes(q);
+    });
+  }, [jobApplications, searchQuery]);
+
+  const filteredEngagements = React.useMemo(() => {
+    return jobApplications.filter(a => a.status === 'hired' || a.status === 'agreement').filter((app) => {
+      if (searchQuery.trim() === '') return true;
+      const q = searchQuery.toLowerCase();
+      const studioName = app.studio?.studioName || '';
+      const jobTitle = app.jobPosting?.title || app.jobPosting?.role || '';
+      return studioName.toLowerCase().includes(q) || jobTitle.toLowerCase().includes(q);
+    });
+  }, [jobApplications, searchQuery]);
+
+  const filteredActivityItems = React.useMemo(() => {
+    return activityItems.filter((item) => {
+      if (searchQuery.trim() === '') return true;
+      return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+  }, [activityItems, searchQuery]);
 
   const fetchDashboardData = React.useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -1346,10 +1538,10 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex bg-gray-50/50 p-1 rounded-2xl border border-gray-100 overflow-x-auto no-scrollbar">
                   {[
-                    { id: 'opportunities', label: 'Opportunities', icon: Sparkles, count: studioRequests.length + studioJobPostings.length },
-                    { id: 'applications', label: 'Applications', icon: Layers, count: jobApplications.length },
-                    { id: 'engagements', label: 'Engagements', icon: Briefcase, count: jobApplications.filter(a => a.status === 'hired' || a.status === 'agreement').length },
-                    { id: 'activity', label: 'Activity Hub', icon: Activity, count: activityItems.length },
+                    { id: 'opportunities', label: 'Opportunities', icon: Sparkles, count: filteredStudioRequests.length + filteredStudioJobPostings.length },
+                    { id: 'applications', label: 'Applications', icon: Layers, count: filteredApplications.length },
+                    { id: 'engagements', label: 'Engagements', icon: Briefcase, count: filteredEngagements.length },
+                    { id: 'activity', label: 'Activity Hub', icon: Activity, count: filteredActivityItems.length },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -1374,168 +1566,363 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
                     <input
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search roles, studios, budget..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 w-48"
+                      className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 w-56 transition-all"
                     />
                   </div>
-                  <button className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                    <Filter size={18} className="text-text-muted" />
+                  <button
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    className={`p-2 border rounded-xl transition-all relative ${
+                      isFilterOpen || activeFilterCount > 0
+                        ? 'bg-[#7c00ff]/10 border-[#7c00ff] text-[#7c00ff]'
+                        : 'bg-white border-gray-200 hover:bg-gray-50 text-text-muted'
+                    }`}
+                  >
+                    <Filter size={18} />
+                    {activeFilterCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#7c00ff] text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-md">
+                        {activeFilterCount}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
+
+              {/* Filter Panel */}
+              <AnimatePresence>
+                {isFilterOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="p-6 bg-white border border-gray-100 rounded-3xl shadow-xl space-y-6 text-left animate-in fade-in duration-300"
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div className="flex items-center gap-2">
+                        <Filter size={16} className="text-[#7c00ff]" />
+                        <h4 className="text-xs font-black uppercase tracking-widest text-brand-primary">Filter Opportunities</h4>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {(activeFilterCount > 0 || searchQuery) && (
+                          <button
+                            onClick={resetFilters}
+                            className="text-[10px] font-bold text-rose-500 hover:underline uppercase tracking-wider"
+                          >
+                            Reset All
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setIsFilterOpen(false)}
+                          className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                          <X size={16} className="text-gray-400" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Engagement Type Filter */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Engagement Type</label>
+                        <select
+                          value={selectedEngagementFilter}
+                          onChange={(e) => {
+                            setSelectedEngagementFilter(e.target.value);
+                            if (e.target.value !== 'Freelancer' && e.target.value !== 'All') {
+                              setSelectedFreelancerRoleFilter('All');
+                            }
+                          }}
+                          className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs font-bold text-brand-primary outline-none focus:ring-2 focus:ring-brand-primary/20"
+                        >
+                          <option value="All">All Engagement Types</option>
+                          <option value="Full Time (Employee)">Full Time (Employee)</option>
+                          <option value="Short Term/Contract">Short Term/Contract</option>
+                          <option value="Freelancer">Freelancer</option>
+                        </select>
+                      </div>
+
+                      {/* Work Mode Filter */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Work Mode</label>
+                        <select
+                          value={selectedWorkModeFilter}
+                          onChange={(e) => setSelectedWorkModeFilter(e.target.value)}
+                          className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs font-bold text-brand-primary outline-none focus:ring-2 focus:ring-brand-primary/20"
+                        >
+                          <option value="All">All Work Modes</option>
+                          <option value="On-site">On-site</option>
+                          <option value="Hybrid">Hybrid</option>
+                          <option value="Remote">Remote</option>
+                        </select>
+                      </div>
+
+                      {/* Production Type Filter */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Production Type</label>
+                        <select
+                          value={selectedProductionTypeFilter}
+                          onChange={(e) => setSelectedProductionTypeFilter(e.target.value)}
+                          className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs font-bold text-brand-primary outline-none focus:ring-2 focus:ring-brand-primary/20"
+                        >
+                          <option value="All">All Production Types</option>
+                          <option value="Feature Film">Feature Film</option>
+                          <option value="TV Series / OTT">TV Series / OTT</option>
+                          <option value="Short Film">Short Film</option>
+                          <option value="VFX">VFX</option>
+                          <option value="Commercial">Commercial</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Freelancer Role Filter */}
+                    {selectedEngagementFilter === 'Freelancer' && (
+                      <div className="space-y-3 pt-3 border-t border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#7c00ff]">
+                            Freelancer Role Filter {selectedEngagementFilter === 'Freelancer' && '*'}
+                          </label>
+                          {selectedFreelancerRoleFilter !== 'All' && (
+                            <span className="text-[10px] font-bold text-[#7c00ff] bg-[#7c00ff]/10 px-2 py-0.5 rounded-full">
+                              Active: {selectedFreelancerRoleFilter}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto no-scrollbar p-1.5 bg-gray-50/50 rounded-2xl border border-gray-100">
+                          <button
+                            onClick={() => setSelectedFreelancerRoleFilter('All')}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                              selectedFreelancerRoleFilter === 'All'
+                                ? 'bg-[#7c00ff] text-white shadow-sm'
+                                : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            All Roles
+                          </button>
+                          {FREELANCER_ROLES.map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => setSelectedFreelancerRoleFilter(r)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                                selectedFreelancerRoleFilter === r
+                                  ? 'bg-[#7c00ff] text-white shadow-sm'
+                                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="min-h-[400px]">
                 {hiringOSTab === 'opportunities' && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {/* Direct Studio Requests */}
-                    {studioRequests.map((request) => (
-                      <Card key={`request-${request.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium border-[#7c00ff]/10 bg-gradient-to-br from-white to-[#7c00ff]/[0.02] flex flex-col justify-between h-full">
-                        <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.05, 1],
-                              opacity: [0.9, 1, 0.9]
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                            className="flex flex-col items-end gap-1"
-                          >
-                            <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
-                              Studio Request
-                            </span>
-                            <div className="flex items-center gap-1.5 mr-1">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#7c00ff] animate-pulse" />
-                              <span className="text-[9px] font-black text-[#7c00ff] uppercase tracking-widest"># Direct Opportunity</span>
-                            </div>
-                          </motion.div>
-                        </div>
-
-                        <div className="space-y-4 flex-1 flex flex-col justify-between">
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-brand-accent">
-                              <Sparkles size={14} className="text-brand-accent" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
-                            </div>
-
-                            <div>
-                              <h3 className="text-2xl font-bold text-brand-primary">{request.studio?.studioName || 'Movement Studio'}</h3>
-                              <p className="text-text-secondary font-medium">
-                                {request.roleTitle || 'Creative Role'} <span className="mx-2 text-gray-300">•</span> {request.productionType || 'Animation'}
-                              </p>
-                            </div>
-
-                            <div className="p-4 bg-gray-50 rounded-2xl italic text-sm text-text-secondary border border-gray-100/50 min-h-[80px] flex items-center">
-                              "{request.opportunityOverview || request.engagementBrief || 'You have received a direct interest request for this role.'}"
-                            </div>
+                    {filteredStudioRequests.map((request) => {
+                      const isFreelancer = (request.engagementType || request.engagement_type) === 'Freelancer';
+                      return (
+                        <Card key={`request-${request.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium border-[#7c00ff]/10 bg-gradient-to-br from-white to-[#7c00ff]/[0.02] flex flex-col justify-between h-full">
+                          <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
+                            {isFreelancer ? (
+                              <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
+                                Freelancer
+                              </span>
+                            ) : (
+                              <motion.div
+                                animate={{
+                                  scale: [1, 1.05, 1],
+                                  opacity: [0.9, 1, 0.9]
+                                }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut"
+                                }}
+                                className="flex flex-col items-end gap-1"
+                              >
+                                <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
+                                  Studio Request
+                                </span>
+                                <div className="flex items-center gap-1.5 mr-1">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[#7c00ff] animate-pulse" />
+                                  <span className="text-[9px] font-black text-[#7c00ff] uppercase tracking-widest"># Direct Opportunity</span>
+                                </div>
+                              </motion.div>
+                            )}
                           </div>
 
-                          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50 mt-auto">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-text-muted">
-                                <Clock size={14} />
+                          <div className="space-y-4 flex-1 flex flex-col justify-between">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 text-brand-accent">
+                                <Sparkles size={14} className="text-brand-accent" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
                               </div>
-                              <div className="text-left">
-                                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest leading-none mb-1">Starts</p>
-                                <p className="text-xs font-bold text-brand-primary uppercase">{request.startDate || request.startAvailability || 'Immediate'}</p>
+
+                              <div>
+                                <h3 className="text-2xl font-bold text-brand-primary">{request.studio?.studioName || 'Movement Studio'}</h3>
+                                <p className="text-text-secondary font-medium mt-0.5">
+                                  <span className={isFreelancer ? "text-[#7c00ff] font-bold" : ""}>
+                                    {request.role || request.roleTitle || 'Creative Role'}
+                                  </span>
+                                  <span className="mx-2 text-gray-300">•</span>
+                                  {request.productionType || 'Animation'}
+                                </p>
+                              </div>
+
+                              {isFreelancer && (
+                                <div className="space-y-2 pt-2 border-t border-gray-100/80 text-xs text-left">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Duration:</span>
+                                    <span className="font-black text-brand-primary">{request.contractDuration || request.contract_duration || request.projectTimeline || 'N/A'}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Price / Budget:</span>
+                                    <span className="font-black text-emerald-600">{request.price || request.proposedBudget || 'N/A'}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="p-4 bg-gray-50 rounded-2xl italic text-sm text-text-secondary border border-gray-100/50 min-h-[80px] flex items-center">
+                                "{request.opportunityOverview || request.engagementBrief || 'You have received a direct interest request for this role.'}"
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                              <button
-                                className="text-xs font-bold text-text-muted hover:text-brand-primary transition-colors uppercase tracking-wider"
-                                onClick={() => {
-                                  setSelectedOpp(request);
-                                  setIsOppModalOpen(true);
-                                }}
-                              >
-                                View Details
-                              </button>
-                              <Button
-                                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-brand-primary/10 flex items-center gap-2 group text-xs font-bold"
-                                onClick={() => {
-                                  setSelectedOpp(request);
-                                  setIsVerificationModalOpen(true);
-                                }}
-                                loading={requestLoadingId === request.id}
-                              >
-                                Accept & Apply <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                              </Button>
+                            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50 mt-auto">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-text-muted">
+                                  <Clock size={14} />
+                                </div>
+                                <div className="text-left">
+                                  <p className="text-[9px] font-black text-text-muted uppercase tracking-widest leading-none mb-1">Starts</p>
+                                  <p className="text-xs font-bold text-brand-primary uppercase">{request.startDate || request.startAvailability || 'Immediate'}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                <button
+                                  className="text-xs font-bold text-text-muted hover:text-brand-primary transition-colors uppercase tracking-wider"
+                                  onClick={() => {
+                                    setSelectedOpp(request);
+                                    setIsOppModalOpen(true);
+                                  }}
+                                >
+                                  View Details
+                                </button>
+                                <Button
+                                  className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-brand-primary/10 flex items-center gap-2 group text-xs font-bold"
+                                  onClick={() => {
+                                    setSelectedOpp(request);
+                                    setIsVerificationModalOpen(true);
+                                  }}
+                                  loading={requestLoadingId === request.id}
+                                >
+                                  Accept & Apply <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      );
+                    })}
 
                     {/* Global Studio Job Postings */}
-                    {studioJobPostings.map((job) => (
-                      <Card key={`job-${job.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium flex flex-col justify-between h-full">
-                        <div className="absolute top-4 right-4">
-                          <Badge variant="outline" className="bg-white border-gray-100 text-[8px] uppercase tracking-widest font-black px-2 py-1 rounded-md text-gray-900">Studio Post</Badge>
-                        </div>
-
-                        <div className="space-y-4 flex-1 flex flex-col justify-between">
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-brand-accent">
-                              <Sparkles size={14} className="text-brand-accent" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
-                            </div>
-
-                            <div>
-                              <h3 className="text-2xl font-bold text-brand-primary">{job.studio?.studioName || 'Movement Studio'}</h3>
-                              <p className="text-text-secondary font-medium">
-                                {job.title} <span className="mx-2 text-gray-300">•</span> {job.productionType || job.projectType || 'Feature Film'}
-                              </p>
-                            </div>
-
-                            <div className="p-4 bg-gray-50 rounded-2xl italic text-sm text-text-secondary border border-gray-100/50 min-h-[80px] flex items-center">
-                              "{job.opportunityOverview || job.description || 'Join a world-class team working on a major project.'}"
-                            </div>
+                    {filteredStudioJobPostings.map((job) => {
+                      const isFreelancer = (job.engagementType || job.engagement_type) === 'Freelancer';
+                      return (
+                        <Card key={`job-${job.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium flex flex-col justify-between h-full">
+                          <div className="absolute top-4 right-4">
+                            {isFreelancer ? (
+                              <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
+                                Freelancer
+                              </span>
+                            ) : (
+                              <Badge variant="outline" className="bg-white border-gray-100 text-[8px] uppercase tracking-widest font-black px-2 py-1 rounded-md text-gray-900">Studio Post</Badge>
+                            )}
                           </div>
 
-                          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50 mt-auto">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-text-muted">
-                                <Clock size={14} />
+                          <div className="space-y-4 flex-1 flex flex-col justify-between">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 text-brand-accent">
+                                <Sparkles size={14} className="text-brand-accent" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Incoming Interest</span>
                               </div>
-                              <div className="text-left">
-                                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest leading-none mb-1">Starts</p>
-                                <p className="text-xs font-bold text-brand-primary uppercase">{job.startDate || job.requiredAvailability || 'Immediate'}</p>
+
+                              <div>
+                                <h3 className="text-2xl font-bold text-brand-primary">{job.studio?.studioName || 'Movement Studio'}</h3>
+                                <p className="text-text-secondary font-medium mt-0.5">
+                                  <span className={isFreelancer ? "text-[#7c00ff] font-bold" : ""}>
+                                    {job.role || job.title}
+                                  </span>
+                                  <span className="mx-2 text-gray-300">•</span>
+                                  {job.productionType || job.projectType || 'Feature Film'}
+                                </p>
+                              </div>
+
+                              {isFreelancer && (
+                                <div className="space-y-2 pt-2 border-t border-gray-100/80 text-xs text-left">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Duration:</span>
+                                    <span className="font-black text-brand-primary">{job.contractDuration || job.contract_duration || 'N/A'}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Price / Budget:</span>
+                                    <span className="font-black text-emerald-600">{job.price || 'N/A'}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="p-4 bg-gray-50 rounded-2xl italic text-sm text-text-secondary border border-gray-100/50 min-h-[80px] flex items-center">
+                                "{job.opportunityOverview || job.description || 'Join a world-class team working on a major project.'}"
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                              <button
-                                className="text-xs font-bold text-text-muted hover:text-brand-primary transition-colors uppercase tracking-wider"
-                                onClick={() => {
-                                  setSelectedOpp({ ...job, isGlobal: true });
-                                  setIsOppModalOpen(true);
-                                }}
-                              >
-                                View Details
-                              </button>
-                              <Button
-                                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-brand-primary/10 flex items-center gap-2 group text-xs font-bold"
-                                onClick={() => {
-                                  setSelectedOpp({ ...job, isGlobal: true });
-                                  setIsVerificationModalOpen(true);
-                                }}
-                              >
-                                Accept & Apply <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                              </Button>
+                            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50 mt-auto">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-text-muted">
+                                  <Clock size={14} />
+                                </div>
+                                <div className="text-left">
+                                  <p className="text-[9px] font-black text-text-muted uppercase tracking-widest leading-none mb-1">Starts</p>
+                                  <p className="text-xs font-bold text-brand-primary uppercase">{job.startDate || job.requiredAvailability || 'Immediate'}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                <button
+                                  className="text-xs font-bold text-text-muted hover:text-brand-primary transition-colors uppercase tracking-wider"
+                                  onClick={() => {
+                                    setSelectedOpp({ ...job, isGlobal: true });
+                                    setIsOppModalOpen(true);
+                                  }}
+                                >
+                                  View Details
+                                </button>
+                                <Button
+                                  className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-brand-primary/10 flex items-center gap-2 group text-xs font-bold"
+                                  onClick={() => {
+                                    setSelectedOpp({ ...job, isGlobal: true });
+                                    setIsVerificationModalOpen(true);
+                                  }}
+                                >
+                                  Accept & Apply <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      );
+                    })}
 
-                    {studioRequests.length === 0 && studioJobPostings.length === 0 && (
+                    {filteredStudioRequests.length === 0 && filteredStudioJobPostings.length === 0 && (
                       <div className="col-span-full py-20 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 text-center">
-                        <p className="text-text-muted font-medium">No incoming interests at the moment.</p>
+                        <p className="text-text-muted font-medium">No opportunities matching your search or filters.</p>
                       </div>
                     )}
                   </div>
@@ -1553,7 +1940,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {jobApplications
+                        {filteredApplications
                           .map((app, i) => {
                             const statusMap: Record<string, { label: string; progress: number; color: string }> = {
                               applied: { label: 'APPLIED', progress: 1, color: 'bg-gray-500' },
@@ -1624,8 +2011,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
 
                 {hiringOSTab === 'engagements' && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {jobApplications
-                      .filter(a => a.status === 'hired' || a.status === 'agreement')
+                    {filteredEngagements
                       .map((app) => {
                         const eng = app.agreementDetails || {};
                         const isNewOffer = app.status === 'agreement' && app.artistDecision === 'pending';
@@ -1707,9 +2093,9 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         );
                       })}
 
-                    {jobApplications.filter(a => a.status === 'hired' || a.status === 'agreement').length === 0 && (
+                    {filteredEngagements.length === 0 && (
                       <div className="col-span-full py-20 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 text-center">
-                        <p className="text-text-muted font-medium">No active engagements or pending agreements.</p>
+                        <p className="text-text-muted font-medium">No engagements matching your search or filters.</p>
                       </div>
                     )}
                   </div>
@@ -1718,7 +2104,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                 {hiringOSTab === 'activity' && (
                   <div className="bg-white rounded-3xl border border-gray-100 p-10 animate-in fade-in slide-in-from-bottom-4 duration-500 text-left">
                     <div className="space-y-10 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gray-100">
-                      {activityItems.slice(0, visibleActivitiesCount).map((item, i) => (
+                      {filteredActivityItems.slice(0, visibleActivitiesCount).map((item, i) => (
                         <div key={i} className="flex gap-6 relative pl-8 group">
                           <div className={`absolute left-0 top-2 w-4 h-4 rounded-full border-4 border-white shadow-sm ring-2 ring-transparent group-hover:ring-gray-100 transition-all ${item.color}`} />
                           <div className="space-y-1">
@@ -1729,17 +2115,17 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                           </div>
                         </div>
                       ))}
-                      {activityItems.length === 0 && (
+                      {filteredActivityItems.length === 0 && (
                         <div className="py-12 text-center text-text-muted font-medium">
-                          No recent activity in the hub.
+                          No activity matching your search.
                         </div>
                       )}
                     </div>
-                    {activityItems.length > visibleActivitiesCount && (
+                    {filteredActivityItems.length > visibleActivitiesCount && (
                       <div className="mt-8 pt-6 border-t border-gray-50 flex justify-center">
                         <button
                           onClick={() => setVisibleActivitiesCount(prev => prev + 5)}
-                          className="px-6 py-2.5 bg-white hover:bg-gray-50 text-brand-primary border border-gray-200 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2"
+                          className="px-6 py-2.5 bg-[#7c00ff]/10 hover:bg-[#7c00ff]/20 text-[#7c00ff] rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2"
                         >
                           View More Activity
                         </button>
