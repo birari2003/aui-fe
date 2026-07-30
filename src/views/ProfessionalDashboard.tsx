@@ -607,7 +607,7 @@ const OpportunityDetailsModal = ({
 }) => {
   if (!isOpen || !opportunity) return null;
 
-  const isFreelancer = (opportunity.engagementType || opportunity.engagement_type) === 'Freelancer';
+  const isFreelancer = (opportunity.engagementType || opportunity.engagement_type) === 'Freelance' || (opportunity.engagementType || opportunity.engagement_type) === 'Freelancer';
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
@@ -618,7 +618,7 @@ const OpportunityDetailsModal = ({
               <div className="flex items-center gap-3">
                 {isFreelancer ? (
                   <span className="bg-[#7c00ff] text-white border-none text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-xl shadow-lg shadow-[#7c00ff]/20">
-                    Freelancer
+                    Freelance
                   </span>
                 ) : (
                   <Badge variant="info" className="bg-brand-primary/5 text-brand-primary border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest">
@@ -739,9 +739,10 @@ const OpportunityDetailsModal = ({
 };
 
 const FREELANCER_ROLES = [
-  'Motion Design',
+  'Motion Graphic',
   'Animator',
   '3D Artist',
+  'AI Artist',
   'Concept Artist',
   'Compositor',
   'Rigging Artist',
@@ -955,8 +956,12 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
         if (!matches) return false;
       }
 
-      if (selectedEngagementFilter !== 'All' && engagementType !== selectedEngagementFilter) {
-        return false;
+      if (selectedEngagementFilter !== 'All') {
+        if (selectedEngagementFilter === 'Freelance' || selectedEngagementFilter === 'Freelancer') {
+          if (engagementType !== 'Freelance' && engagementType !== 'Freelancer') return false;
+        } else if (engagementType !== selectedEngagementFilter) {
+          return false;
+        }
       }
 
       if (selectedWorkModeFilter !== 'All' && workMode !== selectedWorkModeFilter) {
@@ -1008,8 +1013,12 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
         if (!matches) return false;
       }
 
-      if (selectedEngagementFilter !== 'All' && engagementType !== selectedEngagementFilter) {
-        return false;
+      if (selectedEngagementFilter !== 'All') {
+        if (selectedEngagementFilter === 'Freelance' || selectedEngagementFilter === 'Freelancer') {
+          if (engagementType !== 'Freelance' && engagementType !== 'Freelancer') return false;
+        } else if (engagementType !== selectedEngagementFilter) {
+          return false;
+        }
       }
 
       if (selectedWorkModeFilter !== 'All' && workMode !== selectedWorkModeFilter) {
@@ -1630,7 +1639,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                           value={selectedEngagementFilter}
                           onChange={(e) => {
                             setSelectedEngagementFilter(e.target.value);
-                            if (e.target.value !== 'Freelancer' && e.target.value !== 'All') {
+                            if (e.target.value !== 'Freelance' && e.target.value !== 'Freelancer' && e.target.value !== 'All') {
                               setSelectedFreelancerRoleFilter('All');
                             }
                           }}
@@ -1639,7 +1648,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                           <option value="All">All Engagement Types</option>
                           <option value="Full Time (Employee)">Full Time (Employee)</option>
                           <option value="Short Term/Contract">Short Term/Contract</option>
-                          <option value="Freelancer">Freelancer</option>
+                          <option value="Freelance">Freelance</option>
                         </select>
                       </div>
 
@@ -1677,12 +1686,12 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                       </div>
                     </div>
 
-                    {/* Freelancer Role Filter */}
-                    {selectedEngagementFilter === 'Freelancer' && (
+                    {/* Freelance Role Filter */}
+                    {(selectedEngagementFilter === 'Freelance' || selectedEngagementFilter === 'Freelancer') && (
                       <div className="space-y-3 pt-3 border-t border-gray-100">
                         <div className="flex items-center justify-between">
                           <label className="text-[10px] font-black uppercase tracking-widest text-[#7c00ff]">
-                            Freelancer Role Filter {selectedEngagementFilter === 'Freelancer' && '*'}
+                            Freelance Role Filter *
                           </label>
                           {selectedFreelancerRoleFilter !== 'All' && (
                             <span className="text-[10px] font-bold text-[#7c00ff] bg-[#7c00ff]/10 px-2 py-0.5 rounded-full">
@@ -1726,13 +1735,13 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {/* Direct Studio Requests */}
                     {filteredStudioRequests.map((request) => {
-                      const isFreelancer = (request.engagementType || request.engagement_type) === 'Freelancer';
+                      const isFreelancer = (request.engagementType || request.engagement_type) === 'Freelance' || (request.engagementType || request.engagement_type) === 'Freelancer';
                       return (
                         <Card key={`request-${request.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium border-[#7c00ff]/10 bg-gradient-to-br from-white to-[#7c00ff]/[0.02] flex flex-col justify-between h-full">
                           <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
                             {isFreelancer ? (
                               <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
-                                Freelancer
+                                Freelance
                               </span>
                             ) : (
                               <motion.div
@@ -1777,14 +1786,16 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                               </div>
 
                               {isFreelancer && (
-                                <div className="space-y-2 pt-2 border-t border-gray-100/80 text-xs text-left">
+                                <div className="space-y-2.5 pt-2 border-t border-gray-100/80 text-xs text-left">
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Duration:</span>
                                     <span className="font-black text-brand-primary">{request.contractDuration || request.contract_duration || request.projectTimeline || 'N/A'}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Price / Budget:</span>
-                                    <span className="font-black text-emerald-600">{request.price || request.proposedBudget || 'N/A'}</span>
+                                    <span className="text-base font-black text-emerald-600 bg-emerald-50 px-3.5 py-1 rounded-xl border border-emerald-200/80 shadow-sm">
+                                      {request.price || request.proposedBudget || 'N/A'}
+                                    </span>
                                   </div>
                                 </div>
                               )}
@@ -1834,13 +1845,13 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
 
                     {/* Global Studio Job Postings */}
                     {filteredStudioJobPostings.map((job) => {
-                      const isFreelancer = (job.engagementType || job.engagement_type) === 'Freelancer';
+                      const isFreelancer = (job.engagementType || job.engagement_type) === 'Freelance' || (job.engagementType || job.engagement_type) === 'Freelancer';
                       return (
                         <Card key={`job-${job.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium flex flex-col justify-between h-full">
                           <div className="absolute top-4 right-4">
                             {isFreelancer ? (
                               <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
-                                Freelancer
+                                Freelance
                               </span>
                             ) : (
                               <Badge variant="outline" className="bg-white border-gray-100 text-[8px] uppercase tracking-widest font-black px-2 py-1 rounded-md text-gray-900">Studio Post</Badge>
@@ -1866,14 +1877,16 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                               </div>
 
                               {isFreelancer && (
-                                <div className="space-y-2 pt-2 border-t border-gray-100/80 text-xs text-left">
+                                <div className="space-y-2.5 pt-2 border-t border-gray-100/80 text-xs text-left">
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Duration:</span>
                                     <span className="font-black text-brand-primary">{job.contractDuration || job.contract_duration || 'N/A'}</span>
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider">Price / Budget:</span>
-                                    <span className="font-black text-emerald-600">{job.price || 'N/A'}</span>
+                                    <span className="text-base font-black text-emerald-600 bg-emerald-50 px-3.5 py-1 rounded-xl border border-emerald-200/80 shadow-sm">
+                                      {job.price || 'N/A'}
+                                    </span>
                                   </div>
                                 </div>
                               )}

@@ -66,9 +66,10 @@ interface JobPosting {
 }
 
 const FREELANCER_ROLES = [
-  'Motion Design',
+  'Motion Graphic',
   'Animator',
   '3D Artist',
+  'AI Artist',
   'Concept Artist',
   'Compositor',
   'Rigging Artist',
@@ -272,9 +273,9 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
         artistCount: formData.positionsCount,
         startDate: formData.hiringDeadline,
         internalNotes: formData.internalNotes,
-        contractDuration: (formData.engagementType === 'Short Term/Contract' || formData.engagementType === 'Freelancer') ? formData.contractDuration : null,
-        role: formData.engagementType === 'Freelancer' ? (formData.role === 'Other' ? formData.customRole : formData.role) : null,
-        price: formData.engagementType === 'Freelancer' ? formData.price : null,
+        contractDuration: (formData.engagementType === 'Short Term/Contract' || formData.engagementType === 'Freelancer' || formData.engagementType === 'Freelance') ? formData.contractDuration : null,
+        role: (formData.engagementType === 'Freelancer' || formData.engagementType === 'Freelance') ? (formData.role === 'Other' ? formData.customRole : formData.role) : null,
+        price: (formData.engagementType === 'Freelancer' || formData.engagementType === 'Freelance') ? formData.price : null,
         verificationFields: formData.verificationFields,
         status: 'open',
       });
@@ -451,9 +452,9 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
           : editingJob.softwareTools,
         experienceRequired: editingJob.experienceLevel,
         requiredExperience: editingJob.requiredExperience,
-        role: editingJob.engagementType === 'Freelancer' ? (editingJob.role === 'Other' ? editingJob.customRole : editingJob.role) : null,
-        price: editingJob.engagementType === 'Freelancer' ? editingJob.price : null,
-        contractDuration: (editingJob.engagementType === 'Short Term/Contract' || editingJob.engagementType === 'Freelancer') ? editingJob.contractDuration : null,
+        role: (editingJob.engagementType === 'Freelancer' || editingJob.engagementType === 'Freelance') ? (editingJob.role === 'Other' ? editingJob.customRole : editingJob.role) : null,
+        price: (editingJob.engagementType === 'Freelancer' || editingJob.engagementType === 'Freelance') ? editingJob.price : null,
+        contractDuration: (editingJob.engagementType === 'Short Term/Contract' || editingJob.engagementType === 'Freelancer' || editingJob.engagementType === 'Freelance') ? editingJob.contractDuration : null,
       };
 
       const response = await updateStudioJobPosting(token, editingJob.id, dataToUpdate);
@@ -569,7 +570,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
               <div className="space-y-3">
                 <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Engagement Type *</label>
                 <div className="flex flex-wrap gap-2">
-                  {['Full Time (Employee)', 'Short Term/Contract', 'Freelancer'].map(type => (
+                  {['Full Time (Employee)', 'Short Term/Contract', 'Freelance'].map(type => (
                     <button
                       key={type}
                       type="button"
@@ -585,7 +586,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                 </div>
               </div>
 
-              {(formData.engagementType === 'Short Term/Contract' || formData.engagementType === 'Freelancer') && (
+              {(formData.engagementType === 'Short Term/Contract' || formData.engagementType === 'Freelancer' || formData.engagementType === 'Freelance') && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -603,7 +604,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                 </motion.div>
               )}
 
-              {formData.engagementType === 'Freelancer' && (
+              {(formData.engagementType === 'Freelancer' || formData.engagementType === 'Freelance') && (
                 <>
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -626,7 +627,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                     animate={{ opacity: 1, height: 'auto' }}
                     className="space-y-3"
                   >
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Freelancer Role *</label>
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Freelance Role *</label>
                     <div className="flex flex-wrap gap-2">
                       {FREELANCER_ROLES.map(r => (
                         <button
@@ -1260,7 +1261,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                       <div className="space-y-3">
                         <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">ENGAGEMENT TYPE *</label>
                         <div className="flex bg-gray-50/50 p-1.5 rounded-2xl">
-                          {['Full Time (Employee)', 'Short Term/Contract', 'Freelancer'].map(type => (
+                          {['Full Time (Employee)', 'Short Term/Contract', 'Freelance'].map(type => (
                             <button
                               key={type}
                               type="button"
@@ -1268,13 +1269,13 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                               className={`flex-1 h-10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${editingJob.engagementType === type ? 'bg-black text-white shadow-lg' : 'text-gray-300'
                                 }`}
                             >
-                              {type === 'Full Time (Employee)' ? 'Full Time' : type === 'Short Term/Contract' ? 'Short Term' : 'Freelancer'}
+                              {type === 'Full Time (Employee)' ? 'Full Time' : type === 'Short Term/Contract' ? 'Short Term' : 'Freelance'}
                             </button>
                           ))}
                         </div>
                       </div>
                     </div>
-                    {(editingJob.engagementType === 'Short Term/Contract' || editingJob.engagementType === 'Freelancer') && (
+                    {(editingJob.engagementType === 'Short Term/Contract' || editingJob.engagementType === 'Freelancer' || editingJob.engagementType === 'Freelance') && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
@@ -1291,7 +1292,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                       </motion.div>
                     )}
 
-                    {editingJob.engagementType === 'Freelancer' && (
+                    {(editingJob.engagementType === 'Freelancer' || editingJob.engagementType === 'Freelance') && (
                       <>
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
@@ -1313,7 +1314,7 @@ const HiringByStudio: React.FC<HiringByStudioProps> = ({ onInviteFromBench, onSe
                           animate={{ opacity: 1, height: 'auto' }}
                           className="space-y-3"
                         >
-                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">FREELANCER ROLE *</label>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-300">FREELANCE ROLE *</label>
                           <div className="flex flex-wrap gap-2">
                             {FREELANCER_ROLES.map(r => (
                               <button
