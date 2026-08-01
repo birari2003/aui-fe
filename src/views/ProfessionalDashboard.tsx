@@ -617,7 +617,7 @@ const OpportunityDetailsModal = ({
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 {isFreelancer ? (
-                  <span className="bg-[#7c00ff] text-white border-none text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-xl shadow-lg shadow-[#7c00ff]/20">
+                  <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 text-amber-950 border border-amber-300/60 text-[10px] font-black uppercase tracking-[0.2em] px-3.5 py-1 rounded-xl shadow-lg shadow-amber-400/25">
                     Freelance
                   </span>
                 ) : (
@@ -1740,7 +1740,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         <Card key={`request-${request.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium border-[#7c00ff]/10 bg-gradient-to-br from-white to-[#7c00ff]/[0.02] flex flex-col justify-between h-full">
                           <div className="absolute top-4 right-4 flex flex-col items-end gap-1.5">
                             {isFreelancer ? (
-                              <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
+                              <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 text-amber-950 border border-amber-300/60 text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-amber-400/25">
                                 Freelance
                               </span>
                             ) : (
@@ -1777,7 +1777,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                               <div>
                                 <h3 className="text-2xl font-bold text-brand-primary">{request.studio?.studioName || 'Movement Studio'}</h3>
                                 <p className="text-text-secondary font-medium mt-0.5">
-                                  <span className={isFreelancer ? "text-[#7c00ff] font-bold" : ""}>
+                                  <span className={isFreelancer ? "text-amber-600 font-bold" : ""}>
                                     {request.role || request.roleTitle || 'Creative Role'}
                                   </span>
                                   <span className="mx-2 text-gray-300">•</span>
@@ -1850,7 +1850,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                         <Card key={`job-${job.id}`} className="p-8 space-y-6 relative overflow-hidden group hover:shadow-premium transition-premium flex flex-col justify-between h-full">
                           <div className="absolute top-4 right-4">
                             {isFreelancer ? (
-                              <span className="bg-[#7c00ff] text-white border-none text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[#7c00ff]/30">
+                              <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 text-amber-950 border border-amber-300/60 text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1.5 rounded-xl shadow-lg shadow-amber-400/25">
                                 Freelance
                               </span>
                             ) : (
@@ -1868,7 +1868,7 @@ const ProfessionalDashboard = ({ setView }: { setView?: (v: any) => void } = {})
                               <div>
                                 <h3 className="text-2xl font-bold text-brand-primary">{job.studio?.studioName || 'Movement Studio'}</h3>
                                 <p className="text-text-secondary font-medium mt-0.5">
-                                  <span className={isFreelancer ? "text-[#7c00ff] font-bold" : ""}>
+                                  <span className={isFreelancer ? "text-amber-600 font-bold" : ""}>
                                     {job.role || job.title}
                                   </span>
                                   <span className="mx-2 text-gray-300">•</span>
