@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Briefcase, GraduationCap, ChevronRight } from 'lucide-react';
+import { Users, Briefcase, GraduationCap, ChevronRight, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UserRole } from '../types';
 import SEO from '../components/SEO';
@@ -9,14 +9,15 @@ const RegisterSelect = ({ onSelect }: { onSelect: (role: UserRole) => void }) =>
     { id: 'professional', label: 'Professional', icon: Users, desc: 'Artists, Designers, and Engineers' },
     { id: 'studio', label: 'Studio', icon: Briefcase, desc: 'Production Houses and Agencies' },
     { id: 'institute', label: 'Institute', icon: GraduationCap, desc: 'Schools and Training Centers' },
+    { id: 'aspirant', label: 'Aspirant', icon: Sparkles, desc: 'Students & Creative Aspirants looking for exposure & opportunities' },
   ];
 
   return (
-    <div className="max-w-5xl mx-auto py-20 px-6 space-y-16">
+    <div className="max-w-7xl mx-auto py-20 px-6 space-y-16">
       <SEO 
         title="Join AUI" 
-        description="Register and create an account as a Studio, Institute, or Professional on AUI." 
-        keywords="register, join, sign up, animation network, create profile" 
+        description="Register and create an account as a Studio, Institute, Professional, or Aspirant on AUI." 
+        keywords="register, join, sign up, animation network, create profile, aspirant" 
       />
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -27,7 +28,7 @@ const RegisterSelect = ({ onSelect }: { onSelect: (role: UserRole) => void }) =>
         <p className="text-text-secondary text-lg md:text-xl max-w-md mx-auto">Select your role to begin the verification process.</p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         {roles.map((role, index) => (
           <motion.button 
             key={role.id}
@@ -35,23 +36,23 @@ const RegisterSelect = ({ onSelect }: { onSelect: (role: UserRole) => void }) =>
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             onClick={() => onSelect(role.id as UserRole)}
-            className="group relative p-8 md:p-10 bg-white rounded-[2.5rem] border border-gray-100 shadow-premium hover:shadow-premium-hover transition-premium flex flex-col items-center gap-8 text-center"
+            className="group relative p-6 md:p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-premium hover:shadow-premium-hover transition-premium flex flex-col items-center gap-6 text-center"
           >
             {/* Background Accent Gradient */}
             <div className="absolute inset-0 bg-gradient-to-b from-brand-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-premium rounded-[2.5rem]" />
             
-            <div className="relative z-10 w-24 h-24 bg-brand-surface rounded-[2rem] flex items-center justify-center shadow-sm group-hover:bg-brand-primary group-hover:text-white transition-premium group-hover:scale-110">
-              <role.icon size={44} strokeWidth={1.5} />
+            <div className="relative z-10 w-20 h-20 bg-brand-surface rounded-[2rem] flex items-center justify-center shadow-sm group-hover:bg-brand-primary group-hover:text-white transition-premium group-hover:scale-110">
+              <role.icon size={38} strokeWidth={1.5} />
             </div>
 
-            <div className="relative z-10 space-y-3">
-              <span className="block text-2xl font-bold text-brand-primary group-hover:text-brand-accent transition-colors">{role.label}</span>
-              <p className="text-sm text-text-secondary leading-relaxed px-4">{role.desc}</p>
+            <div className="relative z-10 space-y-2">
+              <span className="block text-xl font-bold text-brand-primary group-hover:text-brand-accent transition-colors">{role.label}</span>
+              <p className="text-xs text-text-secondary leading-relaxed px-2">{role.desc}</p>
             </div>
 
             <div className="relative z-10 pt-4 mt-auto">
-              <div className="w-14 h-14 rounded-full bg-brand-surface flex items-center justify-center group-hover:bg-brand-accent group-hover:text-white transition-premium group-hover:rotate-[-45deg] shadow-sm">
-                <ChevronRight size={28} />
+              <div className="w-12 h-12 rounded-full bg-brand-surface flex items-center justify-center group-hover:bg-brand-accent group-hover:text-white transition-premium group-hover:rotate-[-45deg] shadow-sm">
+                <ChevronRight size={24} />
               </div>
             </div>
           </motion.button>
@@ -62,4 +63,3 @@ const RegisterSelect = ({ onSelect }: { onSelect: (role: UserRole) => void }) =>
 };
 
 export default RegisterSelect;
-

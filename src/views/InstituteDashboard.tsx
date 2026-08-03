@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen, MessageSquare, Search, CheckCircle2, Globe, Shield, Clock, ExternalLink, Users, XCircle, Cpu, Laptop, Network, Sparkles } from 'lucide-react';
+import { Calendar, ChevronRight, ChevronDown, X, User, MapPin, ArrowRight, BookOpen, MessageSquare, Search, CheckCircle2, Globe, Shield, Clock, ExternalLink, Users, XCircle, Cpu, Laptop, Network, Sparkles, Phone, Mail, Building2, GraduationCap, Star, Download, RotateCcw, Share2, ChevronLeft, Eye } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import Button from '../components/Button';
@@ -13,6 +13,7 @@ import { fetchNexusOpportunities } from '../services/nexusServices';
 import { getMyCollaborationRequests, respondToCollaborationRequest, sendCollaborationRequest } from '../services/collaborationServices';
 import { createInstituteSpecialRequest, getMySpecialRequests } from '../services/specialRequestServices';
 import { getMyInstituteProfile } from '../services/instituteServices';
+import { fetchSharedAspirantsForInstitute } from '../services/aspirantServices';
 import * as workshopServices from '../services/instituteWorkshopServices';
 import * as workshopRequestServices from '../services/workshopRequestServices';
 import Modal from '../components/Modal';
@@ -44,7 +45,20 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
     message: ''
   });
   const [profile, setProfile] = React.useState<any>(null);
-  const [activeSubTab, setActiveSubTab] = React.useState<'book' | 'ledger' | 'nexus'>('book');
+  const [activeSubTab, setActiveSubTab] = React.useState<'book' | 'ledger' | 'nexus' | 'aspirants'>('book');
+
+  // Conditional Shared Aspirants state
+  const [isAspirantsShared, setIsAspirantsShared] = React.useState(false);
+  const [sharedAspirantsList, setSharedAspirantsList] = React.useState<any[]>([]);
+  const [aspirantLocationFilter, setAspirantLocationFilter] = React.useState<string>('all');
+  const [aspirantGenderFilter, setAspirantGenderFilter] = React.useState<string>('all');
+  const [aspirantCollegeFilter, setAspirantCollegeFilter] = React.useState<string>('all');
+  const [aspirantCourseFilter, setAspirantCourseFilter] = React.useState<string>('all');
+  const [aspirantSortBy, setAspirantSortBy] = React.useState<string>('recent');
+  const [aspirantPage, setAspirantPage] = React.useState<number>(1);
+  const [aspirantSearchQuery, setAspirantSearchQuery] = React.useState<string>('');
+  const [selectedAspirant, setSelectedAspirant] = React.useState<any>(null);
+  const [isAspirantDetailsOpen, setIsAspirantDetailsOpen] = React.useState(false);
   const [bookMode, setBookMode] = React.useState<'classes' | 'search'>('classes');
   const [selectedModel, setSelectedModel] = React.useState('workshops');
   const [dynamicWorkshops, setDynamicWorkshops] = React.useState<any[]>([]);
@@ -255,11 +269,32 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
     }
   }, []);
 
+  const fetchSharedAspirants = React.useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await fetchSharedAspirantsForInstitute(token);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.isShared) {
+          setIsAspirantsShared(true);
+          setSharedAspirantsList(data.data || []);
+        } else {
+          setIsAspirantsShared(false);
+          setSharedAspirantsList([]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch shared aspirants:', err);
+    }
+  }, []);
+
   React.useEffect(() => {
     fetchDashboardData();
     fetchSpecialRequests();
     fetchProfile();
-  }, [fetchSpecialRequests, fetchProfile]);
+    fetchSharedAspirants();
+  }, [fetchSpecialRequests, fetchProfile, fetchSharedAspirants]);
 
   React.useEffect(() => {
     fetchWorkshops();
@@ -367,6 +402,391 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
     }
   };
 
+  const exportAspirantsToExcel = (aspirantList: any[]) => {
+    const headers = ['Full Name', 'Gender', 'Email', 'Phone', 'DOB', 'Country', 'State', 'City/District', 'College', 'Education Title', 'Year', 'Interested Department', 'Verification Status'];
+    const rows = aspirantList.map((u) => {
+      const p = u.profileData || u.profile || u;
+      return [
+        `"${(p.fullName || '').replace(/"/g, '""')}"`,
+        `"${(p.gender || '').replace(/"/g, '""')}"`,
+        `"${(u.user?.email || u.email || p.email || '').replace(/"/g, '""')}"`,
+        `"${(p.phone || u.user?.phone || u.phone || '').replace(/"/g, '""')}"`,
+        `"${(p.dob || '').replace(/"/g, '""')}"`,
+        `"${(p.country || '').replace(/"/g, '""')}"`,
+        `"${(p.state || '').replace(/"/g, '""')}"`,
+        `"${(p.city || p.district || '').replace(/"/g, '""')}"`,
+        `"${(p.collegeName || '').replace(/"/g, '""')}"`,
+        `"${(p.educationTitle || '').replace(/"/g, '""')}"`,
+        `"${(p.year || '').replace(/"/g, '""')}"`,
+        `"${(p.interestedDepartment || '').replace(/"/g, '""')}"`,
+        `"${p.verificationStatus ? 'Verified' : 'Pending'}"`,
+      ].join(',');
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Shared_Aspirants_List_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const renderSharedAspirantsTab = () => {
+    // Dynamic Filter Options
+    const locationOptions = Array.from(
+      new Set(
+        sharedAspirantsList
+          .map((u) => {
+            const p = u.profileData || u;
+            if (!p) return null;
+            return p.state ? `${p.city || p.district || ''}, ${p.state}` : p.city || p.country;
+          })
+          .filter(Boolean)
+      )
+    );
+
+    const collegeOptions = Array.from(
+      new Set(sharedAspirantsList.map((u) => (u.profileData || u)?.collegeName).filter(Boolean))
+    );
+
+    const courseOptions = Array.from(
+      new Set(
+        sharedAspirantsList
+          .map((u) => {
+            const p = u.profileData || u;
+            return p?.educationTitle ? `${p.educationTitle}${p.year ? ' - ' + p.year : ''}` : null;
+          })
+          .filter(Boolean)
+      )
+    );
+
+    // Filtering
+    let filtered = sharedAspirantsList.filter((u) => {
+      const p = u.profileData || u || {};
+      const fullName = (p.fullName || '').toLowerCase();
+      const email = (u.user?.email || u.email || p.email || '').toLowerCase();
+      const phone = (u.user?.phone || u.phone || p.phone || '').toLowerCase();
+      const q = aspirantSearchQuery.toLowerCase();
+
+      if (q && !fullName.includes(q) && !email.includes(q) && !phone.includes(q)) {
+        return false;
+      }
+
+      if (aspirantLocationFilter !== 'all') {
+        const loc = p.state ? `${p.city || p.district || ''}, ${p.state}` : p.city || p.country;
+        if (loc !== aspirantLocationFilter) return false;
+      }
+
+      if (aspirantGenderFilter !== 'all') {
+        if ((p.gender || '').toLowerCase() !== aspirantGenderFilter.toLowerCase()) return false;
+      }
+
+      if (aspirantCollegeFilter !== 'all') {
+        if (p.collegeName !== aspirantCollegeFilter) return false;
+      }
+
+      if (aspirantCourseFilter !== 'all') {
+        const courseStr = p.educationTitle ? `${p.educationTitle}${p.year ? ' - ' + p.year : ''}` : '';
+        if (courseStr !== aspirantCourseFilter) return false;
+      }
+
+      return true;
+    });
+
+    // Sorting
+    if (aspirantSortBy === 'name') {
+      filtered.sort((a, b) => ((a.profileData || a)?.fullName || '').localeCompare((b.profileData || b)?.fullName || ''));
+    } else if (aspirantSortBy === 'college') {
+      filtered.sort((a, b) => ((a.profileData || a)?.collegeName || '').localeCompare((b.profileData || b)?.collegeName || ''));
+    } else {
+      filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    }
+
+    // Pagination
+    const pageSize = 5;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const currentPage = Math.min(aspirantPage, totalPages);
+    const paginatedAspirants = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-12 space-y-8 text-left">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-2">
+              <span>Shared Network Access ✓</span>
+            </div>
+            <h2 className="text-3xl font-display font-bold text-brand-primary tracking-tight">Shared Aspirants</h2>
+            <p className="text-text-secondary text-sm mt-1">
+              Explore aspiring creative talent shared with your institute by AUI Platform.
+            </p>
+          </div>
+
+          <Button
+            onClick={() => exportAspirantsToExcel(filtered)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-5 rounded-2xl flex items-center gap-2 shadow-sm transition-premium self-start md:self-auto"
+          >
+            <Download size={16} />
+            <span>Download as Excel</span>
+          </Button>
+        </div>
+
+        {/* Filters Bar */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-3">
+          <select
+            value={aspirantLocationFilter}
+            onChange={(e) => { setAspirantLocationFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium"
+          >
+            <option value="all">📍 All Locations</option>
+            {locationOptions.map((loc: any) => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+
+          <select
+            value={aspirantGenderFilter}
+            onChange={(e) => { setAspirantGenderFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium"
+          >
+            <option value="all">👤 All Genders</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-binary">Non-binary</option>
+          </select>
+
+          <select
+            value={aspirantCollegeFilter}
+            onChange={(e) => { setAspirantCollegeFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium max-w-xs truncate"
+          >
+            <option value="all">🏛️ All Colleges</option>
+            {collegeOptions.map((col: any) => (
+              <option key={col} value={col}>{col}</option>
+            ))}
+          </select>
+
+          <select
+            value={aspirantCourseFilter}
+            onChange={(e) => { setAspirantCourseFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium max-w-xs truncate"
+          >
+            <option value="all">🎓 All Courses / Year</option>
+            {courseOptions.map((crs: any) => (
+              <option key={crs} value={crs}>{crs}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => {
+              setAspirantLocationFilter('all');
+              setAspirantGenderFilter('all');
+              setAspirantCollegeFilter('all');
+              setAspirantCourseFilter('all');
+              setAspirantSearchQuery('');
+              setAspirantPage(1);
+            }}
+            className="px-3.5 py-2 text-xs font-bold text-text-muted hover:text-brand-primary flex items-center gap-1.5 transition-premium ml-auto"
+          >
+            <RotateCcw size={14} /> Clear Filters
+          </button>
+        </div>
+
+        {/* Count & Sort Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold text-text-muted">
+          <div>
+            Total Aspirants: <span className="text-emerald-600 font-extrabold text-sm">{filtered.length}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span>Sort by:</span>
+            <select
+              value={aspirantSortBy}
+              onChange={(e) => setAspirantSortBy(e.target.value)}
+              className="bg-white border border-gray-100 rounded-xl px-3 py-1.5 text-xs font-bold text-brand-primary outline-none shadow-sm cursor-pointer"
+            >
+              <option value="recent">Recently Added</option>
+              <option value="name">Name A-Z</option>
+              <option value="college">College A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Aspirants List Cards */}
+        <div className="space-y-6">
+          {paginatedAspirants.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center text-text-muted text-sm font-semibold shadow-sm">
+              No aspirants found matching the selected criteria.
+            </div>
+          ) : (
+            paginatedAspirants.map((u) => {
+              const p = u.profileData || u;
+              const isFemale = (p.gender || '').toLowerCase() === 'female';
+
+              return (
+                <Card
+                  key={u.id}
+                  className="bg-white border border-gray-100 rounded-[2rem] p-6 sm:p-8 shadow-premium hover:shadow-premium-hover transition-all duration-300 relative group"
+                >
+                  <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+                    {/* Aspirant Photo Thumbnail */}
+                    <div className="w-40 h-40 sm:w-44 sm:h-44 rounded-2xl bg-brand-surface border border-gray-100 shadow-sm shrink-0 overflow-hidden flex items-center justify-center relative">
+                      {p.photoUrl || p.photo_url ? (
+                        <img
+                          src={p.photoUrl || p.photo_url}
+                          alt={p.fullName || 'Aspirant'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-emerald-50 text-emerald-600 font-extrabold text-3xl">
+                          {(p.fullName || 'A')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Details Container */}
+                    <div className="flex-1 space-y-5 w-full">
+                      {/* Name & Gender */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h4 className="text-xl font-bold text-brand-primary tracking-tight">
+                            {p.fullName || 'Unnamed Aspirant'}
+                          </h4>
+                          {p.gender && (
+                            <span
+                              className={`px-3 py-0.5 rounded-full text-xs font-semibold ${
+                                isFemale
+                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+                                  : 'bg-blue-50 text-blue-600 border border-blue-200/60'
+                              }`}
+                            >
+                              {p.gender}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 2-Column Info Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-xs text-text-secondary font-medium">
+                        {/* Column 1 */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <MapPin size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Location:</span>{' '}
+                              {p.state ? `${p.city || p.district || ''}, ${p.state}` : p.city || p.country || 'Location not specified'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Phone size={15} className="text-emerald-500 shrink-0" />
+                            <span>
+                              <span className="font-semibold text-brand-primary">Phone:</span> {p.phone || u.user?.phone || u.phone || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Calendar size={15} className="text-emerald-500 shrink-0" />
+                            <span>
+                              <span className="font-semibold text-brand-primary">DOB:</span> {p.dob || 'DOB not specified'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Mail size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Email:</span> {u.user?.email || u.email || p.email || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Column 2 */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <Building2 size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">College:</span> {p.collegeName || 'College not specified'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <GraduationCap size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Education:</span> {p.educationTitle || 'Education'} {p.year ? `– ${p.year}` : ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Star size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Interested in:</span> {p.interestedDepartment || 'Animation / VFX'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tag Badges Row */}
+                      {p.interestedDepartment && (
+                        <div className="flex items-center gap-2 flex-wrap pt-1">
+                          {p.interestedDepartment.split(',').map((dept: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-3.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                            >
+                              {dept.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
+          )}
+        </div>
+
+        {/* Pagination Footer */}
+        {filtered.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-gray-100 text-xs text-text-muted font-medium">
+            <div>
+              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} aspirants
+            </div>
+
+            <div className="flex items-center gap-2 self-center">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setAspirantPage((p) => Math.max(1, p - 1))}
+                className="p-2 rounded-xl border border-gray-100 hover:bg-brand-surface disabled:opacity-40 transition-premium text-brand-primary"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                <button
+                  key={pg}
+                  onClick={() => setAspirantPage(pg)}
+                  className={`w-8 h-8 rounded-xl font-bold transition-premium text-xs ${
+                    currentPage === pg
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'border border-gray-100 hover:bg-brand-surface text-brand-primary'
+                  }`}
+                >
+                  {pg}
+                </button>
+              ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setAspirantPage((p) => Math.min(totalPages, p + 1))}
+                className="p-2 rounded-xl border border-gray-100 hover:bg-brand-surface disabled:opacity-40 transition-premium text-brand-primary"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const seoTitle = activeSubTab === 'ledger'
     ? 'Academic Ledger'
     : activeSubTab === 'nexus'
@@ -402,6 +822,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                 { id: 'book', label: 'BOOK INDUSTRY EXPERT' },
                 { id: 'ledger', label: 'ACADEMIC LEDGER' },
                 { id: 'nexus', label: 'AUI NEXUS' },
+                ...(isAspirantsShared ? [{ id: 'aspirants', label: 'ASPIRANTS' }] : []),
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1056,6 +1477,8 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
               </div>
             </section>
           </div>
+        ) : activeSubTab === 'aspirants' && isAspirantsShared ? (
+          renderSharedAspirantsTab()
         ) : (
           <div className="py-40 text-center">
             <h2 className="text-3xl font-display font-bold text-brand-primary">Coming Soon</h2>

@@ -9,8 +9,13 @@ import { View, UserRole } from '../types';
 import { registerUser, checkUserStatus } from '../services/userServices';
 import Modal from '../components/Modal';
 import SEO from '../components/SEO';
+import AspirantOnboarding from './AspirantOnboarding';
 
 const OnboardingFlow = ({ onComplete, role }: { onComplete: (v: View) => void, role: UserRole }) => {
+  if (role === 'aspirant') {
+    return <AspirantOnboarding onComplete={onComplete} />;
+  }
+
   const [step, setStep] = React.useState(1);
   const [formData, setFormData] = React.useState<any>({});
   const [loading, setLoading] = React.useState(false);

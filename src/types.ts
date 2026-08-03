@@ -1,4 +1,42 @@
-export type UserRole = 'professional' | 'studio' | 'institute' | 'admin';
+export type UserRole = 'professional' | 'studio' | 'institute' | 'admin' | 'aspirant';
+
+export interface Education {
+  id: number;
+  title: string;
+  category: string;
+  description?: string;
+  sortOrder?: number;
+  status: number;
+}
+
+export interface Aspirant {
+  id: number;
+  userId: number;
+  fullName: string;
+  email: string;
+  phone?: string;
+  photoUrl?: string;
+  dob?: string;
+  gender?: string;
+  country?: string;
+  state?: string;
+  district?: string;
+  city?: string;
+  collegeName?: string;
+  educationId?: number;
+  educationTitle?: string;
+  year?: string;
+  interestedDepartment?: string;
+  verificationStatus?: boolean;
+  user?: {
+    email: string;
+    phone?: string;
+    role: string;
+    status: string;
+  };
+  education?: Education;
+  createdAt?: string;
+}
 
 export type View = 
   | 'landing' 

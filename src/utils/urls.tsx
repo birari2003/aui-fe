@@ -89,5 +89,20 @@ export const API_ENDPOINTS = {
   SHOWREELS: {
     BASE: `${BASE_URL}/api/showreels`,
     DELETE: (id: number) => `${BASE_URL}/api/showreels/${id}`,
+  },
+  EDUCATIONS: {
+    BASE: `${BASE_URL}/api/educations`,
+    GET_BY_ID: (id: number) => `${BASE_URL}/api/educations/${id}`,
+  },
+  ASPIRANTS: {
+    BASE: `${BASE_URL}/api/aspirants`,
+    GET_PROFILE: `${BASE_URL}/api/aspirants/profile`,
+    UPDATE_PROFILE: `${BASE_URL}/api/aspirants/profile`,
+    GET_BY_ID: (id: number) => `${BASE_URL}/api/aspirants/${id}`,
+    UPDATE: (id: number) => `${BASE_URL}/api/aspirants/${id}`,
+    DELETE: (id: number) => `${BASE_URL}/api/aspirants/${id}`,
+    SHARE: `${BASE_URL}/api/aspirants/share`,
+    GET_SHARES: `${BASE_URL}/api/aspirants/shares`,
+    GET_SHARED_FOR_INSTITUTE: `${BASE_URL}/api/aspirants/shared-for-institute`,
   }
 };

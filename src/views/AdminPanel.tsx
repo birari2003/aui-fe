@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight, Network, Mail, Send, Film, Play } from 'lucide-react';
+import { Users, Briefcase, GraduationCap, LayoutDashboard, FileText, CheckCircle, XCircle, Eye, Filter, Share2, History, ExternalLink, Plus, Trash2, Edit, BookOpen, Clock, Shield, ArrowRight, Network, Mail, Send, Film, Play, Sparkles, MapPin, Phone, Calendar, Building2, Star, Download, RotateCcw, MoreVertical, ChevronLeft, ChevronRight, User, Search } from 'lucide-react';
 import Button from '../components/Button';
 import SEO from '../components/SEO';
 import Card from '../components/Card';
@@ -13,12 +13,13 @@ import * as workshopServices from '../services/instituteWorkshopServices';
 import * as workshopRequestServices from '../services/workshopRequestServices';
 import * as nexusServices from '../services/nexusServices';
 import * as showreelServices from '../services/showreelServices';
+import { fetchAspirantShares, shareAspirantsWithInstitutes } from '../services/aspirantServices';
 import { BASE_URL } from '../utils/urls';
 
 
 
 const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios' | 'bulk_email' | 'showreels'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios' | 'aspirants' | 'bulk_email' | 'showreels'>('overview');
   const [users, setUsers] = React.useState<any[]>([]);
   const [specialRequests, setSpecialRequests] = React.useState<any[]>([]);
   const [analytics, setAnalytics] = React.useState<any>(null);
@@ -35,6 +36,20 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
 
   // Mentor filter in Professional tab directory
   const [mentorFilter, setMentorFilter] = React.useState<'all' | 'mentor' | 'non_mentor'>('all');
+
+  // Aspirants tab filters & pagination state
+  const [aspirantLocationFilter, setAspirantLocationFilter] = React.useState<string>('all');
+  const [aspirantGenderFilter, setAspirantGenderFilter] = React.useState<string>('all');
+  const [aspirantCollegeFilter, setAspirantCollegeFilter] = React.useState<string>('all');
+  const [aspirantCourseFilter, setAspirantCourseFilter] = React.useState<string>('all');
+  const [aspirantSortBy, setAspirantSortBy] = React.useState<string>('recent');
+  const [aspirantPage, setAspirantPage] = React.useState<number>(1);
+
+  // Share Aspirants Modal State
+  const [isShareAspirantsModalOpen, setIsShareAspirantsModalOpen] = React.useState(false);
+  const [selectedShareInstituteIds, setSelectedShareInstituteIds] = React.useState<number[]>([]);
+  const [shareAspirantsSearch, setShareAspirantsSearch] = React.useState('');
+  const [isSharingAspirants, setIsSharingAspirants] = React.useState(false);
 
   // Bulk Email State
   const [emailSubject, setEmailSubject] = React.useState('');
@@ -651,10 +666,46 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     </div>
   );
 
+  const renderAspirantDetails = (data: any) => (
+    <div className="space-y-8">
+      {data.photoUrl && (
+        <div className="flex items-center gap-4 bg-brand-surface p-4 rounded-2xl border border-gray-100">
+          <img src={data.photoUrl} alt={data.fullName} className="w-16 h-16 rounded-full object-cover border-2 border-emerald-500/40" />
+          <div>
+            <h4 className="font-bold text-lg text-brand-primary">{data.fullName}</h4>
+            <p className="text-xs text-text-muted">Aspirant Network Profile</p>
+          </div>
+        </div>
+      )}
+
+      {renderDetailSection("Personal Information", [
+        { label: "Full Name", value: data.fullName },
+        { label: "Email", value: data.email },
+        { label: "Phone Number", value: data.phone || selectedUser?.phone },
+        { label: "Date of Birth (DOB)", value: data.dob },
+        { label: "Gender", value: data.gender },
+        { label: "Location", value: [data.city, data.district, data.state, data.country].filter(Boolean).join(', ') },
+      ])}
+
+      {renderDetailSection("Education Details", [
+        { label: "College Name", value: data.collegeName },
+        { label: "Education / Course", value: data.educationTitle || (data.education?.title) },
+        { label: "Course Year", value: data.year },
+      ])}
+
+      {renderDetailSection("Career Interest & Meta", [
+        { label: "Interested Department", value: data.interestedDepartment },
+        { label: "Verification Status", value: data.verificationStatus ? "Verified" : "Unverified" },
+        { label: "Registered At", value: data.createdAt },
+      ])}
+    </div>
+  );
+
   const getProfileData = (user: any) => {
     if (user.role === 'professional') return user.professional;
     if (user.role === 'studio') return user.studio;
     if (user.role === 'institute') return user.institute;
+    if (user.role === 'aspirant') return user.aspirant;
     return null;
   };
 
@@ -819,7 +870,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     const roleMap: Record<string, string> = {
       'professionals': 'professional',
       'studios': 'studio',
-      'institutes': 'institute'
+      'institutes': 'institute',
+      'aspirants': 'aspirant'
     };
     const role = roleMap[tab];
     let filteredUsers = users.filter(u => u.role === role);
@@ -1027,6 +1079,447 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       </div>
     );
   };
+
+  const handleOpenShareAspirantsModal = async () => {
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetchAspirantShares(token);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedShareInstituteIds(data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch shared institute IDs:', err);
+    }
+    setShareAspirantsSearch('');
+    setIsShareAspirantsModalOpen(true);
+  };
+
+  const handleSaveShareAspirants = async () => {
+    const token = localStorage.getItem('token') || '';
+    setIsSharingAspirants(true);
+    try {
+      const res = await shareAspirantsWithInstitutes(token, selectedShareInstituteIds);
+      if (res.ok) {
+        setIsShareAspirantsModalOpen(false);
+        alert('Aspirant list sharing preferences updated successfully!');
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to share Aspirants list.');
+      }
+    } catch (err) {
+      console.error('Failed to share aspirants:', err);
+      alert('An error occurred while saving sharing preferences.');
+    } finally {
+      setIsSharingAspirants(false);
+    }
+  };
+
+  const exportAspirantsToExcel = (aspirantList: any[]) => {
+    const headers = ['Full Name', 'Gender', 'Email', 'Phone', 'DOB', 'Country', 'State', 'City/District', 'College', 'Education Title', 'Year', 'Interested Department', 'Verification Status'];
+    const rows = aspirantList.map((u) => {
+      const p = getProfileData(u) || {};
+      return [
+        `"${(p.fullName || '').replace(/"/g, '""')}"`,
+        `"${(p.gender || '').replace(/"/g, '""')}"`,
+        `"${(u.email || p.email || '').replace(/"/g, '""')}"`,
+        `"${(p.phone || u.phone || '').replace(/"/g, '""')}"`,
+        `"${(p.dob || '').replace(/"/g, '""')}"`,
+        `"${(p.country || '').replace(/"/g, '""')}"`,
+        `"${(p.state || '').replace(/"/g, '""')}"`,
+        `"${(p.city || p.district || '').replace(/"/g, '""')}"`,
+        `"${(p.collegeName || '').replace(/"/g, '""')}"`,
+        `"${(p.educationTitle || '').replace(/"/g, '""')}"`,
+        `"${(p.year || '').replace(/"/g, '""')}"`,
+        `"${(p.interestedDepartment || '').replace(/"/g, '""')}"`,
+        `"${p.verificationStatus ? 'Verified' : 'Pending'}"`,
+      ].join(',');
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Aspirants_List_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const renderAspirantsView = () => {
+    const rawAspirants = users.filter((u) => u.role === 'aspirant');
+
+    // Dynamic Filter Options
+    const locationOptions = Array.from(
+      new Set(
+        rawAspirants
+          .map((u) => {
+            const p = getProfileData(u);
+            if (!p) return null;
+            return p.state ? `${p.city || p.district || ''}, ${p.state}` : p.city || p.country;
+          })
+          .filter(Boolean)
+      )
+    );
+
+    const collegeOptions = Array.from(
+      new Set(rawAspirants.map((u) => getProfileData(u)?.collegeName).filter(Boolean))
+    );
+
+    const courseOptions = Array.from(
+      new Set(
+        rawAspirants
+          .map((u) => {
+            const p = getProfileData(u);
+            return p?.educationTitle ? `${p.educationTitle}${p.year ? ' - ' + p.year : ''}` : null;
+          })
+          .filter(Boolean)
+      )
+    );
+
+    // Filtering
+    let filtered = rawAspirants.filter((u) => {
+      const p = getProfileData(u) || {};
+      const fullName = (p.fullName || '').toLowerCase();
+      const email = (u.email || p.email || '').toLowerCase();
+      const phone = (u.phone || p.phone || '').toLowerCase();
+      const q = userSearchQuery.toLowerCase();
+
+      if (q && !fullName.includes(q) && !email.includes(q) && !phone.includes(q)) {
+        return false;
+      }
+
+      if (aspirantLocationFilter !== 'all') {
+        const loc = p.state ? `${p.city || p.district || ''}, ${p.state}` : p.city || p.country;
+        if (loc !== aspirantLocationFilter) return false;
+      }
+
+      if (aspirantGenderFilter !== 'all') {
+        if ((p.gender || '').toLowerCase() !== aspirantGenderFilter.toLowerCase()) return false;
+      }
+
+      if (aspirantCollegeFilter !== 'all') {
+        if (p.collegeName !== aspirantCollegeFilter) return false;
+      }
+
+      if (aspirantCourseFilter !== 'all') {
+        const courseStr = p.educationTitle ? `${p.educationTitle}${p.year ? ' - ' + p.year : ''}` : '';
+        if (courseStr !== aspirantCourseFilter) return false;
+      }
+
+      return true;
+    });
+
+    // Sorting
+    if (aspirantSortBy === 'name') {
+      filtered.sort((a, b) => (getProfileData(a)?.fullName || '').localeCompare(getProfileData(b)?.fullName || ''));
+    } else if (aspirantSortBy === 'college') {
+      filtered.sort((a, b) => (getProfileData(a)?.collegeName || '').localeCompare(getProfileData(b)?.collegeName || ''));
+    } else {
+      filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    }
+
+    // Pagination (5 per page as shown in screenshot)
+    const pageSize = 5;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    const currentPage = Math.min(aspirantPage, totalPages);
+    const paginatedAspirants = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    return (
+      <div className="space-y-8 text-left">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-display font-bold text-brand-primary tracking-tight">Aspirants</h2>
+            <p className="text-text-secondary text-sm mt-1">
+              Discover talented students interested in Animation, VFX, Gaming and more.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            <Button
+              onClick={handleOpenShareAspirantsModal}
+              className="bg-brand-primary hover:bg-brand-accent text-white font-bold text-xs py-3 px-5 rounded-2xl flex items-center gap-2 shadow-sm transition-premium"
+            >
+              <Share2 size={16} />
+              <span>Share Aspirants List</span>
+            </Button>
+
+            <Button
+              onClick={() => exportAspirantsToExcel(filtered)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-5 rounded-2xl flex items-center gap-2 shadow-sm transition-premium"
+            >
+              <Download size={16} />
+              <span>Download as Excel</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters Bar */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-3">
+          <select
+            value={aspirantLocationFilter}
+            onChange={(e) => { setAspirantLocationFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium"
+          >
+            <option value="all">📍 All Locations</option>
+            {locationOptions.map((loc: any) => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+
+          <select
+            value={aspirantGenderFilter}
+            onChange={(e) => { setAspirantGenderFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium"
+          >
+            <option value="all">👤 All Genders</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-binary">Non-binary</option>
+          </select>
+
+          <select
+            value={aspirantCollegeFilter}
+            onChange={(e) => { setAspirantCollegeFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium max-w-xs truncate"
+          >
+            <option value="all">🏛️ All Colleges</option>
+            {collegeOptions.map((col: any) => (
+              <option key={col} value={col}>{col}</option>
+            ))}
+          </select>
+
+          <select
+            value={aspirantCourseFilter}
+            onChange={(e) => { setAspirantCourseFilter(e.target.value); setAspirantPage(1); }}
+            className="bg-brand-surface/60 border border-gray-100 rounded-xl px-3.5 py-2 text-xs font-semibold text-brand-primary outline-none focus:border-brand-accent transition-premium max-w-xs truncate"
+          >
+            <option value="all">🎓 All Courses / Year</option>
+            {courseOptions.map((crs: any) => (
+              <option key={crs} value={crs}>{crs}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => {
+              setAspirantLocationFilter('all');
+              setAspirantGenderFilter('all');
+              setAspirantCollegeFilter('all');
+              setAspirantCourseFilter('all');
+              setUserSearchQuery('');
+              setAspirantPage(1);
+            }}
+            className="px-3.5 py-2 text-xs font-bold text-text-muted hover:text-brand-primary flex items-center gap-1.5 transition-premium ml-auto"
+          >
+            <RotateCcw size={14} /> Clear Filters
+          </button>
+        </div>
+
+        {/* Count & Sort Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold text-text-muted">
+          <div>
+            Total Aspirants: <span className="text-emerald-600 font-extrabold text-sm">{filtered.length}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span>Sort by:</span>
+            <select
+              value={aspirantSortBy}
+              onChange={(e) => setAspirantSortBy(e.target.value)}
+              className="bg-white border border-gray-100 rounded-xl px-3 py-1.5 text-xs font-bold text-brand-primary outline-none shadow-sm cursor-pointer"
+            >
+              <option value="recent">Recently Added</option>
+              <option value="name">Name A-Z</option>
+              <option value="college">College A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Aspirants Cards List */}
+        <div className="space-y-6">
+          {paginatedAspirants.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center text-text-muted text-sm font-semibold shadow-sm">
+              No aspirants found matching the selected criteria.
+            </div>
+          ) : (
+            paginatedAspirants.map((u) => {
+              const p = getProfileData(u) || {};
+              const isFemale = (p.gender || '').toLowerCase() === 'female';
+
+              return (
+                <Card
+                  key={u.id}
+                  className="bg-white border border-gray-100 rounded-[2rem] p-6 sm:p-8 shadow-premium hover:shadow-premium-hover transition-all duration-300 relative group"
+                >
+                  <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+                    {/* Aspirant Photo Thumbnail */}
+                    <div className="w-40 h-40 sm:w-44 sm:h-44 rounded-2xl bg-brand-surface border border-gray-100 shadow-sm shrink-0 overflow-hidden flex items-center justify-center relative">
+                      {p.photoUrl || p.photo_url ? (
+                        <img
+                          src={p.photoUrl || p.photo_url}
+                          alt={p.fullName || 'Aspirant'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-emerald-50 text-emerald-600 font-extrabold text-3xl">
+                          {(p.fullName || 'A')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Details Container */}
+                    <div className="flex-1 space-y-5 w-full">
+                      {/* Name & Gender & Actions Row */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h4 className="text-xl font-bold text-brand-primary tracking-tight">
+                            {p.fullName || 'Unnamed Aspirant'}
+                          </h4>
+                          {p.gender && (
+                            <span
+                              className={`px-3 py-0.5 rounded-full text-xs font-semibold ${
+                                isFemale
+                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
+                                  : 'bg-blue-50 text-blue-600 border border-blue-200/60'
+                              }`}
+                            >
+                              {p.gender}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions Quick Button */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => { setSelectedUser(u); setIsDetailsModalOpen(true); }}
+                            className="p-2 rounded-xl text-text-muted hover:text-brand-primary hover:bg-brand-surface transition-premium"
+                            title="View Full Profile"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 2-Column Info Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-xs text-text-secondary font-medium">
+                        {/* Column 1 */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <MapPin size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Location:</span>{' '}
+                              {p.state ? `${p.city || p.district || ''}, ${p.state}` : p.city || p.country || 'Location not specified'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Phone size={15} className="text-emerald-500 shrink-0" />
+                            <span>
+                              <span className="font-semibold text-brand-primary">Phone:</span> {p.phone || u.phone || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Calendar size={15} className="text-emerald-500 shrink-0" />
+                            <span>
+                              <span className="font-semibold text-brand-primary">DOB:</span> {p.dob || 'DOB not specified'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Mail size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Email:</span> {u.email || p.email || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Column 2 */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <Building2 size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">College:</span> {p.collegeName || 'College not specified'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <GraduationCap size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Education:</span> {p.educationTitle || 'Education'} {p.year ? `– ${p.year}` : ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Star size={15} className="text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              <span className="font-semibold text-brand-primary">Interested in:</span> {p.interestedDepartment || 'Animation / VFX'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tag Badges Row */}
+                      {p.interestedDepartment && (
+                        <div className="flex items-center gap-2 flex-wrap pt-1">
+                          {p.interestedDepartment.split(',').map((dept: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-3.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                            >
+                              {dept.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
+          )}
+        </div>
+
+        {/* Pagination Footer */}
+        {filtered.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-gray-100 text-xs text-text-muted font-medium">
+            <div>
+              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} aspirants
+            </div>
+
+            <div className="flex items-center gap-2 self-center">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setAspirantPage((p) => Math.max(1, p - 1))}
+                className="p-2 rounded-xl border border-gray-100 hover:bg-brand-surface disabled:opacity-40 transition-premium text-brand-primary"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                <button
+                  key={pg}
+                  onClick={() => setAspirantPage(pg)}
+                  className={`w-8 h-8 rounded-xl font-bold transition-premium text-xs ${
+                    currentPage === pg
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'border border-gray-100 hover:bg-brand-surface text-brand-primary'
+                  }`}
+                >
+                  {pg}
+                </button>
+              ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setAspirantPage((p) => Math.min(totalPages, p + 1))}
+                className="p-2 rounded-xl border border-gray-100 hover:bg-brand-surface disabled:opacity-40 transition-premium text-brand-primary"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderShowreelsTab = () => {
     return (
       <div className="space-y-6">
@@ -1328,6 +1821,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     { id: 'professionals' as const, label: 'Professionals', icon: Briefcase, badge: 0 },
     { id: 'studios' as const, label: 'Studios', icon: Users, badge: 0 },
     { id: 'institutes' as const, label: 'Institutes', icon: GraduationCap, badge: 0 },
+    { id: 'aspirants' as const, label: 'Aspirants', icon: Sparkles, badge: users.filter(u => u.role === 'aspirant').length },
     { id: 'showreels' as const, label: 'Showreels', icon: Film, badge: 0 },
     { id: 'bulk_email' as const, label: 'Bulk Email', icon: Mail, badge: 0 },
   ];
@@ -1857,6 +2351,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
               </div>
         ) : activeTab === 'showreels' ? (
           renderShowreelsTab()
+        ) : activeTab === 'aspirants' ? (
+          renderAspirantsView()
         ) : (
           ['professionals', 'studios', 'institutes'].includes(activeTab) && renderUserList(activeTab)
         )}
@@ -1908,6 +2404,12 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                   selectedUser.institute ? renderInstituteDetails(selectedUser.institute) : (
                     <div className="text-center py-12 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                       <p className="text-text-secondary font-medium">No institute profile linked yet.</p>
+                    </div>
+                  )
+                ) : selectedUser.role === 'aspirant' ? (
+                  selectedUser.aspirant ? renderAspirantDetails(selectedUser.aspirant) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                      <p className="text-text-secondary font-medium">No aspirant profile linked yet.</p>
                     </div>
                   )
                 ) : getProfileData(selectedUser) ? (
@@ -2737,7 +3239,108 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           </form>
         }
       />
-    </div >
+
+      {/* Share Aspirants List Modal */}
+      <Modal
+        isOpen={isShareAspirantsModalOpen}
+        onClose={() => setIsShareAspirantsModalOpen(false)}
+        title="Share Aspirants List with Institutes"
+        size="lg"
+        showFooter={false}
+        message={
+          <div className="space-y-6 text-left py-2">
+          <p className="text-xs text-text-secondary leading-relaxed font-medium">
+            Select registered institutes on AUI platform that should have access to view and download the Aspirant list in their dashboard.
+          </p>
+
+          <div className="relative">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Search institutes by name, location, email..."
+              value={shareAspirantsSearch}
+              onChange={(e) => setShareAspirantsSearch(e.target.value)}
+              className="w-full bg-brand-surface/50 border border-gray-100 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-brand-primary outline-none focus:bg-white focus:border-brand-accent transition-premium"
+            />
+          </div>
+
+          <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+            {users
+              .filter((u) => u.role === 'institute')
+              .filter((u) => {
+                const p = getProfileData(u) || {};
+                const name = (p.instituteName || u.email || '').toLowerCase();
+                const loc = (p.location || '').toLowerCase();
+                const q = shareAspirantsSearch.toLowerCase();
+                return name.includes(q) || loc.includes(q);
+              })
+              .map((inst) => {
+                const p = getProfileData(inst) || {};
+                const instId = p.id || inst.id;
+                const isChecked = selectedShareInstituteIds.includes(instId);
+
+                return (
+                  <label
+                    key={inst.id}
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer select-none ${
+                      isChecked
+                        ? 'bg-emerald-50/60 border-emerald-200 shadow-sm'
+                        : 'bg-brand-surface/30 border-gray-100 hover:bg-brand-surface'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          if (isChecked) {
+                            setSelectedShareInstituteIds(selectedShareInstituteIds.filter((id) => id !== instId));
+                          } else {
+                            setSelectedShareInstituteIds([...selectedShareInstituteIds, instId]);
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 cursor-pointer"
+                      />
+                      <div>
+                        <span className="font-bold text-sm text-brand-primary block">
+                          {p.instituteName || inst.email}
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {p.location ? `📍 ${p.location}` : inst.email}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isChecked && (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                        Access Granted ✓
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button
+              variant="ghost"
+              onClick={() => setIsShareAspirantsModalOpen(false)}
+              className="text-xs font-bold text-text-muted"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveShareAspirants}
+              loading={isSharingAspirants}
+              className="bg-brand-primary hover:bg-brand-accent text-white font-bold text-xs px-6 py-3 rounded-xl shadow-premium"
+            >
+              Save Sharing Preferences
+            </Button>
+          </div>
+        </div>
+        }
+      />
+    </div>
   );
 
 };
