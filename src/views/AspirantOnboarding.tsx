@@ -71,6 +71,8 @@ const AspirantOnboarding: React.FC<AspirantOnboardingProps> = ({ onComplete }) =
 
   // Career Interest State (Multi-Select)
   const [interestedDepartments, setInterestedDepartments] = React.useState<string[]>([]);
+  const [customDepartments, setCustomDepartments] = React.useState<string[]>([]);
+  const [otherDepartmentInput, setOtherDepartmentInput] = React.useState('');
 
   // Photo Upload State
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
@@ -192,6 +194,15 @@ const AspirantOnboarding: React.FC<AspirantOnboardingProps> = ({ onComplete }) =
       const stateObj = states.find((s) => s.isoCode === selectedState);
       const eduObj = educations.find((ed) => String(ed.id) === String(selectedEducationId));
 
+      let finalDepartments = [...interestedDepartments];
+      if (finalDepartments.includes('Other') && otherDepartmentInput.trim()) {
+        const val = otherDepartmentInput.trim();
+        if (!finalDepartments.includes(val)) {
+          finalDepartments.push(val);
+        }
+      }
+      finalDepartments = finalDepartments.filter((d) => d !== 'Other');
+
       const payload = {
         email,
         phone: `${countryCode} ${phoneNumber}`,
@@ -210,7 +221,7 @@ const AspirantOnboarding: React.FC<AspirantOnboardingProps> = ({ onComplete }) =
           educationId: selectedEducationId ? Number(selectedEducationId) : null,
           educationTitle: eduObj ? eduObj.title : '',
           year,
-          interestedDepartment: interestedDepartments.join(', '),
+          interestedDepartment: finalDepartments.join(', '),
           photoUrl: photoPreview || '',
         },
       };
@@ -957,39 +968,81 @@ const AspirantOnboarding: React.FC<AspirantOnboardingProps> = ({ onComplete }) =
                           'Graphic Design & Concept Art',
                           'UI/UX Design',
                           'Video Editing & Post Production',
+                          'AI Artist',
+                          ...customDepartments,
                           'Other'
                         ]
                           .filter((d) => d.toLowerCase().includes(drawerSearch.toLowerCase()))
                           .map((opt) => {
                             const isSelected = interestedDepartments.includes(opt);
                             return (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setInterestedDepartments(interestedDepartments.filter((d) => d !== opt));
-                                  } else {
-                                    setInterestedDepartments([...interestedDepartments, opt]);
-                                  }
-                                }}
-                                className={`w-full p-4 rounded-2xl text-left text-sm font-bold flex items-center justify-between transition-premium border ${
-                                  isSelected
-                                    ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
-                                    : 'bg-brand-surface/30 text-brand-primary border-gray-100 hover:bg-brand-surface'
-                                }`}
-                              >
-                                <span>{opt}</span>
-                                <div
-                                  className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+                              <div key={opt} className="space-y-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setInterestedDepartments(interestedDepartments.filter((d) => d !== opt));
+                                    } else {
+                                      setInterestedDepartments([...interestedDepartments, opt]);
+                                    }
+                                  }}
+                                  className={`w-full p-4 rounded-2xl text-left text-sm font-bold flex items-center justify-between transition-premium border ${
                                     isSelected
-                                      ? 'bg-white text-brand-primary border-white'
-                                      : 'border-gray-300 bg-white/50'
+                                      ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                                      : 'bg-brand-surface/30 text-brand-primary border-gray-100 hover:bg-brand-surface'
                                   }`}
                                 >
-                                  {isSelected && <Check size={14} className="stroke-[3]" />}
-                                </div>
-                              </button>
+                                  <span>{opt}</span>
+                                  <div
+                                    className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+                                      isSelected
+                                        ? 'bg-white text-brand-primary border-white'
+                                        : 'border-gray-300 bg-white/50'
+                                    }`}
+                                  >
+                                    {isSelected && <Check size={14} className="stroke-[3]" />}
+                                  </div>
+                                </button>
+                                {opt === 'Other' && isSelected && (
+                                  <div className="animate-in fade-in slide-in-from-top-1 px-1 pb-1 flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={otherDepartmentInput}
+                                      onChange={(e) => setOtherDepartmentInput(e.target.value)}
+                                      placeholder="Add custom department..."
+                                      className="flex-1 bg-brand-surface/50 border border-gray-100 rounded-xl p-3 text-sm font-medium focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 transition-premium placeholder:text-text-muted"
+                                      onClick={(e) => e.stopPropagation()}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          const val = otherDepartmentInput.trim();
+                                          if (val && !customDepartments.includes(val) && !interestedDepartments.includes(val)) {
+                                            setCustomDepartments([...customDepartments, val]);
+                                            setInterestedDepartments([...interestedDepartments, val]);
+                                            setOtherDepartmentInput('');
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const val = otherDepartmentInput.trim();
+                                        if (val && !customDepartments.includes(val) && !interestedDepartments.includes(val)) {
+                                          setCustomDepartments([...customDepartments, val]);
+                                          setInterestedDepartments([...interestedDepartments, val]);
+                                          setOtherDepartmentInput('');
+                                        }
+                                      }}
+                                      className="bg-brand-primary text-white px-5 rounded-xl text-sm font-bold shadow-sm hover:bg-brand-accent transition-premium"
+                                    >
+                                      Add
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             );
                           })}
                       </div>
