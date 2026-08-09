@@ -23,7 +23,7 @@ export const fetchAdminUsers = async (filters: { role?: string; status?: string 
 
 export const updateUserStatus = async (userId: number, status: 'approved' | 'rejected' | 'pending') => {
   const response = await fetch(API_ENDPOINTS.ADMIN_EXTRA.USER_STATUS(userId), {
-    method: 'PATCH',
+    method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({ status }),
   });
