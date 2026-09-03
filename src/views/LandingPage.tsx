@@ -13,8 +13,9 @@ import { fetchPlatformStats } from '../services/platformServices';
 
 type PlatformStats = {
   professionals: number | null;
-  // studios: number | null;
-  // institutes: number | null;
+  aspirants: number | null;
+  studios: number | null;
+  institutes: number | null;
 };
 
 const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRole: UserRole | null }) => {
@@ -23,6 +24,9 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
   const [restrictedMessage, setRestrictedMessage] = React.useState('');
   const [platformStats, setPlatformStats] = React.useState<PlatformStats>({
     professionals: null,
+    aspirants: null,
+    studios: null,
+    institutes: null,
   });
 
   React.useEffect(() => {
@@ -34,8 +38,9 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
         const payload = await res.json();
         setPlatformStats({
           professionals: Number(payload.data?.professionals || 0),
-          // studios: Number(payload.data?.studios || 0),
-          // institutes: Number(payload.data?.institutes || 0),
+          aspirants: Number(payload.data?.aspirants || 0),
+          studios: Number(payload.data?.studios || 0),
+          institutes: Number(payload.data?.institutes || 0),
         });
       } catch (err) {
         console.error('Failed to load platform stats:', err);
@@ -151,9 +156,9 @@ const LandingPage = ({ onStart, userRole }: { onStart: (v: View) => void, userRo
           <section className="grid grid-cols-1 md:grid-cols-4 gap-12 border-y border-gray-100 py-20">
             {[
               { label: 'Professionals', value: platformStats.professionals },
-              { label: 'Aspirants', value: 92 },
-              { label: 'Studios', value: 10 },
-              { label: 'Institutes', value: 7 },
+              { label: 'Aspirants', value: platformStats.aspirants },
+              { label: 'Studios', value: platformStats.studios },
+              { label: 'Institutes', value: platformStats.institutes },
             ].map(metric => (
               <div key={metric.label} className="text-center space-y-2">
                 <h2 className="text-6xl font-display font-bold text-brand-primary tracking-tight">

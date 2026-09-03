@@ -1876,11 +1876,12 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           {
             activeTab === 'overview' ? (
           <div className="space-y-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
               <SummaryCard title="Total Users" value={analytics?.users} icon={Users} colorClass="bg-blue-50 text-blue-600" />
               <SummaryCard title="Professionals" value={analytics?.professionals} icon={Users} colorClass="bg-emerald-50 text-emerald-600" />
               <SummaryCard title="Studios" value={analytics?.studios} icon={Briefcase} colorClass="bg-purple-50 text-purple-600" />
               <SummaryCard title="Institutes" value={analytics?.institutes} icon={GraduationCap} colorClass="bg-amber-50 text-amber-600" />
+              <SummaryCard title="Aspirants" value={analytics?.aspirants} icon={Sparkles} colorClass="bg-indigo-50 text-indigo-600" />
             </div>
 
             <Card className="p-8 bg-brand-surface border-transparent">
