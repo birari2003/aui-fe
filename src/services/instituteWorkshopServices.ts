@@ -11,25 +11,36 @@ export const fetchAllWorkshops = async () => {
 };
 
 export const createInstituteWorkshop = async (data: any) => {
+  const body = toFormData(data);
   return fetch(`${API_URL}`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
-    body: JSON.stringify(data),
+    body,
   });
 };
 
 export const updateInstituteWorkshop = async (id: number, data: any) => {
+  const body = toFormData(data);
   return fetch(`${API_URL}/${id}`, {
     method: 'PUT',
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
-    body: JSON.stringify(data),
+    body,
   });
+};
+
+const toFormData = (data: any) => {
+  const form = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === null || value === undefined) return;
+    if (key === 'mediaFile' && value instanceof File) form.append('media', value);
+    else if (Array.isArray(value)) form.append(key, JSON.stringify(value));
+    else if (key !== 'mediaFile') form.append(key, String(value));
+  });
+  return form;
 };
 
 export const deleteInstituteWorkshop = async (id: number) => {

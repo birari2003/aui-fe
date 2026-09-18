@@ -20,6 +20,8 @@ import Modal from '../components/Modal';
 import { View } from '../types';
 import EditInstituteModal from '../components/EditInstituteModal';
 import ManageInstituteProfileModal from '../components/ManageInstituteProfileModal';
+import WorkshopCard from '../components/WorkshopCard';
+import WorkshopDetailsDrawer from '../components/WorkshopDetailsDrawer';
 
 const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const navigate = useNavigate();
@@ -65,6 +67,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
   const [facilitationRequests, setFacilitationRequests] = React.useState<any[]>([]);
   const [isFacilitationModalOpen, setIsFacilitationModalOpen] = React.useState(false);
   const [selectedWorkshopForFacilitation, setSelectedWorkshopForFacilitation] = React.useState<any | null>(null);
+  const [selectedWorkshopDetails, setSelectedWorkshopDetails] = React.useState<any | null>(null);
   const [facilitationForm, setFacilitationForm] = React.useState({
     studentCount: '10-20',
     preferredMonth: 'June 2026',
@@ -1051,55 +1054,16 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {(dynamicWorkshops.length > 0
-                          ? dynamicWorkshops.filter(w => w.modelType === selectedModel)
-                          : staticWorkshops
-                        ).map((workshop, i) => (
+                        {dynamicWorkshops.map((workshop, i) => (
                           <motion.div
                             key={workshop.id || workshop.title}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: i * 0.1 }}
-                            className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 space-y-8 flex flex-col"
+                            className="space-y-3"
                           >
-                            <div className="space-y-6 flex-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-brand-purple uppercase tracking-[0.15em]">{workshop.category}</span>
-                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-brand-primary/30 uppercase tracking-widest">
-                                  <Clock size={12} /> {workshop.duration}
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <h4 className="text-2xl font-bold text-brand-primary leading-tight">{workshop.title}</h4>
-                                <span className="inline-block text-[10px] font-bold text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded">
-                                  {workshop.level}
-                                </span>
-                              </div>
-
-                              <div className="space-y-4">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-primary/20">PROGRAM PILLARS</p>
-                                <ul className="space-y-3">
-                                  {(Array.isArray(workshop.pillars) ? workshop.pillars : []).map((pillar: string, idx: number) => (
-                                    <li key={idx} className="text-xs text-text-secondary flex items-start gap-2 leading-relaxed text-left">
-                                      <div className="w-1 h-1 rounded-full bg-brand-purple mt-1.5 flex-shrink-0" />
-                                      {pillar}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-
-                              <div className="p-4 bg-emerald-50 rounded-2xl space-y-2 text-left">
-                                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-600/60">LEARNING OUTCOMES</p>
-                                <p className="text-xs font-bold text-emerald-700 leading-relaxed">{workshop.outcome}</p>
-                              </div>
-                            </div>
-
-                            <div className="pt-8 border-t border-gray-50 flex items-center justify-between">
-                              <div className="space-y-1 text-left">
-                                <p className="text-[9px] font-bold uppercase tracking-widest text-brand-primary/30">INVESTMENT RATE</p>
-                                <p className="text-lg font-bold text-brand-primary">{workshop.rate}</p>
-                              </div>
+                            <WorkshopCard workshop={workshop} onDetails={() => setSelectedWorkshopDetails(workshop)} />
+                            <div className="flex justify-end">
                               {facilitationRequests.find(r => r.workshopId === workshop.id) ? (
                                 <div className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest border ${facilitationRequests.find(r => r.workshopId === workshop.id).status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                     facilitationRequests.find(r => r.workshopId === workshop.id).status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
@@ -1123,6 +1087,7 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                             </div>
                           </motion.div>
                         ))}
+                        {dynamicWorkshops.length === 0 && <div className="md:col-span-3 rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center text-sm text-slate-500">No workshops have been assigned to your institute yet.</div>}
                       </div>
                     </div>
                   ) : (
@@ -1180,7 +1145,10 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                               name: prof.fullName || prof.user?.email?.split('@')[0] || 'Expert',
                               role: prof.headline || prof.position || 'Industry Expert',
                               verified: prof.verificationStatus ? '100%' : '95%',
-                              image: prof.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(prof.fullName || 'Expert')}&background=random`
+                              image: prof.avatarUrl || prof.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(prof.fullName || 'Expert')}&background=ede9fe&color=6d28d9`,
+                              experience: `${prof.experienceYears || 0}+ Years`,
+                              production: prof.productionType || 'Not specified',
+                              primarySkill: prof.primarySkill || 'Not specified'
                             };
                             return (
                               <motion.div
@@ -1188,35 +1156,25 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group"
+                                className="relative overflow-hidden rounded-[32px] border border-slate-200/90 bg-white/90 p-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-all duration-500 group hover:-translate-y-1 hover:border-violet-300/80 hover:bg-white/75 hover:shadow-[0_22px_55px_rgba(109,40,217,0.16)] before:pointer-events-none before:absolute before:inset-0 before:opacity-0 before:transition-opacity before:duration-500 hover:before:opacity-100 before:bg-[linear-gradient(135deg,rgba(255,255,255,.75),rgba(237,233,254,.34),rgba(255,255,255,.15))]"
                               >
-                                <div className="flex items-center gap-6 mb-8">
-                                  <div className="relative">
-                                    <img src={expert.image} className="w-20 h-20 rounded-[24px] object-cover shadow-lg group-hover:scale-105 transition-transform duration-500" alt="" />
-                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center text-white">
-                                      <CheckCircle2 size={12} />
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="text-lg font-bold text-brand-primary">{expert.name}</h4>
-                                      <CheckCircle2 size={14} className="text-emerald-500" />
-                                    </div>
-                                    <p className="text-sm font-medium text-brand-purple">{expert.role}</p>
-
-                                  </div>
+                                <div className="relative z-10 flex items-center gap-5">
+                                  <div className="relative"><img src={expert.image} className="h-20 w-20 rounded-[22px] object-cover shadow-lg ring-1 ring-slate-100 transition-transform duration-500 group-hover:scale-105" alt={expert.name} /><div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-[3px] border-white bg-emerald-500 text-white shadow-sm"><CheckCircle2 size={12} /></div></div>
+                                  <div className="min-w-0 flex-1"><span className="mb-2 inline-flex rounded-full bg-emerald-50/90 px-2 py-1 text-[8px] font-extrabold uppercase tracking-widest text-emerald-600">Verified expert</span><div className="flex items-center gap-2"><h4 className="truncate text-lg font-extrabold text-brand-primary">{expert.name}</h4><CheckCircle2 size={14} className="text-emerald-500" /></div><p className="truncate text-sm font-semibold text-brand-purple">{expert.role}</p></div>
                                 </div>
-
-                                <div className="flex gap-4 pt-4">
+                                <div className="relative z-10 mb-3 mt-5 grid grid-cols-3 divide-x divide-slate-100 rounded-2xl border border-white/80 bg-white/65 px-2 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-md">
+                                  <div className="px-2 text-center"><p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Experience</p><p className="mt-1 truncate text-xs font-extrabold text-slate-900">{expert.experience}</p></div><div className="px-2 text-center"><p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Production</p><p className="mt-1 truncate text-xs font-extrabold uppercase text-slate-900">{expert.production}</p></div><div className="px-2 text-center"><p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Primary Skill</p><p className="mt-1 truncate text-xs font-extrabold text-slate-900" title={expert.primarySkill}>{expert.primarySkill}</p></div>
+                                </div>
+                                <div className="relative z-10 flex gap-3 border-t border-white/80 pt-3">
                                   <Link
                                     to={`/talent/${prof.user?.talentId?.talentCode || prof.talentId?.talentCode || 'AUI-PRO-001'}`}
-                                    className="flex-1 py-4 px-6 bg-gray-50 hover:bg-gray-100 text-brand-primary text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all text-center no-underline"
+                                    className="flex-1 rounded-xl border border-white/90 bg-white/65 px-4 py-3.5 text-center text-[9px] font-extrabold uppercase tracking-widest text-brand-primary no-underline shadow-sm backdrop-blur transition-all hover:bg-white"
                                   >
                                     VIEW PROFILE
                                   </Link>
                                   <button
                                     onClick={() => setBookingExpert(expert)}
-                                    className="flex-1 py-4 px-6 bg-brand-primary hover:bg-brand-purple text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl shadow-lg shadow-brand-primary/10 transition-all"
+                                    className="flex-1 rounded-xl bg-brand-primary px-4 py-3.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-lg shadow-brand-primary/10 transition-all hover:bg-brand-purple"
                                   >
                                     REQUEST SESSION
                                   </button>
@@ -2031,6 +1989,16 @@ const InstituteDashboard = ({ setView }: { setView: (v: View) => void }) => {
       {isManageModalOpen && (
         <ManageInstituteProfileModal onClose={() => setIsManageModalOpen(false)} />
       )}
+      <WorkshopDetailsDrawer
+        workshop={selectedWorkshopDetails}
+        requestStatus={selectedWorkshopDetails ? facilitationRequests.find(request => request.workshopId === selectedWorkshopDetails.id)?.status : undefined}
+        onClose={() => setSelectedWorkshopDetails(null)}
+        onBook={(workshop) => {
+          setSelectedWorkshopDetails(null);
+          setSelectedWorkshopForFacilitation(workshop);
+          setIsFacilitationModalOpen(true);
+        }}
+      />
     </div>
   );
 };

@@ -15,11 +15,15 @@ import * as nexusServices from '../services/nexusServices';
 import * as showreelServices from '../services/showreelServices';
 import { fetchAspirantShares, shareAspirantsWithInstitutes } from '../services/aspirantServices';
 import { BASE_URL } from '../utils/urls';
+import WorkshopCard from '../components/WorkshopCard';
+import { StructuredRowsEditor, WorkshopAdminPreview } from '../components/AdminWorkshopVisualEditor';
+import * as studioPortfolioServices from '../services/studioPortfolioServices';
+import StudioPortfolioPreview from '../components/StudioPortfolioPreview';
 
 
 
 const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios' | 'aspirants' | 'bulk_email' | 'showreels'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'applications' | 'special_requests' | 'professionals' | 'institutes' | 'studios' | 'aspirants' | 'bulk_email' | 'showreels' | 'studio_portfolios'>('overview');
   const [users, setUsers] = React.useState<any[]>([]);
   const [specialRequests, setSpecialRequests] = React.useState<any[]>([]);
   const [analytics, setAnalytics] = React.useState<any>(null);
@@ -69,6 +73,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
   const [isWorkshopModalOpen, setIsWorkshopModalOpen] = React.useState(false);
   const [selectedInstitute, setSelectedInstitute] = React.useState<any>(null);
   const [instituteWorkshops, setInstituteWorkshops] = React.useState<any[]>([]);
+  const [workshopInstitutes, setWorkshopInstitutes] = React.useState<any[]>([]);
+  const [previewWorkshop, setPreviewWorkshop] = React.useState<any>(null);
   const [isWorkshopFormOpen, setIsWorkshopFormOpen] = React.useState(false);
   const [currentWorkshop, setCurrentWorkshop] = React.useState<any>(null);
   const [workshopLoading, setWorkshopLoading] = React.useState(false);
@@ -80,7 +86,11 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     pillars: '',
     outcome: '',
     rate: '',
-    modelType: 'workshops'
+    modelType: 'workshops', demandTag: '', studios: '', studioLabel: 'You can work at studios like...',
+    expertName: '', expertTitle: '', expertExperience: '', expertAvatarUrl: '',
+    mediaUrl: '', mediaFile: null as File | null, assignedInstituteIds: [] as number[],
+    detailDescription: '', abroadGuidance: '', includedItems: '', curriculumModules: '',
+    mentorWorkedAt: '', programFee: '', feeUnit: 'per student', programBenefits: 'Live Online Sessions\nCertificate of Completion\nAssignments & Feedback', studioDetails: '', categoryTags: '', demandTags: ''
   });
   const [isFacilitationAdminModalOpen, setIsFacilitationAdminModalOpen] = React.useState(false);
   const [isNexusHubModalOpen, setIsNexusHubModalOpen] = React.useState(false);
@@ -122,6 +132,12 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
   const [userSearchQuery, setUserSearchQuery] = React.useState('');
   const [allUsers, setAllUsers] = React.useState<any[]>([]);
   const [allUsersLoading, setAllUsersLoading] = React.useState(false);
+  const [studioPortfolios, setStudioPortfolios] = React.useState<any[]>([]);
+  const [portfolioLoading, setPortfolioLoading] = React.useState(false);
+  const [editingPortfolioId, setEditingPortfolioId] = React.useState<number | null>(null);
+  const [portfolioFormOpen, setPortfolioFormOpen] = React.useState(false);
+  const [portfolioForm, setPortfolioForm] = React.useState<any>({ studioName: '', projects: [{ projectName: '', imageUrl: '', imageFile: null }] });
+  const [previewStudioPortfolio, setPreviewStudioPortfolio] = React.useState<any>(null);
 
   const getUserName = (user: any) => {
     const profile = user.professional || user.studio || user.institute;
@@ -340,6 +356,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       loadShowreels();
       loadAllUsers();
     }
+    if (activeTab === 'studio_portfolios') loadStudioPortfolios();
   }, [activeTab]);
 
   React.useEffect(() => {
@@ -463,6 +480,11 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
 
   const handleOpenWorkshopManagement = async () => {
     setIsWorkshopModalOpen(true);
+    const instituteRes = await fetchAdminUsers({ role: 'institute', status: 'approved' });
+    if (instituteRes.ok) {
+      const result = await instituteRes.json();
+      setWorkshopInstitutes(result.data || []);
+    }
     await loadWorkshops();
   };
 
@@ -471,7 +493,16 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     try {
       const workshopData = {
         ...workshopForm,
-        pillars: workshopForm.pillars.split('\n').filter(p => p.trim() !== '')
+        pillars: workshopForm.pillars.split('\n').filter(p => p.trim() !== ''),
+        studios: workshopForm.studios.split('\n').filter(p => p.trim() !== ''),
+        abroadGuidance: workshopForm.abroadGuidance.split('\n').filter(Boolean).map(line => { const [title, description = ''] = line.split('|'); return { title: title.trim(), description: description.trim() }; }),
+        includedItems: workshopForm.includedItems.split('\n').filter(Boolean).map(line => { const [title, description = ''] = line.split('|'); return { title: title.trim(), description: description.trim() }; }),
+        curriculumModules: workshopForm.curriculumModules.split('\n').filter(Boolean).map(line => { const [label, category = '', title = '', description = ''] = line.split('|'); return { label: label.trim(), category: category.trim(), title: title.trim(), description: description.trim() }; }),
+        programBenefits: workshopForm.programBenefits.split('\n').filter(Boolean),
+        studioDetails: workshopForm.studioDetails.split('\n').filter(Boolean).map(line => { const [name, project = ''] = line.split('|'); return { name: name.trim(), project: project.trim() }; }),
+        categoryTags: workshopForm.categoryTags.split('\n').filter(Boolean),
+        demandTags: workshopForm.demandTags.split('\n').filter(Boolean),
+        keepExistingMedia: Boolean(currentWorkshop?.mediaUrl && !workshopForm.mediaFile && !workshopForm.mediaUrl)
       };
       let res;
       if (currentWorkshop) {
@@ -492,7 +523,10 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           pillars: '',
           outcome: '',
           rate: '',
-          modelType: 'workshops'
+          modelType: 'workshops', demandTag: '', studios: '', studioLabel: 'You can work at studios like...',
+          expertName: '', expertTitle: '', expertExperience: '', expertAvatarUrl: '', mediaUrl: '',
+          mediaFile: null, assignedInstituteIds: [], detailDescription: '', abroadGuidance: '', includedItems: '',
+          curriculumModules: '', mentorWorkedAt: '', programFee: '', feeUnit: 'per student', programBenefits: 'Live Online Sessions\nCertificate of Completion\nAssignments & Feedback', studioDetails: '', categoryTags: '', demandTags: ''
         });
       }
     } catch (err) {
@@ -1520,6 +1554,30 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     );
   };
 
+  const loadStudioPortfolios = async () => {
+    setPortfolioLoading(true);
+    try { const res = await studioPortfolioServices.fetchStudioPortfolios(); const data = await res.json(); if (res.ok) setStudioPortfolios(data.data || []); }
+    catch (error) { console.error('Failed to load studio portfolios:', error); }
+    finally { setPortfolioLoading(false); }
+  };
+
+  const resetPortfolioForm = () => { setEditingPortfolioId(null); setPortfolioForm({ studioName: '', projects: [{ projectName: '', imageUrl: '', imageFile: null }] }); setPortfolioFormOpen(false); };
+  const saveStudioPortfolio = async () => {
+    if (!portfolioForm.studioName.trim() || portfolioForm.projects.some((p: any) => !p.projectName.trim() || (!p.imageFile && !p.imageUrl))) return alert('Studio name and a name/image for every project are required.');
+    setPortfolioLoading(true);
+    try {
+      const res = editingPortfolioId ? await studioPortfolioServices.updateStudioPortfolio(editingPortfolioId, portfolioForm.studioName, portfolioForm.projects) : await studioPortfolioServices.createStudioPortfolio(portfolioForm.studioName, portfolioForm.projects);
+      const data = await res.json(); if (!res.ok) return alert(data.message || 'Unable to save studio portfolio'); resetPortfolioForm(); await loadStudioPortfolios();
+    } catch (error) { console.error(error); alert('Unable to save studio portfolio'); } finally { setPortfolioLoading(false); }
+  };
+  const removeStudioPortfolio = async (id: number) => { if (!window.confirm('Delete this studio portfolio and all its projects?')) return; const res = await studioPortfolioServices.deleteStudioPortfolio(id); if (res.ok) setStudioPortfolios(rows => rows.filter(row => row.id !== id)); };
+
+  const renderStudioPortfoliosTab = () => <div className="space-y-7">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-3xl font-black text-brand-primary">Studio Portfolios</h2><p className="mt-1 text-sm text-text-muted">Create studios and build their visual project galleries.</p></div><Button onClick={() => { resetPortfolioForm(); setPortfolioFormOpen(true); }} className="flex items-center gap-2"><Plus size={16}/> Add Studio Portfolio</Button></div>
+    {portfolioFormOpen && <Card className="space-y-6 border-violet-100 bg-white p-6 shadow-premium sm:p-8"><div className="flex items-center justify-between"><h3 className="text-xl font-bold">{editingPortfolioId ? 'Edit' : 'Create'} Studio Portfolio</h3><button onClick={resetPortfolioForm} className="rounded-full p-2 hover:bg-slate-100"><XCircle size={20}/></button></div><label className="block space-y-2"><span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Studio Name</span><input value={portfolioForm.studioName} onChange={e => setPortfolioForm({ ...portfolioForm, studioName: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold outline-none focus:border-violet-500" placeholder="e.g. Lighthouse Animation Studios"/></label><div className="space-y-4"><div className="flex items-center justify-between"><h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Portfolio Projects</h4><span className="text-xs text-slate-400">{portfolioForm.projects.length} project(s)</span></div>{portfolioForm.projects.map((project: any, index: number) => <div key={index} className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50/60 p-4 md:grid-cols-[1fr_1fr_120px_auto] md:items-center"><label className="space-y-2"><span className="text-[9px] font-bold uppercase text-slate-500">Project {index + 1} Name</span><input value={project.projectName} onChange={e => { const projects=[...portfolioForm.projects];projects[index]={...project,projectName:e.target.value};setPortfolioForm({...portfolioForm,projects}); }} className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm" placeholder={`Project ${index + 1} name`}/></label><label className="space-y-2"><span className="text-[9px] font-bold uppercase text-slate-500">Project Image</span><input type="file" accept="image/*" onChange={e => { const projects=[...portfolioForm.projects];projects[index]={...project,imageFile:e.target.files?.[0] || null};setPortfolioForm({...portfolioForm,projects}); }} className="w-full rounded-xl bg-white p-2 text-xs"/></label><div className="h-20 overflow-hidden rounded-xl bg-slate-200">{(project.imageFile || project.imageUrl) ? <img src={project.imageFile ? URL.createObjectURL(project.imageFile) : `${BASE_URL}/${project.imageUrl}`} className="h-full w-full object-cover" alt=""/> : <div className="grid h-full place-items-center text-slate-400"><Film size={22}/></div>}</div><button disabled={portfolioForm.projects.length === 1} onClick={() => setPortfolioForm({ ...portfolioForm, projects: portfolioForm.projects.filter((_: any, i: number) => i !== index) })} className="rounded-xl p-3 text-rose-500 hover:bg-rose-50 disabled:opacity-30"><Trash2 size={18}/></button></div>)}<button onClick={() => setPortfolioForm({ ...portfolioForm, projects: [...portfolioForm.projects, { projectName: '', imageUrl: '', imageFile: null }] })} className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-violet-200 py-4 text-xs font-bold uppercase tracking-wider text-violet-700 hover:bg-violet-50"><Plus size={16}/> Add Another Project</button></div><div className="flex justify-end gap-3 border-t pt-5"><Button variant="secondary" onClick={resetPortfolioForm}>Cancel</Button><Button loading={portfolioLoading} onClick={saveStudioPortfolio}>{editingPortfolioId ? 'Update Portfolio' : 'Create Portfolio'}</Button></div></Card>}
+    {portfolioLoading && !portfolioFormOpen ? <div className="py-20 text-center text-sm text-slate-500">Loading studio portfolios...</div> : <div className="grid gap-6 md:grid-cols-2">{studioPortfolios.map(portfolio => <Card key={portfolio.id} className="overflow-hidden border-slate-200 bg-white p-0 shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 p-5"><div><h3 className="text-lg font-extrabold text-brand-primary">{portfolio.studioName}</h3><p className="text-xs text-slate-500">{portfolio.projects?.length || 0} portfolio projects</p></div><div className="flex gap-1"><button onClick={() => setPreviewStudioPortfolio(portfolio)} title="Full-screen portfolio preview" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-violet-700"><Eye size={17}/></button><button onClick={() => { setEditingPortfolioId(portfolio.id); setPortfolioForm({ studioName: portfolio.studioName, projects: portfolio.projects.map((p: any) => ({ projectName: p.projectName, imageUrl: p.imageUrl, imageFile: null })) }); setPortfolioFormOpen(true); }} className="rounded-lg p-2 text-violet-700 hover:bg-violet-50"><Edit size={16}/></button><button onClick={() => removeStudioPortfolio(portfolio.id)} className="rounded-lg p-2 text-rose-500 hover:bg-rose-50"><Trash2 size={16}/></button></div></div><div className="grid grid-cols-2 gap-2 p-3">{portfolio.projects?.map((project: any) => <div key={project.id} className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100"><img src={`${BASE_URL}/${project.imageUrl}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt={project.projectName}/><div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8"><p className="text-xs font-bold text-white">{project.projectName}</p></div></div>)}</div></Card>)}</div>}
+  </div>;
+
   const renderShowreelsTab = () => {
     return (
       <div className="space-y-6">
@@ -1798,6 +1856,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           ? 'Bulk Email Broadcast'
           : activeTab === 'showreels'
             ? 'Showreel Showcase'
+            : activeTab === 'studio_portfolios'
+              ? 'Studio Portfolios'
             : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Management`;
 
   const seoDescription = `AUI Admin Panel - ${seoTitle}. Control center for managing professionals, institutes, studios, and requests.`;
@@ -1820,6 +1880,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     },
     { id: 'professionals' as const, label: 'Professionals', icon: Briefcase, badge: 0 },
     { id: 'studios' as const, label: 'Studios', icon: Users, badge: 0 },
+    { id: 'studio_portfolios' as const, label: 'Studio Portfolios', icon: Building2, badge: 0 },
     { id: 'institutes' as const, label: 'Institutes', icon: GraduationCap, badge: 0 },
     { id: 'aspirants' as const, label: 'Aspirants', icon: Sparkles, badge: users.filter(u => u.role === 'aspirant').length },
     { id: 'showreels' as const, label: 'Showreels', icon: Film, badge: 0 },
@@ -2352,6 +2413,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
               </div>
         ) : activeTab === 'showreels' ? (
           renderShowreelsTab()
+        ) : activeTab === 'studio_portfolios' ? (
+          renderStudioPortfoliosTab()
         ) : activeTab === 'aspirants' ? (
           renderAspirantsView()
         ) : (
@@ -2563,6 +2626,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          <button onClick={() => setPreviewWorkshop(workshop)} title="Preview complete card" className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"><Eye size={16} /></button>
                           <button
                             onClick={() => {
                               setCurrentWorkshop(workshop);
@@ -2574,7 +2638,21 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                                 pillars: Array.isArray(workshop.pillars) ? workshop.pillars.join('\n') : '',
                                 outcome: workshop.outcome,
                                 rate: workshop.rate,
-                                modelType: workshop.modelType
+                                modelType: workshop.modelType, demandTag: workshop.demandTag || '',
+                                studios: Array.isArray(workshop.studios) ? workshop.studios.join('\n') : '',
+                                studioLabel: workshop.studioLabel || 'You can work at studios like...',
+                                expertName: workshop.expertName || '', expertTitle: workshop.expertTitle || '',
+                                expertExperience: workshop.expertExperience || '', expertAvatarUrl: workshop.expertAvatarUrl || '',
+                                mediaUrl: workshop.mediaType === 'youtube' ? workshop.mediaUrl || '' : '', mediaFile: null,
+                                assignedInstituteIds: workshop.assignedInstituteIds || [],
+                                detailDescription: workshop.detailDescription || '',
+                                abroadGuidance: (workshop.abroadGuidance || []).map((x: any) => `${x.title || ''}|${x.description || ''}`).join('\n'),
+                                includedItems: (workshop.includedItems || []).map((x: any) => `${x.title || ''}|${x.description || ''}`).join('\n'),
+                                curriculumModules: (workshop.curriculumModules || []).map((x: any) => `${x.label || ''}|${x.category || ''}|${x.title || ''}|${x.description || ''}`).join('\n'),
+                                mentorWorkedAt: workshop.mentorWorkedAt || '', programFee: workshop.programFee || '', feeUnit: workshop.feeUnit || 'per student',
+                                programBenefits: workshop.programBenefits?.length ? workshop.programBenefits.join('\n') : 'Live Online Sessions\nCertificate of Completion\nAssignments & Feedback',
+                                studioDetails: (workshop.studioDetails || []).map((x: any) => `${x.name || ''}|${x.project || ''}`).join('\n'),
+                                categoryTags: (workshop.categoryTags || []).join('\n'), demandTags: (workshop.demandTags || []).join('\n')
                               });
                               setIsWorkshopFormOpen(true);
                             }}
@@ -2603,7 +2681,15 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                   <h4 className="text-lg font-bold text-brand-primary">{currentWorkshop ? 'Edit Workshop' : 'Add New Workshop'}</h4>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <WorkshopAdminPreview form={workshopForm} existingMedia={currentWorkshop?.mediaUrl} onChange={(patch) => setWorkshopForm({ ...workshopForm, ...patch })} />
+
+                <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 p-4 sm:grid-cols-2">
+                  <label className="space-y-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Workshop type</span><select value={workshopForm.modelType} onChange={e => setWorkshopForm({ ...workshopForm, modelType: e.target.value })} className="w-full rounded-xl bg-slate-50 p-3 text-sm"><option value="workshops">Intense Workshops</option><option value="mentorship">Professional Mentorship</option><option value="portfolio">Portfolio Review</option></select></label>
+                  <label className="space-y-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">YouTube URL</span><input value={workshopForm.mediaUrl} onChange={e => setWorkshopForm({ ...workshopForm, mediaUrl: e.target.value, mediaFile: null })} className="w-full rounded-xl bg-slate-50 p-3 text-sm" placeholder="https://youtube.com/..." /></label>
+                  <div className="space-y-2 sm:col-span-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Assign this card to institutes</span><div className="grid max-h-40 gap-2 overflow-y-auto sm:grid-cols-2">{workshopInstitutes.filter(u => u.institute).map(u => { const id=u.institute.id; const checked=workshopForm.assignedInstituteIds.includes(id); return <label key={id} className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${checked ? 'border-violet-400 bg-violet-50' : 'border-slate-200'}`}><input type="checkbox" checked={checked} onChange={() => setWorkshopForm({ ...workshopForm, assignedInstituteIds: checked ? workshopForm.assignedInstituteIds.filter(x => x !== id) : [...workshopForm.assignedInstituteIds, id] })} />{u.institute.instituteName}</label>; })}</div></div>
+                </div>
+
+                <div className="hidden grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Model Category</label>
                     <select
@@ -2656,14 +2742,13 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                       onChange={(e) => setWorkshopForm({ ...workshopForm, level: e.target.value })}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Demand Badge</label>
+                    <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" placeholder="HIGH STUDIO DEMAND" value={workshopForm.demandTag} onChange={e => setWorkshopForm({ ...workshopForm, demandTag: e.target.value })} />
+                  </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Program Pillars (One per line)</label>
-                    <textarea
-                      className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none min-h-[100px]"
-                      placeholder="Enter each pillar on a new line"
-                      value={workshopForm.pillars}
-                      onChange={(e) => setWorkshopForm({ ...workshopForm, pillars: e.target.value })}
-                    />
+                    <StructuredRowsEditor value={workshopForm.pillars} onChange={pillars => setWorkshopForm({ ...workshopForm, pillars })} columns={['Skill / learning item']} addLabel="Add learning item" />
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Learning Outcome</label>
@@ -2683,6 +2768,58 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                       value={workshopForm.rate}
                       onChange={(e) => setWorkshopForm({ ...workshopForm, rate: e.target.value })}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Expert Name</label>
+                    <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.expertName} onChange={e => setWorkshopForm({ ...workshopForm, expertName: e.target.value })} placeholder="Kanwar Rohan" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Expert Role</label>
+                    <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.expertTitle} onChange={e => setWorkshopForm({ ...workshopForm, expertTitle: e.target.value })} placeholder="Senior Gameplay Animator" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Experience</label>
+                    <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.expertExperience} onChange={e => setWorkshopForm({ ...workshopForm, expertExperience: e.target.value })} placeholder="12+ Years Exp." />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Expert Avatar URL</label>
+                    <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.expertAvatarUrl} onChange={e => setWorkshopForm({ ...workshopForm, expertAvatarUrl: e.target.value })} placeholder="https://..." />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Studios (One per line)</label>
+                    <StructuredRowsEditor value={workshopForm.studios} onChange={studios => setWorkshopForm({ ...workshopForm, studios })} columns={['Studio name']} addLabel="Add studio" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">YouTube Video URL</label>
+                    <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.mediaUrl} onChange={e => setWorkshopForm({ ...workshopForm, mediaUrl: e.target.value, mediaFile: null })} placeholder="https://youtube.com/watch?v=..." />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Or Upload Video (MP4/MOV)</label>
+                    <input type="file" accept="video/mp4,video/quicktime,video/*" className="w-full bg-gray-50 rounded-xl p-2 text-xs" onChange={e => setWorkshopForm({ ...workshopForm, mediaFile: e.target.files?.[0] || null, mediaUrl: '' })} />
+                    {currentWorkshop?.mediaUrl && !workshopForm.mediaFile && !workshopForm.mediaUrl && <p className="text-[10px] text-emerald-600">Existing uploaded video will be retained.</p>}
+                  </div>
+                  <div className="md:col-span-2 space-y-5 rounded-3xl border border-violet-100 bg-violet-50/40 p-5 sm:p-6">
+                    <div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">Workshop Details Drawer</p><p className="mt-1 text-xs text-slate-500">This content appears after an institute clicks Details.</p></div>
+                    <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Detailed Overview</label><textarea className="min-h-[90px] w-full rounded-xl border-gray-100 bg-white p-3 text-sm outline-none" value={workshopForm.detailDescription} onChange={e => setWorkshopForm({ ...workshopForm, detailDescription: e.target.value })} placeholder="Master industry-standard gameplay animation skills and get ready for top game studios." /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Studio Details</label><StructuredRowsEditor value={workshopForm.studioDetails} onChange={studioDetails => setWorkshopForm({ ...workshopForm, studioDetails })} columns={['Studio', 'Known project']} addLabel="Add studio detail" /></div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Program Fee</label><input className="w-full rounded-xl border-gray-100 bg-white p-3 text-sm" value={workshopForm.programFee} onChange={e => setWorkshopForm({ ...workshopForm, programFee: e.target.value })} placeholder="₹2,500" /></div>
+                      <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Fee Unit</label><input className="w-full rounded-xl border-gray-100 bg-white p-3 text-sm" value={workshopForm.feeUnit} onChange={e => setWorkshopForm({ ...workshopForm, feeUnit: e.target.value })} placeholder="per student" /></div>
+                      <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Mentor Worked At</label><input className="w-full rounded-xl border-gray-100 bg-white p-3 text-sm" value={workshopForm.mentorWorkedAt} onChange={e => setWorkshopForm({ ...workshopForm, mentorWorkedAt: e.target.value })} placeholder="Ubisoft, EA & Rockstar Games" /></div>
+                    </div>
+                    <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Work Abroad Guidance</label><StructuredRowsEditor value={workshopForm.abroadGuidance} onChange={abroadGuidance => setWorkshopForm({ ...workshopForm, abroadGuidance })} columns={['Title', 'Description']} addLabel="Add guidance card" /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Included with Program</label><StructuredRowsEditor value={workshopForm.includedItems} onChange={includedItems => setWorkshopForm({ ...workshopForm, includedItems })} columns={['Title', 'Description']} addLabel="Add included item" /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Curriculum Modules</label><StructuredRowsEditor value={workshopForm.curriculumModules} onChange={curriculumModules => setWorkshopForm({ ...workshopForm, curriculumModules })} columns={['Module label', 'Category', 'Title', 'Description']} addLabel="Add curriculum module" /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Bottom Program Benefits</label><StructuredRowsEditor value={workshopForm.programBenefits} onChange={programBenefits => setWorkshopForm({ ...workshopForm, programBenefits })} columns={['Benefit']} addLabel="Add program benefit" /></div>
+                  </div>
+                  <div className="md:col-span-2 space-y-3 rounded-2xl border border-gray-100 p-4">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Assign to Institutes</label>
+                    <div className="grid max-h-44 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
+                      {workshopInstitutes.filter(u => u.institute).map(u => {
+                        const id = u.institute.id; const checked = workshopForm.assignedInstituteIds.includes(id);
+                        return <label key={id} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-xs font-semibold ${checked ? 'border-violet-400 bg-violet-50' : 'border-gray-100'}`}><input type="checkbox" checked={checked} onChange={() => setWorkshopForm({ ...workshopForm, assignedInstituteIds: checked ? workshopForm.assignedInstituteIds.filter(x => x !== id) : [...workshopForm.assignedInstituteIds, id] })} />{u.institute.instituteName}</label>;
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -2707,6 +2844,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           </div>
         }
       />
+
+      <Modal isOpen={Boolean(previewWorkshop)} onClose={() => setPreviewWorkshop(null)} title="Workshop Card Preview" size="lg" showFooter={false} message={previewWorkshop ? <div className="mx-auto max-w-md space-y-4"><WorkshopCard workshop={previewWorkshop} preview /><div className="rounded-xl bg-slate-50 p-4 text-xs text-slate-600"><strong>Assigned institutes:</strong> {previewWorkshop.assignedInstitutes?.map((i: any) => i.instituteName).join(', ') || 'None'}</div></div> : null} />
 
       {/* Facilitation Requests Modal */}
       <Modal
@@ -3341,6 +3480,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
         </div>
         }
       />
+      <StudioPortfolioPreview portfolio={previewStudioPortfolio} onClose={() => setPreviewStudioPortfolio(null)} />
     </div>
   );
 

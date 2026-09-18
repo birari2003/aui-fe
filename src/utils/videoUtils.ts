@@ -8,9 +8,25 @@ export interface VideoInfo {
 
 export const getYouTubeId = (url: string): string => {
   if (!url) return '';
-  const regExp = /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|&v=)([^#&?]{11}).*/;
-  const match = url.match(regExp);
-  return (match && match[1].length === 11) ? match[1] : '';
+  const value = url.trim();
+  try {
+    const parsed = new URL(value.startsWith('http') ? value : `https://${value}`);
+    const host = parsed.hostname.replace(/^www\./, '').replace(/^m\./, '');
+    if (host === 'youtu.be') {
+      const id = parsed.pathname.split('/').filter(Boolean)[0] || '';
+      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
+    }
+    if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
+      const queryId = parsed.searchParams.get('v') || '';
+      if (/^[a-zA-Z0-9_-]{11}$/.test(queryId)) return queryId;
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      if (['embed', 'shorts', 'live', 'v'].includes(parts[0]) && /^[a-zA-Z0-9_-]{11}$/.test(parts[1] || '')) return parts[1];
+    }
+  } catch {
+    // Fall through to the permissive matcher for pasted partial URLs.
+  }
+  const match = value.match(/(?:youtu\.be\/|embed\/|shorts\/|live\/|watch\?(?:.*&)?v=|[?&]v=)([a-zA-Z0-9_-]{11})/);
+  return match?.[1] || '';
 };
 
 export const getVimeoId = (url: string): string => {

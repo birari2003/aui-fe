@@ -90,6 +90,10 @@ export const API_ENDPOINTS = {
     BASE: `${BASE_URL}/api/showreels`,
     DELETE: (id: number) => `${BASE_URL}/api/showreels/${id}`,
   },
+  STUDIO_PORTFOLIOS: {
+    BASE: `${BASE_URL}/api/studio-portfolios`,
+    BY_ID: (id: number) => `${BASE_URL}/api/studio-portfolios/${id}`,
+  },
   EDUCATIONS: {
     BASE: `${BASE_URL}/api/educations`,
     GET_BY_ID: (id: number) => `${BASE_URL}/api/educations/${id}`,
