@@ -74,6 +74,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
   const [selectedInstitute, setSelectedInstitute] = React.useState<any>(null);
   const [instituteWorkshops, setInstituteWorkshops] = React.useState<any[]>([]);
   const [workshopInstitutes, setWorkshopInstitutes] = React.useState<any[]>([]);
+  const [workshopMentors, setWorkshopMentors] = React.useState<any[]>([]);
   const [previewWorkshop, setPreviewWorkshop] = React.useState<any>(null);
   const [isWorkshopFormOpen, setIsWorkshopFormOpen] = React.useState(false);
   const [currentWorkshop, setCurrentWorkshop] = React.useState<any>(null);
@@ -480,10 +481,37 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
 
   const handleOpenWorkshopManagement = async () => {
     setIsWorkshopModalOpen(true);
-    const instituteRes = await fetchAdminUsers({ role: 'institute', status: 'approved' });
+    const [instituteRes, professionalRes] = await Promise.all([
+      fetchAdminUsers({ role: 'institute', status: 'approved' }),
+      fetchAdminUsers({ role: 'professional' })
+    ]);
     if (instituteRes.ok) {
       const result = await instituteRes.json();
       setWorkshopInstitutes(result.data || []);
+    }
+    if (professionalRes.ok) {
+      const result = await professionalRes.json();
+      const mentors = (result.data || []).filter((user: any) => {
+        const value = user.professional?.isMentor ?? user.professional?.is_mentor;
+        return value === true || value === 1 || value === '1';
+      });
+      const mentorsWithImages = await Promise.all(mentors.map(async (user: any) => {
+        const professional = { ...user.professional };
+        if (!professional.profileImage && user.talentId?.talentCode) {
+          try {
+            const profileRes = await fetch(`${BASE_URL}/api/public-profile/code/${encodeURIComponent(user.talentId.talentCode)}`);
+            const profilePayload = await profileRes.json();
+            professional.profileImage = profilePayload?.data?.publicProfile?.profileImage || '';
+          } catch (error) {
+            console.error(`Could not fetch mentor profile image for ${professional.fullName}:`, error);
+          }
+        }
+        if (professional.profileImage || professional.avatarUrl) {
+          professional.profileImage = getFileUrl(professional.profileImage || professional.avatarUrl);
+        }
+        return { ...user, professional };
+      }));
+      setWorkshopMentors(mentorsWithImages);
     }
     await loadWorkshops();
   };
@@ -2681,7 +2709,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                   <h4 className="text-lg font-bold text-brand-primary">{currentWorkshop ? 'Edit Workshop' : 'Add New Workshop'}</h4>
                 </div>
 
-                <WorkshopAdminPreview form={workshopForm} existingMedia={currentWorkshop?.mediaUrl} onChange={(patch) => setWorkshopForm({ ...workshopForm, ...patch })} />
+                <WorkshopAdminPreview form={workshopForm} mentors={workshopMentors} existingMedia={currentWorkshop?.mediaUrl} onChange={(patch) => setWorkshopForm({ ...workshopForm, ...patch })} />
 
                 <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 p-4 sm:grid-cols-2">
                   <label className="space-y-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Workshop type</span><select value={workshopForm.modelType} onChange={e => setWorkshopForm({ ...workshopForm, modelType: e.target.value })} className="w-full rounded-xl bg-slate-50 p-3 text-sm"><option value="workshops">Intense Workshops</option><option value="mentorship">Professional Mentorship</option><option value="portfolio">Portfolio Review</option></select></label>
@@ -2771,7 +2799,25 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Expert Name</label>
-                    <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.expertName} onChange={e => setWorkshopForm({ ...workshopForm, expertName: e.target.value })} placeholder="Kanwar Rohan" />
+                    <select
+                      className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none"
+                      value={workshopForm.expertName}
+                      onChange={e => {
+                        const mentor = workshopMentors.find((user: any) => user.professional?.fullName === e.target.value)?.professional;
+                        setWorkshopForm({
+                          ...workshopForm,
+                          expertName: e.target.value,
+                          ...(mentor ? {
+                            expertTitle: mentor.position || mentor.primarySkill || '',
+                            expertExperience: `${mentor.experienceYears || 0}+ Years Exp.`,
+                            expertAvatarUrl: getFileUrl(mentor.profileImage || mentor.avatarUrl || '')
+                          } : {})
+                        });
+                      }}
+                    >
+                      <option value="">Select a mentor</option>
+                      {workshopMentors.map((user: any) => <option key={user.professional.id} value={user.professional.fullName}>{user.professional.fullName}</option>)}
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Expert Role</label>
