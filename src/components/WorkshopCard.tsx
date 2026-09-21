@@ -27,14 +27,14 @@ export default function WorkshopCard({ workshop, onDetails, preview = false }: {
   }, [isVideoOpen]);
 
   const videoModal = isVideoOpen && source ? createPortal(
-    <div role="dialog" aria-modal="true" aria-label={`${workshop.title} video preview`} className="fixed inset-0 z-[300] flex items-center justify-center bg-[#08030f]/90 p-4 backdrop-blur-md" onMouseDown={() => setIsVideoOpen(false)}>
+    <div role="dialog" aria-modal="true" aria-label={`${workshop.title} ${isImage ? 'image' : 'video'} preview`} className="fixed inset-0 z-[300] flex items-center justify-center bg-[#08030f]/90 p-4 backdrop-blur-md" onMouseDown={() => setIsVideoOpen(false)}>
       <div className="relative w-full max-w-6xl" onMouseDown={event => event.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between gap-4 text-white">
-          <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300">Workshop video</p><h3 className="truncate text-lg font-bold sm:text-2xl">{workshop.title}</h3></div>
-          <button type="button" onClick={() => setIsVideoOpen(false)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/20" aria-label="Close video"><X size={22} /></button>
+          <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300">Workshop {isImage ? 'image' : 'video'}</p><h3 className="truncate text-lg font-bold sm:text-2xl">{workshop.title}</h3></div>
+          <button type="button" onClick={() => setIsVideoOpen(false)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/20" aria-label="Close preview"><X size={22} /></button>
         </div>
-        <div className="aspect-video max-h-[78vh] overflow-hidden rounded-2xl bg-black shadow-2xl ring-1 ring-white/10">
-          {video.type === 'direct' ? <video className="h-full w-full" src={source} autoPlay controls playsInline /> : video.canEmbed ? <iframe title={`${workshop.title} video`} className="h-full w-full" src={video.embedUrl || ''} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : <div className="grid h-full place-items-center p-8 text-center text-white">This video cannot be embedded.</div>}
+        <div className={`${isImage ? 'flex max-h-[82vh] items-center justify-center' : 'aspect-video max-h-[78vh]'} overflow-hidden rounded-2xl bg-black shadow-2xl ring-1 ring-white/10`}>
+          {isImage ? <img src={source} alt={workshop.title || 'Workshop'} className="max-h-[82vh] max-w-full object-contain" /> : video.type === 'direct' ? <video className="h-full w-full" src={source} autoPlay controls playsInline /> : video.canEmbed ? <iframe title={`${workshop.title} video`} className="h-full w-full" src={video.embedUrl || ''} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : <div className="grid h-full place-items-center p-8 text-center text-white">This video cannot be embedded.</div>}
         </div>
       </div>
     </div>, document.body
@@ -57,7 +57,7 @@ export default function WorkshopCard({ workshop, onDetails, preview = false }: {
         <ul className="space-y-2 min-w-0">
           {(workshop.pillars || []).map((item: string, index: number) => <li key={`${item}-${index}`} className="flex gap-2 text-xs font-semibold text-slate-700"><span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-violet-50 text-violet-600"><Check size={11} strokeWidth={3} /></span>{item}</li>)}
         </ul>
-        <button type="button" onClick={() => source && !isImage && setIsVideoOpen(true)} disabled={!source} aria-label={source ? (isImage ? `${workshop.title} image` : `Open ${workshop.title} video`) : 'No media available'} className="group relative h-[96px] overflow-hidden rounded-xl bg-[#130b22] disabled:cursor-default">
+        <button type="button" onClick={() => source && setIsVideoOpen(true)} disabled={!source} aria-label={source ? `Open ${workshop.title} ${isImage ? 'image' : 'video'}` : 'No media available'} className="group relative h-[96px] overflow-hidden rounded-xl bg-[#130b22] disabled:cursor-default">
           {source ? (isImage ? <img className="h-full w-full object-cover" src={source} alt={workshop.title || 'Workshop'} /> : video.type === 'direct' ? <video className="pointer-events-none h-full w-full object-cover" src={source} muted playsInline preload="metadata" /> : youtubeId ? <img className="h-full w-full object-cover" src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} alt="" /> : <div className="grid h-full place-items-center text-white/70"><Play size={24} /></div>) : <div className="grid h-full place-items-center text-white/70"><Play size={24} /></div>}
           {source && !isImage && <span className="absolute inset-0 grid place-items-center bg-black/15 transition-colors group-hover:bg-black/35"><span className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-violet-700 shadow-lg transition-transform group-hover:scale-110"><Play size={18} fill="currentColor" /></span></span>}
         </button>

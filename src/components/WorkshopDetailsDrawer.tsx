@@ -47,13 +47,13 @@ export default function WorkshopDetailsDrawer({ workshop, onClose, onBook, reque
 
           <div className="mt-5 grid gap-5 sm:grid-cols-[1fr_210px] sm:items-start">
             <div><h2 className="text-3xl font-black tracking-tight text-[#17003c]">{workshop.title}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{workshop.detailDescription || workshop.outcome}</p></div>
-            <button disabled={!source} onClick={() => source && !isImage && setPlaying(true)} className="group relative aspect-video overflow-hidden rounded-2xl bg-[#14051f] disabled:cursor-default">
+            <button disabled={!source} onClick={() => source && setPlaying(true)} className="group relative aspect-video overflow-hidden rounded-2xl bg-[#14051f] disabled:cursor-default">
               {isImage ? <img src={source} className="h-full w-full object-cover" alt={workshop.title || 'Workshop'} /> : youtubeId ? <img src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} className="h-full w-full object-cover" alt="" /> : source && media.type === 'direct' ? <video src={source} muted preload="metadata" className="pointer-events-none h-full w-full object-cover" /> : null}
               {!isImage && <span className="absolute inset-0 grid place-items-center bg-black/20"><span className="grid h-11 w-11 place-items-center rounded-full bg-white text-violet-700 shadow-xl group-hover:scale-110"><Play size={18} fill="currentColor" /></span></span>}
             </button>
           </div>
 
-          {playing && source && !isImage && <div className="mt-5 aspect-video overflow-hidden rounded-2xl bg-black">{media.type === 'direct' ? <video src={source} autoPlay controls playsInline className="h-full w-full" /> : media.canEmbed ? <iframe src={media.embedUrl || ''} className="h-full w-full" title="Workshop video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : null}</div>}
+          {playing && source && <div className={`${isImage ? 'flex max-h-[70vh] items-center justify-center' : 'aspect-video'} mt-5 overflow-hidden rounded-2xl bg-black`}>{isImage ? <img src={source} alt={workshop.title || 'Workshop'} className="max-h-[70vh] max-w-full object-contain" /> : media.type === 'direct' ? <video src={source} autoPlay controls playsInline className="h-full w-full" /> : media.canEmbed ? <iframe src={media.embedUrl || ''} className="h-full w-full" title="Workshop video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : null}</div>}
 
           <Section title="You will learn"><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{items(workshop.pillars).map((x: string) => <Tile key={x} icon={<Zap size={17} />} title={x} />)}</div></Section>
 
