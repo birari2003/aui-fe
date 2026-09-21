@@ -88,7 +88,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
     outcome: '',
     rate: '',
     modelType: 'workshops', demandTag: '', studios: '', studioLabel: 'You can work at studios like...',
-    expertName: '', expertTitle: '', expertExperience: '', expertAvatarUrl: '',
+    expertName: '', expertTitle: '', expertExperience: '', expertAvatarUrl: '', expertAbout: '', expertTalentCode: '',
     mediaUrl: '', mediaFile: null as File | null, assignedInstituteIds: [] as number[],
     detailDescription: '', abroadGuidance: '', includedItems: '', curriculumModules: '',
     mentorWorkedAt: '', programFee: '', feeUnit: 'per student', programBenefits: 'Live Online Sessions\nCertificate of Completion\nAssignments & Feedback', studioDetails: '', categoryTags: '', demandTags: ''
@@ -497,6 +497,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
       });
       const mentorsWithImages = await Promise.all(mentors.map(async (user: any) => {
         const professional = { ...user.professional };
+        professional.talentCode = professional.talentCode || user.talentId?.talentCode || '';
         if (!professional.profileImage && user.talentId?.talentCode) {
           try {
             const profileRes = await fetch(`${BASE_URL}/api/public-profile/code/${encodeURIComponent(user.talentId.talentCode)}`);
@@ -552,7 +553,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
           outcome: '',
           rate: '',
           modelType: 'workshops', demandTag: '', studios: '', studioLabel: 'You can work at studios like...',
-          expertName: '', expertTitle: '', expertExperience: '', expertAvatarUrl: '', mediaUrl: '',
+          expertName: '', expertTitle: '', expertExperience: '', expertAvatarUrl: '', expertAbout: '', expertTalentCode: '', mediaUrl: '',
           mediaFile: null, assignedInstituteIds: [], detailDescription: '', abroadGuidance: '', includedItems: '',
           curriculumModules: '', mentorWorkedAt: '', programFee: '', feeUnit: 'per student', programBenefits: 'Live Online Sessions\nCertificate of Completion\nAssignments & Feedback', studioDetails: '', categoryTags: '', demandTags: ''
         });
@@ -2670,7 +2671,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                                 studios: Array.isArray(workshop.studios) ? workshop.studios.join('\n') : '',
                                 studioLabel: workshop.studioLabel || 'You can work at studios like...',
                                 expertName: workshop.expertName || '', expertTitle: workshop.expertTitle || '',
-                                expertExperience: workshop.expertExperience || '', expertAvatarUrl: workshop.expertAvatarUrl || '',
+                                expertExperience: workshop.expertExperience || '', expertAvatarUrl: workshop.expertAvatarUrl || '', expertAbout: workshop.expertAbout || '', expertTalentCode: workshop.expertTalentCode || '',
                                 mediaUrl: workshop.mediaType === 'youtube' ? workshop.mediaUrl || '' : '', mediaFile: null,
                                 assignedInstituteIds: workshop.assignedInstituteIds || [],
                                 detailDescription: workshop.detailDescription || '',
@@ -2714,7 +2715,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                 <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 p-4 sm:grid-cols-2">
                   <label className="space-y-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Workshop type</span><select value={workshopForm.modelType} onChange={e => setWorkshopForm({ ...workshopForm, modelType: e.target.value })} className="w-full rounded-xl bg-slate-50 p-3 text-sm"><option value="workshops">Intense Workshops</option><option value="mentorship">Professional Mentorship</option><option value="portfolio">Portfolio Review</option></select></label>
                   <label className="space-y-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">YouTube URL</span><input value={workshopForm.mediaUrl} onChange={e => setWorkshopForm({ ...workshopForm, mediaUrl: e.target.value, mediaFile: null })} className="w-full rounded-xl bg-slate-50 p-3 text-sm" placeholder="https://youtube.com/..." /></label>
-                  <div className="space-y-2 sm:col-span-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Assign this card to institutes</span><div className="grid max-h-40 gap-2 overflow-y-auto sm:grid-cols-2">{workshopInstitutes.filter(u => u.institute).map(u => { const id=u.institute.id; const checked=workshopForm.assignedInstituteIds.includes(id); return <label key={id} className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${checked ? 'border-violet-400 bg-violet-50' : 'border-slate-200'}`}><input type="checkbox" checked={checked} onChange={() => setWorkshopForm({ ...workshopForm, assignedInstituteIds: checked ? workshopForm.assignedInstituteIds.filter(x => x !== id) : [...workshopForm.assignedInstituteIds, id] })} />{u.institute.instituteName}</label>; })}</div></div>
+                  <div className="space-y-2 sm:col-span-2"><span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Assign this card to institutes</span><div className="grid max-h-40 gap-2 overflow-y-auto sm:grid-cols-2"><label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-xs font-bold sm:col-span-2 ${workshopInstitutes.filter(u => u.institute).length > 0 && workshopInstitutes.filter(u => u.institute).every(u => workshopForm.assignedInstituteIds.includes(u.institute.id)) ? 'border-violet-500 bg-violet-100 text-violet-800' : 'border-slate-300 bg-slate-50'}`}><input type="checkbox" checked={workshopInstitutes.filter(u => u.institute).length > 0 && workshopInstitutes.filter(u => u.institute).every(u => workshopForm.assignedInstituteIds.includes(u.institute.id))} onChange={e => setWorkshopForm({ ...workshopForm, assignedInstituteIds: e.target.checked ? workshopInstitutes.filter(u => u.institute).map(u => u.institute.id) : [] })} />All institutes</label>{workshopInstitutes.filter(u => u.institute).map(u => { const id=u.institute.id; const checked=workshopForm.assignedInstituteIds.includes(id); return <label key={id} className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${checked ? 'border-violet-400 bg-violet-50' : 'border-slate-200'}`}><input type="checkbox" checked={checked} onChange={() => setWorkshopForm({ ...workshopForm, assignedInstituteIds: checked ? workshopForm.assignedInstituteIds.filter(x => x !== id) : [...workshopForm.assignedInstituteIds, id] })} />{u.institute.instituteName}</label>; })}</div></div>
                 </div>
 
                 <div className="hidden grid-cols-1 md:grid-cols-2 gap-6">
@@ -2810,7 +2811,8 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                           ...(mentor ? {
                             expertTitle: mentor.position || mentor.primarySkill || '',
                             expertExperience: `${mentor.experienceYears || 0}+ Years Exp.`,
-                            expertAvatarUrl: getFileUrl(mentor.profileImage || mentor.avatarUrl || '')
+                            expertAvatarUrl: getFileUrl(mentor.profileImage || mentor.avatarUrl || ''),
+                            expertTalentCode: mentor.talentCode || ''
                           } : {})
                         });
                       }}
@@ -2831,6 +2833,10 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Expert Avatar URL</label>
                     <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.expertAvatarUrl} onChange={e => setWorkshopForm({ ...workshopForm, expertAvatarUrl: e.target.value })} placeholder="https://..." />
                   </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">About Mentor</label>
+                    <textarea className="min-h-24 w-full rounded-xl border-gray-100 bg-gray-50 p-3 text-sm outline-none" value={workshopForm.expertAbout} onChange={e => setWorkshopForm({ ...workshopForm, expertAbout: e.target.value })} placeholder="Brief mentor background, experience and specialties..." />
+                  </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Studios (One per line)</label>
                     <StructuredRowsEditor value={workshopForm.studios} onChange={studios => setWorkshopForm({ ...workshopForm, studios })} columns={['Studio name']} addLabel="Add studio" />
@@ -2840,9 +2846,9 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                     <input className="w-full bg-gray-50 border-gray-100 rounded-xl p-3 text-sm outline-none" value={workshopForm.mediaUrl} onChange={e => setWorkshopForm({ ...workshopForm, mediaUrl: e.target.value, mediaFile: null })} placeholder="https://youtube.com/watch?v=..." />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Or Upload Video (MP4/MOV)</label>
-                    <input type="file" accept="video/mp4,video/quicktime,video/*" className="w-full bg-gray-50 rounded-xl p-2 text-xs" onChange={e => setWorkshopForm({ ...workshopForm, mediaFile: e.target.files?.[0] || null, mediaUrl: '' })} />
-                    {currentWorkshop?.mediaUrl && !workshopForm.mediaFile && !workshopForm.mediaUrl && <p className="text-[10px] text-emerald-600">Existing uploaded video will be retained.</p>}
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Or Upload Image / Video</label>
+                    <input type="file" accept="image/*,video/*" className="w-full bg-gray-50 rounded-xl p-2 text-xs" onChange={e => setWorkshopForm({ ...workshopForm, mediaFile: e.target.files?.[0] || null, mediaUrl: '' })} />
+                    {currentWorkshop?.mediaUrl && !workshopForm.mediaFile && !workshopForm.mediaUrl && <p className="text-[10px] text-emerald-600">Existing uploaded image or video will be retained.</p>}
                   </div>
                   <div className="md:col-span-2 space-y-5 rounded-3xl border border-violet-100 bg-violet-50/40 p-5 sm:p-6">
                     <div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">Workshop Details Drawer</p><p className="mt-1 text-xs text-slate-500">This content appears after an institute clicks Details.</p></div>
@@ -2861,6 +2867,7 @@ const AdminPanel = ({ setView }: { setView: (v: View) => void }) => {
                   <div className="md:col-span-2 space-y-3 rounded-2xl border border-gray-100 p-4">
                     <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Assign to Institutes</label>
                     <div className="grid max-h-44 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
+                      <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-xs font-bold sm:col-span-2 ${workshopInstitutes.filter(u => u.institute).length > 0 && workshopInstitutes.filter(u => u.institute).every(u => workshopForm.assignedInstituteIds.includes(u.institute.id)) ? 'border-violet-500 bg-violet-100 text-violet-800' : 'border-gray-200 bg-gray-50'}`}><input type="checkbox" checked={workshopInstitutes.filter(u => u.institute).length > 0 && workshopInstitutes.filter(u => u.institute).every(u => workshopForm.assignedInstituteIds.includes(u.institute.id))} onChange={e => setWorkshopForm({ ...workshopForm, assignedInstituteIds: e.target.checked ? workshopInstitutes.filter(u => u.institute).map(u => u.institute.id) : [] })} />All institutes</label>
                       {workshopInstitutes.filter(u => u.institute).map(u => {
                         const id = u.institute.id; const checked = workshopForm.assignedInstituteIds.includes(id);
                         return <label key={id} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-xs font-semibold ${checked ? 'border-violet-400 bg-violet-50' : 'border-gray-100'}`}><input type="checkbox" checked={checked} onChange={() => setWorkshopForm({ ...workshopForm, assignedInstituteIds: checked ? workshopForm.assignedInstituteIds.filter(x => x !== id) : [...workshopForm.assignedInstituteIds, id] })} />{u.institute.instituteName}</label>;

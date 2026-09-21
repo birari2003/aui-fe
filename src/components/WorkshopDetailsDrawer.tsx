@@ -5,6 +5,7 @@ import { BASE_URL } from '../utils/urls';
 import { detectVideoUrl, getYouTubeId } from '../utils/videoUtils';
 
 const sourceFor = (url?: string) => !url ? '' : url.startsWith('uploads/') ? `${BASE_URL}/${url}` : url;
+const isImageSource = (url: string) => /\.(avif|gif|jpe?g|png|svg|webp)(?:\?|#|$)/i.test(url);
 const items = (value: any) => Array.isArray(value) ? value : [];
 
 export default function WorkshopDetailsDrawer({ workshop, onClose, onBook, requestStatus }: { workshop: any | null; onClose: () => void; onBook: (workshop: any) => void; requestStatus?: 'pending' | 'approved' | 'rejected' }) {
@@ -22,6 +23,7 @@ export default function WorkshopDetailsDrawer({ workshop, onClose, onBook, reque
   const source = sourceFor(workshop.mediaUrl);
   const media = detectVideoUrl(source);
   const youtubeId = getYouTubeId(source);
+  const isImage = isImageSource(source);
   const guidance = items(workshop.abroadGuidance);
   const included = items(workshop.includedItems);
   const modules = items(workshop.curriculumModules);
@@ -45,13 +47,13 @@ export default function WorkshopDetailsDrawer({ workshop, onClose, onBook, reque
 
           <div className="mt-5 grid gap-5 sm:grid-cols-[1fr_210px] sm:items-start">
             <div><h2 className="text-3xl font-black tracking-tight text-[#17003c]">{workshop.title}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{workshop.detailDescription || workshop.outcome}</p></div>
-            <button disabled={!source} onClick={() => source && setPlaying(true)} className="group relative aspect-video overflow-hidden rounded-2xl bg-[#14051f] disabled:cursor-default">
-              {youtubeId ? <img src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} className="h-full w-full object-cover" alt="" /> : source && media.type === 'direct' ? <video src={source} muted preload="metadata" className="pointer-events-none h-full w-full object-cover" /> : null}
-              <span className="absolute inset-0 grid place-items-center bg-black/20"><span className="grid h-11 w-11 place-items-center rounded-full bg-white text-violet-700 shadow-xl group-hover:scale-110"><Play size={18} fill="currentColor" /></span></span>
+            <button disabled={!source} onClick={() => source && !isImage && setPlaying(true)} className="group relative aspect-video overflow-hidden rounded-2xl bg-[#14051f] disabled:cursor-default">
+              {isImage ? <img src={source} className="h-full w-full object-cover" alt={workshop.title || 'Workshop'} /> : youtubeId ? <img src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} className="h-full w-full object-cover" alt="" /> : source && media.type === 'direct' ? <video src={source} muted preload="metadata" className="pointer-events-none h-full w-full object-cover" /> : null}
+              {!isImage && <span className="absolute inset-0 grid place-items-center bg-black/20"><span className="grid h-11 w-11 place-items-center rounded-full bg-white text-violet-700 shadow-xl group-hover:scale-110"><Play size={18} fill="currentColor" /></span></span>}
             </button>
           </div>
 
-          {playing && source && <div className="mt-5 aspect-video overflow-hidden rounded-2xl bg-black">{media.type === 'direct' ? <video src={source} autoPlay controls playsInline className="h-full w-full" /> : media.canEmbed ? <iframe src={media.embedUrl || ''} className="h-full w-full" title="Workshop video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : null}</div>}
+          {playing && source && !isImage && <div className="mt-5 aspect-video overflow-hidden rounded-2xl bg-black">{media.type === 'direct' ? <video src={source} autoPlay controls playsInline className="h-full w-full" /> : media.canEmbed ? <iframe src={media.embedUrl || ''} className="h-full w-full" title="Workshop video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /> : null}</div>}
 
           <Section title="You will learn"><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{items(workshop.pillars).map((x: string) => <Tile key={x} icon={<Zap size={17} />} title={x} />)}</div></Section>
 
@@ -60,11 +62,13 @@ export default function WorkshopDetailsDrawer({ workshop, onClose, onBook, reque
           {guidance.length > 0 && <Section title="We guide you to work abroad"><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{guidance.map((x: any, i: number) => <Tile key={i} icon={<Globe2 size={17} />} title={x.title} description={x.description} />)}</div></Section>}
           {included.length > 0 && <Section title="Included with this program"><div className="grid gap-3 sm:grid-cols-3">{included.map((x: any, i: number) => <Tile key={i} horizontal icon={<Building2 size={17} />} title={x.title} description={x.description} />)}</div></Section>}
           {modules.length > 0 && <Section title="Studio pipeline curriculum"><div className="grid gap-3 sm:grid-cols-2">{modules.map((x: any, i: number) => <div key={i} className="rounded-2xl border border-slate-200 p-4"><div className="flex justify-between gap-3 text-[9px] font-extrabold uppercase"><span className="rounded-md bg-violet-50 px-2 py-1 text-violet-700">{x.label || `Module ${i + 1}`}</span><span className="text-slate-500">{x.category}</span></div><h4 className="mt-3 text-sm font-extrabold text-[#17003c]">{x.title}</h4><p className="mt-2 text-xs leading-5 text-slate-500">{x.description}</p></div>)}</div></Section>}
+          {workshop.expertAbout && <Section title={`About ${workshop.expertName?.split(' ')[0] || 'the mentor'}`}><p className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4 text-sm leading-6 text-slate-600">{workshop.expertAbout}</p></Section>}
+          {workshop.expertTalentCode && <a href={`/talent/${encodeURIComponent(workshop.expertTalentCode)}`} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-violet-600 px-5 py-3 text-xs font-extrabold uppercase text-violet-700 transition-colors hover:bg-violet-50">View mentor profile <ArrowRight size={14} /></a>}
         </div>
 
         <div className="absolute inset-x-0 bottom-0 border-t border-fuchsia-100 bg-[#fff5ff]/95 px-5 py-4 shadow-[0_-12px_30px_rgba(30,0,60,.08)] backdrop-blur sm:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="flex min-w-0 flex-1 items-center gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-violet-600 bg-violet-100 font-bold text-violet-700">{workshop.expertAvatarUrl ? <img src={workshop.expertAvatarUrl} className="h-full w-full object-cover" alt="" /> : workshop.expertName?.[0] || 'E'}</div><div className="min-w-0"><p className="text-[9px] font-bold uppercase tracking-widest text-violet-600">Mentor</p><p className="font-extrabold text-[#17003c]">{workshop.expertName || 'Industry Expert'}</p><p className="truncate text-[10px] text-slate-600">{workshop.expertTitle} · {workshop.expertExperience}</p>{workshop.mentorWorkedAt && <p className="truncate text-[10px] font-semibold text-fuchsia-600">Worked at {workshop.mentorWorkedAt}</p>}</div></div>
+            <div className="flex min-w-0 flex-1 items-center gap-3"><div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-violet-600 bg-violet-100 text-lg font-bold text-violet-700">{workshop.expertAvatarUrl ? <img src={workshop.expertAvatarUrl} className="h-full w-full object-cover" alt="" /> : workshop.expertName?.[0] || 'E'}</div><div className="min-w-0"><p className="text-[9px] font-bold uppercase tracking-widest text-violet-600">Mentor</p><p className="font-extrabold text-[#17003c]">{workshop.expertName || 'Industry Expert'}</p><p className="truncate text-[10px] text-slate-600">{workshop.expertTitle} · {workshop.expertExperience}</p>{workshop.mentorWorkedAt && <p className="truncate text-[10px] font-semibold text-fuchsia-600">Worked at {workshop.mentorWorkedAt}</p>}</div></div>
             <div className="shrink-0"><p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Program fee</p><p className="text-2xl font-black text-[#17003c]">{workshop.programFee || workshop.rate}<span className="ml-1 text-[10px] font-medium text-slate-500">{workshop.feeUnit}</span></p></div>
             {requestStatus ? <div className={`flex shrink-0 items-center justify-center gap-2 rounded-xl border px-7 py-4 text-xs font-extrabold uppercase tracking-wide ${requestStatus === 'approved' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : requestStatus === 'rejected' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}><span className={`h-2 w-2 rounded-full ${requestStatus === 'approved' ? 'bg-emerald-500' : requestStatus === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`} />{requestStatus}</div> : <button onClick={() => onBook(workshop)} className="flex shrink-0 items-center justify-center gap-3 rounded-xl bg-violet-700 px-7 py-4 text-xs font-extrabold uppercase tracking-wide text-white shadow-lg shadow-violet-300 hover:bg-violet-800">Book workshop <ArrowRight size={16} /></button>}
           </div>

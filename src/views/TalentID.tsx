@@ -10,6 +10,9 @@ import {
   Bookmark,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  X,
   Play,
   ArrowRight,
   UserCheck,
@@ -287,8 +290,25 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isWorkLedgerOpen, setIsWorkLedgerOpen] = useState(true);
+  const [openWorkLedgerIndex, setOpenWorkLedgerIndex] = useState<number | null>(0);
+  const [shotPreview, setShotPreview] = useState<{ title: string; images: string[]; index: number } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    if (!shotPreview) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShotPreview(null);
+      if (event.key === 'ArrowLeft') setShotPreview(current => current ? { ...current, index: (current.index - 1 + current.images.length) % current.images.length } : null);
+      if (event.key === 'ArrowRight') setShotPreview(current => current ? { ...current, index: (current.index + 1) % current.images.length } : null);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [shotPreview]);
 
   const [me, setMe] = useState<any>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -725,6 +745,13 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
         description={seoDescription} 
         keywords={seoKeywords} 
       />
+      {shotPreview && <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/95 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`${shotPreview.title} shot samples`} onClick={() => setShotPreview(null)}>
+        <button type="button" onClick={() => setShotPreview(null)} className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="Close image preview"><X size={24} /></button>
+        <div className="absolute left-5 top-5 max-w-[70vw] text-white"><p className="truncate text-sm font-bold sm:text-lg">{shotPreview.title}</p><p className="text-xs text-white/60">{shotPreview.index + 1} of {shotPreview.images.length}</p></div>
+        {shotPreview.images.length > 1 && <button type="button" onClick={event => { event.stopPropagation(); setShotPreview(current => current ? { ...current, index: (current.index - 1 + current.images.length) % current.images.length } : null); }} className="absolute left-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:left-8" aria-label="Previous image"><ChevronLeft size={30} /></button>}
+        <img src={shotPreview.images[shotPreview.index]} alt={`${shotPreview.title} sample ${shotPreview.index + 1}`} className="max-h-[82vh] max-w-[88vw] object-contain" onClick={event => event.stopPropagation()} />
+        {shotPreview.images.length > 1 && <button type="button" onClick={event => { event.stopPropagation(); setShotPreview(current => current ? { ...current, index: (current.index + 1) % current.images.length } : null); }} className="absolute right-3 z-10 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:right-8" aria-label="Next image"><ChevronRight size={30} /></button>}
+      </div>}
       {/* Top Header */}
       <header className="bg-white border-b border-[#E5E7EB] sticky top-0 z-50">
         <div className="max-w-[1100px] mx-auto px-6 h-14 flex items-center justify-between">
@@ -1176,13 +1203,14 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
               <div key={idx} className="border border-[#F1F5F9] rounded-[20px] overflow-hidden">
                 <div
                   className="p-5 flex flex-col md:flex-row items-center md:items-start gap-6 cursor-pointer hover:bg-[#F8FAFC] transition-colors"
-                  onClick={() => setIsWorkLedgerOpen(idx === 0 ? !isWorkLedgerOpen : true)}
+                  onClick={() => setOpenWorkLedgerIndex(openWorkLedgerIndex === idx ? null : idx)}
                 >
                   <div className="w-full md:w-[180px] h-[180px] md:h-auto md:aspect-square bg-gray-900 rounded-xl overflow-hidden shrink-0">
                     <img
-                      src={publicProfile?.workLedgerImage ? getFileUrl(publicProfile.workLedgerImage) : (project.shotSamples?.length > 0 ? getFileUrl(project.shotSamples[0]) : '/assets/superhero_team_thumbnail_1777487519840.png')}
+                      src={project.shotSamples?.length > 0 ? getFileUrl(project.shotSamples[0]) : (publicProfile?.workLedgerImage ? getFileUrl(publicProfile.workLedgerImage) : '/assets/superhero_team_thumbnail_1777487519840.png')}
                       alt={project.projectName}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full cursor-zoom-in object-cover"
+                      onClick={event => { event.stopPropagation(); const images = project.shotSamples?.length ? project.shotSamples.map((sample: string) => getFileUrl(sample)) : [publicProfile?.workLedgerImage ? getFileUrl(publicProfile.workLedgerImage) : '/assets/superhero_team_thumbnail_1777487519840.png']; setShotPreview({ title: project.projectName, images, index: 0 }); }}
                     />
                   </div>
                   <div className="flex-1 w-full pt-2">
@@ -1193,12 +1221,12 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-4">
                         <span className="bg-[#DCFCE7] text-[#166534] px-4 py-1.5 rounded-full text-xs font-bold">{project.status}</span>
-                        {(idx === 0 && isWorkLedgerOpen) ? <ChevronUp size={20} className="text-[#94A3B8]" /> : <ChevronDown size={20} className="text-[#94A3B8]" />}
+                        {openWorkLedgerIndex === idx ? <ChevronUp size={20} className="text-[#94A3B8]" /> : <ChevronDown size={20} className="text-[#94A3B8]" />}
                       </div>
                     </div>
 
 
-                    {(idx === 0 && isWorkLedgerOpen) && (
+                    {openWorkLedgerIndex === idx && (
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 pt-6 border-t border-[#F1F5F9]">
                         <div className="space-y-3">
                           <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Contribution</div>
@@ -1219,11 +1247,13 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                         <div className="space-y-3 relative">
                           <div className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">Shot Samples</div>
                           <div className="flex flex-wrap gap-2">
-                            {(publicProfile?.workLedgerImage ? project.shotSamples : project.shotSamples?.slice(1))?.slice(0, 3).map((sample: string, i: number) => (
+                            {project.shotSamples?.slice(1).map((sample: string, i: number) => (
                               <div key={i} className="w-[70px] h-[50px] bg-gray-200 rounded-lg overflow-hidden border border-[#F1F5F9] shadow-sm">
                                 <img
                                   src={getFileUrl(sample)}
-                                  className="w-full h-full object-cover"
+                                  alt={`${project.projectName} shot sample ${i + 2}`}
+                                  className="w-full h-full cursor-zoom-in object-cover"
+                                  onClick={event => { event.stopPropagation(); setShotPreview({ title: project.projectName, images: project.shotSamples.map((item: string) => getFileUrl(item)), index: i + 1 }); }}
                                 />
                               </div>
                             ))}
@@ -1232,7 +1262,7 @@ const TalentIDPage = ({ setView }: { setView: (v: View) => void }) => {
                             )}
                           </div>
                           <div className="absolute -bottom-2 right-0">
-                            <button className="text-[10px] font-bold text-[#2563EB] flex items-center gap-1 hover:underline">
+                            <button onClick={event => { event.stopPropagation(); const images = (project.shotSamples || []).map((sample: string) => getFileUrl(sample)); if (images.length) setShotPreview({ title: project.projectName, images, index: 0 }); }} className="text-[10px] font-bold text-[#2563EB] flex items-center gap-1 hover:underline">
                               View Shot Samples <ArrowRight size={12} />
                             </button>
                           </div>

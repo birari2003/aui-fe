@@ -5,12 +5,14 @@ import { BASE_URL } from '../utils/urls';
 import { detectVideoUrl, getYouTubeId } from '../utils/videoUtils';
 
 const mediaSrc = (url?: string) => !url ? '' : url.startsWith('uploads/') ? `${BASE_URL}/${url}` : url;
+const isImageSource = (url: string) => /\.(avif|gif|jpe?g|png|svg|webp)(?:\?|#|$)/i.test(url);
 
 export default function WorkshopCard({ workshop, onDetails, preview = false }: { workshop: any; onDetails?: () => void; preview?: boolean }) {
   const [isVideoOpen, setIsVideoOpen] = React.useState(false);
   const source = mediaSrc(workshop.mediaUrl);
   const video = detectVideoUrl(source);
   const youtubeId = getYouTubeId(source);
+  const isImage = isImageSource(source);
 
   React.useEffect(() => {
     if (!isVideoOpen) return;
@@ -55,9 +57,9 @@ export default function WorkshopCard({ workshop, onDetails, preview = false }: {
         <ul className="space-y-2 min-w-0">
           {(workshop.pillars || []).map((item: string, index: number) => <li key={`${item}-${index}`} className="flex gap-2 text-xs font-semibold text-slate-700"><span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-violet-50 text-violet-600"><Check size={11} strokeWidth={3} /></span>{item}</li>)}
         </ul>
-        <button type="button" onClick={() => source && setIsVideoOpen(true)} disabled={!source} aria-label={source ? `Open ${workshop.title} video` : 'No video available'} className="group relative h-[96px] overflow-hidden rounded-xl bg-[#130b22] disabled:cursor-default">
-          {source ? (video.type === 'direct' ? <video className="pointer-events-none h-full w-full object-cover" src={source} muted playsInline preload="metadata" /> : youtubeId ? <img className="h-full w-full object-cover" src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} alt="" /> : <div className="grid h-full place-items-center text-white/70"><Play size={24} /></div>) : <div className="grid h-full place-items-center text-white/70"><Play size={24} /></div>}
-          {source && <span className="absolute inset-0 grid place-items-center bg-black/15 transition-colors group-hover:bg-black/35"><span className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-violet-700 shadow-lg transition-transform group-hover:scale-110"><Play size={18} fill="currentColor" /></span></span>}
+        <button type="button" onClick={() => source && !isImage && setIsVideoOpen(true)} disabled={!source} aria-label={source ? (isImage ? `${workshop.title} image` : `Open ${workshop.title} video`) : 'No media available'} className="group relative h-[96px] overflow-hidden rounded-xl bg-[#130b22] disabled:cursor-default">
+          {source ? (isImage ? <img className="h-full w-full object-cover" src={source} alt={workshop.title || 'Workshop'} /> : video.type === 'direct' ? <video className="pointer-events-none h-full w-full object-cover" src={source} muted playsInline preload="metadata" /> : youtubeId ? <img className="h-full w-full object-cover" src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`} alt="" /> : <div className="grid h-full place-items-center text-white/70"><Play size={24} /></div>) : <div className="grid h-full place-items-center text-white/70"><Play size={24} /></div>}
+          {source && !isImage && <span className="absolute inset-0 grid place-items-center bg-black/15 transition-colors group-hover:bg-black/35"><span className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-violet-700 shadow-lg transition-transform group-hover:scale-110"><Play size={18} fill="currentColor" /></span></span>}
         </button>
       </div>
 
@@ -66,13 +68,15 @@ export default function WorkshopCard({ workshop, onDetails, preview = false }: {
         <div className="mt-2 flex flex-wrap gap-1.5">{(workshop.studios || []).map((studio: string) => <span key={studio} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[9px] font-extrabold uppercase text-slate-800">{studio}</span>)}</div>
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 bg-violet-50/40 px-2 pt-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-violet-100">{workshop.expertAvatarUrl ? <img src={workshop.expertAvatarUrl} className="h-full w-full object-cover" alt="" /> : <span className="grid h-full place-items-center font-bold text-violet-700">{workshop.expertName?.[0] || 'E'}</span>}</div>
-          <div className="min-w-0"><p className="truncate text-xs font-extrabold text-[#160044]">{workshop.expertName || 'Expert name'}</p><p className="truncate text-[10px] text-slate-500">{workshop.expertTitle}</p><p className="text-[9px] font-semibold text-violet-400">{workshop.expertExperience}</p></div>
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-violet-100 shadow-sm">{workshop.expertAvatarUrl ? <img src={workshop.expertAvatarUrl} className="h-full w-full object-cover" alt="" /> : <span className="grid h-full place-items-center text-lg font-bold text-violet-700">{workshop.expertName?.[0] || 'E'}</span>}</div>
+          <div className="min-w-0"><span className="rounded bg-violet-100 px-2 py-1 text-[8px] font-extrabold uppercase text-violet-700">Your mentor</span><p className="mt-1 truncate text-sm font-extrabold text-[#160044]">{workshop.expertName || 'Expert name'}</p><p className="truncate text-[10px] text-slate-500">{workshop.expertTitle}</p><p className="text-[9px] font-semibold text-violet-500">{workshop.expertExperience}</p></div>
         </div>
         <button type="button" onClick={onDetails} disabled={!onDetails} className="shrink-0 rounded-xl border border-violet-600 px-4 py-2 text-[10px] font-extrabold uppercase text-violet-700 disabled:cursor-default">Details <ArrowRight className="inline" size={12} /></button>
       </div>
+      {workshop.expertAbout && <div className="border-t border-slate-100 px-1 pt-3"><p className="text-[11px] font-extrabold text-[#160044]">About {workshop.expertName?.split(' ')[0] || 'mentor'}</p><p className="mt-1 line-clamp-4 text-[10px] leading-4 text-slate-600">{workshop.expertAbout}</p></div>}
+      {workshop.expertTalentCode && <a href={`/talent/${encodeURIComponent(workshop.expertTalentCode)}`} className="mt-3 w-fit rounded-xl border border-violet-600 px-4 py-2 text-[10px] font-extrabold uppercase text-violet-700 transition-colors hover:bg-violet-50">View profile <ArrowRight className="inline" size={12} /></a>}
     </article>{videoModal}</>
   );
 }

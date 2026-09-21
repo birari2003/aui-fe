@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Video, Image as ImageIcon, Layout, History, Sparkles, Send, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import Button from './Button';
 import { getMyPublicProfile, upsertPublicProfile } from '../services/publicProfileServices';
@@ -57,6 +57,16 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [workLedgerImageFile, setWorkLedgerImageFile] = useState<File | null>(null);
   const [projectImages, setProjectImages] = useState<{[key: number]: File[]}>({});
+  const newestProjectRef = useRef<HTMLDivElement | null>(null);
+  const shouldScrollToNewProject = useRef(false);
+
+  useEffect(() => {
+    if (!shouldScrollToNewProject.current || !newestProjectRef.current) return;
+    shouldScrollToNewProject.current = false;
+    requestAnimationFrame(() => {
+      newestProjectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [formData.workLedger.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -204,7 +214,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
         ...project,
         shotSamples: [
           ...(Array.isArray(project.shotSamples) ? project.shotSamples : []).filter(s => typeof s === 'string' && !s.startsWith('blob:')),
-          ...newImages.map(f => `PENDING_UPLOAD:${f.name}`)
+          ...newImages.map((_, imageIdx) => `PENDING_UPLOAD:${idx}:${imageIdx}`)
         ]
       };
     });
@@ -265,6 +275,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
   };
 
   const addWorkLedgerItem = () => {
+    shouldScrollToNewProject.current = true;
     setFormData(prev => ({
       ...prev,
       workLedger: [...(prev.workLedger || []), { 
@@ -285,6 +296,12 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
       ...prev,
       workLedger: (prev.workLedger || []).filter((_, i) => i !== index)
     }));
+    setProjectImages(prev => Object.entries(prev).reduce((next, [key, files]) => {
+      const oldIndex = Number(key);
+      if (oldIndex < index) next[oldIndex] = files;
+      if (oldIndex > index) next[oldIndex - 1] = files;
+      return next;
+    }, {} as {[key: number]: File[]}));
   };
 
   return (
@@ -600,7 +617,7 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
 
               <div className="space-y-6">
                 {Array.isArray(formData.workLedger) && formData.workLedger.map((project, idx) => (
-                  <div key={idx} className="p-8 bg-brand-surface rounded-[32px] border border-gray-100 space-y-6 relative group">
+                  <div ref={idx === formData.workLedger.length - 1 ? newestProjectRef : undefined} key={idx} className="scroll-mt-6 p-8 bg-brand-surface rounded-[32px] border border-gray-100 space-y-6 relative group">
                     <button 
                       onClick={() => removeWorkLedgerItem(idx)}
                       className="absolute top-4 right-4 p-2 bg-white text-red-500 rounded-full shadow-md border border-red-50 hover:bg-red-50 transition-colors"
@@ -735,7 +752,8 @@ const ManagePublicProfileModal: React.FC<ManagePublicProfileModalProps> = ({ isO
                             onChange={(e) => {
                               if (e.target.files) {
                                 const files = Array.from(e.target.files);
-                                setProjectImages({ ...projectImages, [idx]: files });
+                                setProjectImages({ ...projectImages, [idx]: [...(projectImages[idx] || []), ...files] });
+                                e.target.value = '';
                               }
                             }}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
